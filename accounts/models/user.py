@@ -1,7 +1,7 @@
 from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from .managers import CustomUserManager
+from ..managers import CustomUserManager
 
 # Create your models here.
 
