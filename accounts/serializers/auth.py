@@ -17,4 +17,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             return user
 
 
-    
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser    
+        fields = ('id', 'email', 'first_name', 'last_name', 'phone_number', 'role', 'is_active', 'date_joined')
+        read_only_fields = fields

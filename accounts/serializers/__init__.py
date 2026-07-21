@@ -1,1 +1,1 @@
-from .auth import RegisterSerializer
+from .auth import RegisterSerializer, ProfileSerializer
