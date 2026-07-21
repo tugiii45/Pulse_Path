@@ -1,0 +1,1 @@
+from .notification import NotificationDetailView, NotificationListCreateView
