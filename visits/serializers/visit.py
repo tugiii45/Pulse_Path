@@ -11,18 +11,22 @@ class VisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visit
         fields = [
-            "id",
-            "patient",
-            "patient_name",
-            "visit_date",
-            "reason",
-            "symptoms",
-            "diagnosis",
-            "notes",
-            "created_at",
-        ]
+    "id",
+    "patient",
+    "patient_name",
+    "visit_date",
+    "reason",
+    "symptoms",
+    "diagnosis",
+    "notes",
+    "created_at",
+]
+
         read_only_fields = [
-            "id",
-            "visit_date",
-            "created_at",
-        ]
+    "id",
+    "patient",
+    "patient_name",
+    "visit_date",
+    "created_at",
+]
+        
