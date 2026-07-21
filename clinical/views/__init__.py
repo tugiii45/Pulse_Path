@@ -1,0 +1,1 @@
+from .clinical import ClinicalRecordListCreateView, ClinicalRecordDetailView
