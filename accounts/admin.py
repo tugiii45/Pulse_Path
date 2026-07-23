@@ -1,10 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Patient
+from .models import CustomUser, Patient, Doctor
 
 
 # Register the Patient model so it can be managed through the Django admin panel.
 admin.site.register(Patient)
+
+# Register the Doctor model so it can be managed through the Django admin panel.
+admin.site.register(Doctor)
+
 
 
 # Register and customize the CustomUser model in the Django admin panel.

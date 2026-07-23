@@ -17,3 +17,8 @@ class VisitListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(patient=self.request.user.patient)
+
+class VisitDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Visit.objects.all()
+    serializer_class = VisitSerializer      
+    permission_classes = [permissions.IsAuthenticated]

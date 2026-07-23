@@ -1,0 +1,2 @@
+from .appointment import AppointmentListCreateView, AppointmentDetailView
+from .visit import VisitListCreateView, VisitDetailView
