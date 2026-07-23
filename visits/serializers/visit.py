@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from ..models import Visit
+from ..models.appointment import Appointment
 
 
 class VisitSerializer(serializers.ModelSerializer):
@@ -8,10 +9,16 @@ class VisitSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    appointment = serializers.PrimaryKeyRelatedField(
+    queryset=Appointment.objects.all(),
+    required=False,
+    allow_null=True
+)
     class Meta:
         model = Visit
         fields = [
     "id",
+    "appointment",
     "patient",
     "patient_name",
     "visit_date",
