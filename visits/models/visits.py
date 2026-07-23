@@ -1,8 +1,18 @@
 from django.db import models
 from accounts.models import Patient
-
+from .appointment import Appointment
 
 class Visit(models.Model):
+    appointment = models.OneToOneField(
+        Appointment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="visit"
+        
+    )
+
+
     patient = models.ForeignKey(
         Patient,
         on_delete=models.CASCADE,
