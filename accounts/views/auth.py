@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from ..serializers import RegisterSerializer, ProfileSerializer
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from drf_spectacular.utils import extend_schema
+
 
 # Create your views here.
 
@@ -11,6 +13,9 @@ from rest_framework.permissions import IsAuthenticated
 # API view for registering new users.
 # Accepts user details, validates the input, and creates a new account.
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(request=RegisterSerializer, responses={201: RegisterSerializer})
 
     # Handle POST requests for user registration.
     def post(self, request):
@@ -32,6 +37,7 @@ class RegisterView(APIView):
 # API view for retrieving the authenticated user's profile.
 # Only logged-in users are allowed to access this endpoint.
 class ProfileView(APIView):
+
 
     # Restrict access to authenticated users only.
     permission_classes = [IsAuthenticated]
