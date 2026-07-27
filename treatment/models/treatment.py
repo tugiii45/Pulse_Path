@@ -22,7 +22,7 @@ class Treatment(models.Model):
         return f"Treatment #{self.id} - ({self.status})"
 
 
-class MediationScheduel(models.Model):
+class MedicationSchedule(models.Model):
     prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name="schedules") 
     scheduled_time = models.DateTimeField()
     start_date = models.DateField()
