@@ -1,1 +1,1 @@
-from .clinical import ClinicalRecordSerializer
+from .clinical_record import ClinicalRecordSerializer

@@ -15,7 +15,15 @@ class PatientProfileView(generics.RetrieveUpdateAPIView):
     # Restrict access to authenticated users only.
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_context(self):
+            return {'request': self.request} 
+
     # Return the Patient profile associated with the currently logged-in user.
     # This ensures that a patient can only view and update their own profile.
     def get_object(self):
         return Patient.objects.get(user=self.request.user)
+
+class PatientListCreateView(generics.ListCreateAPIView):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer    
+    permission_classes = [IsAuthenticated]

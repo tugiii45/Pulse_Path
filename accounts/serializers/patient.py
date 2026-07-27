@@ -55,6 +55,12 @@ class PatientSerializer(serializers.ModelSerializer):
         # - created_at records when the patient profile was created.
         read_only_fields = ["id", "created_at"]
 
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data) 
+
+    
+
     # Returns the patient's full name.
     #
     # The obj parameter represents the current Patient instance being
