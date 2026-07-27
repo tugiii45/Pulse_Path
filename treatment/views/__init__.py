@@ -1,1 +1,3 @@
 from .treatment import TreatmentListCreateView
+from .prescription import PrescriptionListCreateView, PrescriptionDetailView
+from .medication import MedicationListCreateView, MedicationDetailView
