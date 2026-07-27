@@ -1,1 +1,2 @@
 from .clinical import ClinicalRecordListCreateView, ClinicalRecordDetailView
+from .diagnosis import DiagnosisListCreateView, DiagnosisDetailView
