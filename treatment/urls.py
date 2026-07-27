@@ -2,6 +2,7 @@ from django.urls import path
 from .views import TreatmentListCreateView
 from .views.prescription import PrescriptionListCreateView, PrescriptionDetailView
 from .views.medication import MedicationListCreateView, MedicationDetailView
+from .views.medication_schedule import MedicationScheduleListCreateView, MedicationScheduleDetailView
 
 urlpatterns = [
     path("", TreatmentListCreateView.as_view(), name='treatment-list-create'),
@@ -9,6 +10,8 @@ urlpatterns = [
     path("prescription/<int:pk>/", PrescriptionDetailView.as_view(), name='prescription-detail'),
     path("medication/", MedicationListCreateView.as_view(), name='medication-list-create'),
     path("medication/<int:pk>/", MedicationDetailView.as_view(), name='medication-detail'),
+    path("medication_schedule/", MedicationScheduleListCreateView.as_view(), name='medication_schedule-list-create'),
+    path("medication_schedule/<int:pk>/", MedicationScheduleDetailView.as_view(), name='medication_schedule-detail'),
 
 ]
 

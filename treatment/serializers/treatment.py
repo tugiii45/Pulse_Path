@@ -6,10 +6,7 @@ class TreatmentSerializer(serializers.ModelSerializer):
         model = Treatment
         fields = [
             "id",
-            "visit",
-            "medication",
-            "dosage",
-            "instructions",
+            "prescription",
             "follow_up_date",
             "status",
             "created_at",

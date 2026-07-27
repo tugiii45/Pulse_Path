@@ -1,3 +1,3 @@
-from .treatment import Treatment
-from .medication import Medication
-from .prescription import Prescription
+from .treatment import *
+from .medication import *
+from .prescription import *
