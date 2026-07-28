@@ -4,3 +4,4 @@ from .medication import MedicationListCreateView, MedicationDetailView
 from .medication_schedule import MedicationScheduleListCreateView
 from .medication_log import MedicationLogListCreateView
 from .side_effect_report import SideEffectReportListCreateView, SideEffectReportDetailView
+from .recovery_progress import RecoveryProgressListCreateView, RecoveryProgressDetailView

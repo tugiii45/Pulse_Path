@@ -7,3 +7,4 @@ from .medication_schedule import MedicationScheduleSerializer
 from .medication_log import MedicationLogSerializer
 
 from .side_effect_report import SideEffectReportSerializer
+from .recovery_progress import RecoveryProgressSerializer
