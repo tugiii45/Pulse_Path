@@ -73,7 +73,7 @@ Activate it:
 **Windows**
 
 ```bash
-venv\Scripts\activate
+myenv\Scripts\activate
 ```
 
 **Linux/macOS**
