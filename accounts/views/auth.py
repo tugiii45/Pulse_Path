@@ -5,6 +5,8 @@ from ..serializers import RegisterSerializer, ProfileSerializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
+from accounts.permissions import *
+
 
 
 # Create your views here.

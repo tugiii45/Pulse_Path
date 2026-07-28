@@ -1,11 +1,12 @@
 from rest_framework import generics, permissions
 from ..models import Visit
 from ..serializers import VisitSerializer
-
+from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import *
 
 class VisitListCreateView(generics.ListCreateAPIView):
     serializer_class = VisitSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
 
     def get_queryset(self):
         user = self.request.user
@@ -21,4 +22,4 @@ class VisitListCreateView(generics.ListCreateAPIView):
 class VisitDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Visit.objects.all()
     serializer_class = VisitSerializer      
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
