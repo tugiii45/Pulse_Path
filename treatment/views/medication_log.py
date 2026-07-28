@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from treatment.models import MedicationLog
 from treatment.serializers import MedicationLogSerializer
+from accounts.permissions import *
 
 class MedicationLogListCreateView(generics.ListCreateAPIView):
     queryset = MedicationLog.objects.all()
