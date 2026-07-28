@@ -3,11 +3,12 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from ..models import *
 from ..serializers import *
+from accounts.permissions import *
 # Create your views here.
 
 class NotificationListCreateView(generics.ListCreateAPIView):
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsDoctorOrAdmin]
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)
@@ -18,7 +19,7 @@ class NotificationListCreateView(generics.ListCreateAPIView):
 
 class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)
