@@ -6,12 +6,12 @@ from accounts.permissions import *
 
 class VisitListCreateView(generics.ListCreateAPIView):
     serializer_class = VisitSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
 
     def get_queryset(self):
         user = self.request.user
 
-        if hasattr(user, "patient"):
+        if user.is_authenticated and hasattr(user, "patient"):
             return Visit.objects.filter(patient=user.patient)
 
         return Visit.objects.all()

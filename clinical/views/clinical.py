@@ -8,9 +8,10 @@ from accounts.permissions import *
 class ClinicalRecordListCreateView(generics.ListCreateAPIView):
     queryset = ClinicalRecord.objects.all()
     serializer_class = ClinicalRecordSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
 
-class ClinicalRecordDetailView(generics.RetrieveUpdateDestroyAPIView):    
+
+class ClinicalRecordDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ClinicalRecord.objects.all()
     serializer_class = ClinicalRecordSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]

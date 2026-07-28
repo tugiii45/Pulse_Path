@@ -7,7 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 class PrescriptionListCreateView(generics.ListCreateAPIView):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
+
 
 class PrescriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Prescription.objects.all()

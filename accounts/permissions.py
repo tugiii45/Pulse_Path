@@ -1,63 +1,85 @@
 from rest_framework.permissions import BasePermission
 
+
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.role == 'ADMIN'
-        )
+        return request.user.is_authenticated and request.user.role == 'ADMIN'
 
-class IsPatient(BasePermission):    
+
+class IsPatient(BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.role == 'PATIENT'
-        )
+        return request.user.is_authenticated and request.user.role == 'PATIENT'
 
-class IsDoctor(BasePermission):    
+
+class IsDoctor(BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.role == 'DOCTOR'
-        )
+        return request.user.is_authenticated and request.user.role == 'DOCTOR'
 
-class IsDoctorOrAdmin(BasePermission):    
+
+class IsDoctorOrAdmin(BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.role in ['ADMIN', 'DOCTOR']
-        )
+        return request.user.is_authenticated and request.user.role in ['ADMIN', 'DOCTOR']
 
-class IsOwnerOrDoctor(BasePermission):
-    def has_object_permission(self, request, view, obj):
+
+class IsDoctorOrAdminOrPatientOwner(BasePermission):
+    """Allow doctors/admins full access and patients access only to their own records."""
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
         if request.user.role in ['ADMIN', 'DOCTOR']:
             return True
 
+        return request.method in ['GET', 'HEAD', 'OPTIONS']
+
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.role in ['ADMIN', 'DOCTOR']:
+            return True
+
+        return self._is_patient_owner(request.user, obj)
+
+    def _is_patient_owner(self, user, obj):
         if hasattr(obj, 'patient'):
-            return obj.patient.user == request.user
+            return obj.patient.user == user
 
         if hasattr(obj, 'appointment'):
-            return obj.appointment.patient.user == request.user
+            return obj.appointment.patient.user == user
 
         if hasattr(obj, 'visit'):
-            return obj.visit.appointment.patient.user == request.user
+            return obj.visit.patient.user == user
 
         if hasattr(obj, 'clinical_record'):
-            return obj.clinical_record.visit.appointment.patient.user == request.user
+            return obj.clinical_record.visit.patient.user == user
 
         if hasattr(obj, 'diagnosis'):
-            return obj.diagnosis.clinical_record.visit.appointment.patient.user == request.user
+            return obj.diagnosis.visit.patient.user == user
 
         if hasattr(obj, 'prescription'):
-            return obj.prescription.diagnosis.clinical_record.visit.appointment.patient.user == request.user
+            return obj.prescription.diagnosis.visit.patient.user == user
 
         if hasattr(obj, 'medication_schedule'):
-            return obj.medication_schedule.prescription.diagnosis.clinical_record.visit.appointment.patient.user == request.user
-
+            return obj.medication_schedule.prescription.diagnosis.visit.patient.user == user
 
         if hasattr(obj, 'user'):
-            return obj.user == request.user
+            return obj.user == user
 
         return False
 
-       
+
+class IsOwnerOrDoctor(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.role in ['ADMIN', 'DOCTOR']:
+            return True
+
+        return IsDoctorOrAdminOrPatientOwner()._is_patient_owner(request.user, obj)
+
