@@ -13,4 +13,4 @@ class ClinicalRecordListCreateView(generics.ListCreateAPIView):
 class ClinicalRecordDetailView(generics.RetrieveUpdateDestroyAPIView):    
     queryset = ClinicalRecord.objects.all()
     serializer_class = ClinicalRecordSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
+    permission_classes = [IsAuthenticated, IsOwnerOrDoctor]

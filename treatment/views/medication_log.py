@@ -13,4 +13,4 @@ class MedicationLogListCreateView(generics.ListCreateAPIView):
 class MedicationLogDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MedicationLog.objects.all()
     serializer_class = MedicationLogSerializer    
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrDoctor]

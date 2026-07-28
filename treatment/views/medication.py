@@ -12,4 +12,4 @@ class MedicationListCreateView(generics.ListCreateAPIView):
 class MedicationDetailView(generics.RetrieveUpdateDestroyAPIView):    
     queryset = Medication.objects.all()
     serializer_class = MedicationSerializer
-    permissions = [IsAuthenticated, IsDoctorOrAdmin]
+    permissions = [IsAuthenticated, IsOwnerOrDoctor]

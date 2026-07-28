@@ -12,4 +12,4 @@ class DiagnosisListCreateView(generics.ListCreateAPIView):
 class DiagnosisDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]    
+    permission_classes = [IsAuthenticated, IsOwnerOrDoctor]    

@@ -19,4 +19,4 @@ class TreatmentListCreateView(generics.ListCreateAPIView):
 class TreatmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Treatment.objects.all()
     serializer_class = TreatmentSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]        
+    permission_classes = [IsAuthenticated, IsOwnerOrDoctor]        

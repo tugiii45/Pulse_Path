@@ -22,4 +22,4 @@ class VisitListCreateView(generics.ListCreateAPIView):
 class VisitDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Visit.objects.all()
     serializer_class = VisitSerializer      
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
+    permission_classes = [IsAuthenticated, IsOwnerOrDoctor]

@@ -13,4 +13,4 @@ class MedicationScheduleListCreateView(generics.ListCreateAPIView):
 class MedicationScheduleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MedicationSchedule.objects.all()
     serializer_class = MedicationScheduleSerializer 
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]   
+    permission_classes = [IsAuthenticated, IsOwnerOrDoctor]   
