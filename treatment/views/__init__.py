@@ -3,3 +3,4 @@ from .prescription import PrescriptionListCreateView, PrescriptionDetailView
 from .medication import MedicationListCreateView, MedicationDetailView
 from .medication_schedule import MedicationScheduleListCreateView
 from .medication_log import MedicationLogListCreateView
+from .side_effect_report import SideEffectReportListCreateView, SideEffectReportDetailView

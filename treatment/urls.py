@@ -4,6 +4,7 @@ from .views.prescription import PrescriptionListCreateView, PrescriptionDetailVi
 from .views.medication import MedicationListCreateView, MedicationDetailView
 from .views.medication_schedule import MedicationScheduleListCreateView, MedicationScheduleDetailView
 from .views.medication_log import MedicationLogListCreateView, MedicationLogDetailView
+from .views.side_effect_report import SideEffectReportListCreateView, SideEffectReportDetailView
 
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
     path("medication_schedule/<int:pk>/", MedicationScheduleDetailView.as_view(), name='medication_schedule-detail'),
     path("medication_log/", MedicationLogListCreateView.as_view(), name='medication-log-list-create'),
     path("medication_log/<int:pk>/", MedicationLogDetailView.as_view(), name='medication-log-detail'),
-    
+    path("side_effect/", SideEffectReportListCreateView.as_view(), name='side-effect-list-create'),
+    path("side_effect/<int:pk>/", SideEffectReportDetailView.as_view(), name='side-effect-detail'),
 ]
 
