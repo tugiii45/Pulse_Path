@@ -6,14 +6,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 
 class RecoveryProgressListCreateView(generics.ListCreateAPIView):
-    queryset=RecoveryProgress.objects.all()
     serializer_class = RecoveryProgressSerializer
 
-    filter_backends=[DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["patient", ]
-    search_fields = ["notes"]
-    ordering_fields = ["date", ]
-    ordering = ["-date"]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["patient", "visit"]
+    search_fields = ["notes", "patient__user__first_name", "patient__user__last_name"]
+    ordering_fields = ["recorded_at", "pain_level", "improvement_percentage"]
+    ordering = ["-recorded_at"]
 
     def get_queryset(self):
         user = self.request.user
