@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from rest_framework.request import Request
@@ -123,6 +124,32 @@ class FilteringAPITests(TestCase):
 
         self.assertEqual(queryset.count(), 1)
         self.assertEqual(queryset.first().id, active_schedule.id)
+
+    def test_model_full_clean_rejects_invalid_recovery_progress_range(self):
+        progress = RecoveryProgress(
+            patient=self.patient,
+            visit=self.visit,
+            pain_level=11,
+            body_temperature=37.2,
+            feeling_better=True,
+            notes='Feeling okay',
+            improvement_percentage=0,
+        )
+
+        with self.assertRaises(ValidationError):
+            progress.full_clean()
+
+    def test_model_full_clean_rejects_invalid_medication_schedule_range(self):
+        schedule = MedicationSchedule(
+            prescription=self.prescription,
+            scheduled_time=timezone.now(),
+            start_date='2026-07-10',
+            end_date='2026-07-05',
+            is_active=True,
+        )
+
+        with self.assertRaises(ValidationError):
+            schedule.full_clean()
 
     def test_clinical_record_serializer_rejects_duplicate_record_for_same_visit(self):
         ClinicalRecord.objects.create(visit=self.visit, allergies='Pollen')

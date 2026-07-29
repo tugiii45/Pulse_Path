@@ -1,6 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from visits.models import Visit
 from .prescription import Prescription
+
 
 class Treatment(models.Model):
     STATUS_CHOICES = [
@@ -30,5 +32,18 @@ class MedicationSchedule(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        super().clean()
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError({'end_date': 'End date cannot be earlier than start date.'})
+
+        if self.is_active and self.prescription_id and self.start_date and self.end_date:
+            overlapping = MedicationSchedule.objects.filter(
+                prescription=self.prescription,
+                is_active=True,
+            ).exclude(pk=self.pk)
+            if overlapping.filter(start_date__lte=self.end_date, end_date__gte=self.start_date).exists():
+                raise ValidationError({'prescription': 'This prescription already has an overlapping active medication schedule.'})
+
     def __str__(self):
-        f"{self.prescription.medication.name} - {self.scheduled_time}"    
+        return f"{self.prescription.medication.name} - {self.scheduled_time}"
