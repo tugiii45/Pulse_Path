@@ -2,6 +2,7 @@ from rest_framework import serializers
 from ..models import ClinicalRecord
 from visits.models import Visit
 
+
 class ClinicalRecordSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source="visit.patient.user.get_full_name", read_only=True)
     visit = serializers.PrimaryKeyRelatedField(queryset=Visit.objects.all())
@@ -27,4 +28,11 @@ class ClinicalRecordSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def validate_visit(self, value):
+        if not value:
+            raise serializers.ValidationError("A visit is required.")
+        if self.instance is None and ClinicalRecord.objects.filter(visit=value).exists():
+            raise serializers.ValidationError("Only one clinical record is allowed per visit.")
+        return value
         

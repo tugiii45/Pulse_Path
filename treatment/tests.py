@@ -4,10 +4,15 @@ from rest_framework.request import Request
 from django.utils import timezone
 
 from accounts.models import CustomUser, Patient
-from clinical.models import Diagnosis
-from treatment.models import MedicationSchedule, Prescription, RecoveryProgress
+from clinical.models import Diagnosis, ClinicalRecord
+from clinical.serializers.clinical_record import ClinicalRecordSerializer
+from clinical.serializers.diagnosis import DiagnosisSerializer
+from treatment.models import MedicationSchedule, Prescription, RecoveryProgress, SideEffectReport
 from treatment.models.medication import Medication
-from treatment.models.treatment import Treatment
+from treatment.serializers.prescription import PrescriptionSerializer
+from treatment.serializers.medication_schedule import MedicationScheduleSerializer
+from treatment.serializers.recovery_progress import RecoveryProgressSerializer
+from treatment.serializers.side_effect_report import SideEffectReportSerializer
 from treatment.views.medication_schedule import MedicationScheduleListCreateView
 from treatment.views.recovery_progress import RecoveryProgressListCreateView
 from visits.models import Visit
@@ -118,3 +123,78 @@ class FilteringAPITests(TestCase):
 
         self.assertEqual(queryset.count(), 1)
         self.assertEqual(queryset.first().id, active_schedule.id)
+
+    def test_clinical_record_serializer_rejects_duplicate_record_for_same_visit(self):
+        ClinicalRecord.objects.create(visit=self.visit, allergies='Pollen')
+        serializer = ClinicalRecordSerializer(data={
+            'visit': self.visit.id,
+            'allergies': 'Dust'
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('visit', serializer.errors)
+
+    def test_diagnosis_serializer_requires_clinical_record_on_visit(self):
+        serializer = DiagnosisSerializer(data={
+            'visit': self.visit.id,
+            'condition': 'Diabetes',
+            'severity': 'MODERATE',
+            'status': 'ACTIVE',
+            'notes': 'Needs review'
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('visit', serializer.errors)
+
+    def test_prescription_serializer_validates_duration_and_frequency(self):
+        serializer = PrescriptionSerializer(data={
+            'diagnosis': self.diagnosis.id,
+            'medication': self.medication.id,
+            'dosage': '',
+            'frequency': '',
+            'duration': 0,
+            'instructions': 'Take as directed'
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('dosage', serializer.errors)
+        self.assertIn('frequency', serializer.errors)
+        self.assertIn('duration', serializer.errors)
+
+    def test_medication_schedule_serializer_rejects_invalid_date_range(self):
+        serializer = MedicationScheduleSerializer(data={
+            'prescription': self.prescription.id,
+            'scheduled_time': timezone.now(),
+            'start_date': '2026-07-10',
+            'end_date': '2026-07-05',
+            'is_active': True
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('end_date', serializer.errors)
+
+    def test_recovery_progress_serializer_validates_progress_consistency(self):
+        serializer = RecoveryProgressSerializer(data={
+            'patient': self.patient.id,
+            'visit': self.visit.id,
+            'pain_level': 11,
+            'body_temperature': 37.2,
+            'feeling_better': True,
+            'notes': 'Feeling okay',
+            'improvement_percentage': 0
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('pain_level', serializer.errors)
+
+    def test_side_effect_report_requires_active_medication_schedule(self):
+        serializer = SideEffectReportSerializer(data={
+            'patient': self.patient.id,
+            'prescription': self.prescription.id,
+            'medication': self.medication.id,
+            'severity': 'Mild',
+            'description': 'Headache after dose'
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('prescription', serializer.errors)
