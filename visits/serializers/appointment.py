@@ -14,9 +14,19 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-      patient = attrs.get("patient")
-      doctor = attrs.get("doctor")
-      appointment_date = attrs.get("appointment_date")
+      patient = attrs.get(
+       "patient",
+       self.instance.patient if self.instance else None
+       )
+
+      doctor = attrs.get(
+       "doctor",
+       self.instance.doctor if self.instance else None
+        )
+      appointment_date = attrs.get(
+       "appointment_date",
+       self.instance.appointment_date if self.instance else None
+        )
 
       queryset = Appointment.objects.all()
 
@@ -47,6 +57,30 @@ class AppointmentSerializer(serializers.ModelSerializer):
         "appointment_date":
         "Appointments can only be booked between 8:00 AM and 5:00 PM."
     })
+
+
+      # Validate status transitions
+      if self.instance:
+       current_status = self.instance.status
+       new_status = attrs.get("status", current_status)
+
+       allowed_transitions = {
+        "PENDING": ["CONFIRMED", "CANCELLED"],
+        "CONFIRMED": ["COMPLETED", "CANCELLED"],
+        "COMPLETED": [],
+        "CANCELLED": [],
+    }
+
+      if (
+        new_status != current_status
+        and new_status not in allowed_transitions[current_status]
+    ):
+        raise serializers.ValidationError({
+            "status": (
+                f"Cannot change appointment status from "
+                f"{current_status} to {new_status}."
+            )
+        })
 
       return attrs
 
