@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from ..models import *
@@ -8,18 +7,36 @@ from accounts.permissions import *
 
 class NotificationListCreateView(generics.ListCreateAPIView):
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated,IsDoctorOrAdmin]
+ 
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        user = self.request.user
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        if user.role == "ADMIN":
+            return Notification.objects.all()
+
+        if user.role == "DOCTOR":
+            return Notification.objects.filter(created_by=user)
+
+        return Notification.objects.filter(recipient=user)
+
+    permission_classes = [IsOwnerOrDoctor]
 
 
 class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
+    permission_classes = [IsOwnerOrDoctor]
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        user = self.request.user
+
+        if user.role == "ADMIN":
+            return Notification.objects.all()
+
+        if user.role == "DOCTOR":
+            return Notification.objects.filter(created_by=user)
+
+        return Notification.objects.filter(recepient=user)    

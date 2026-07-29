@@ -64,6 +64,12 @@ class IsDoctorOrAdminOrPatientOwner(BasePermission):
         if hasattr(obj, 'medication_schedule'):
             return obj.medication_schedule.prescription.diagnosis.visit.patient.user == user
 
+        if hasattr(obj, 'recipient'):
+           return obj.recipient == user
+
+        if hasattr(obj, 'created_by'):
+           return obj.created_by == user
+
         if hasattr(obj, 'user'):
             return obj.user == user
 
