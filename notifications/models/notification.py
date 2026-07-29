@@ -11,7 +11,7 @@ class Notification(models.Model):
         MISSED_DOSE = "MISSED_DOSE", "Missed Dose Alert"
         GENERAL = "GENERAL", "General Notification"
 
-    recepient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_notifications') 
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_notifications') 
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_notifications') 
     title = models.CharField(max_length=240)
     message = models.TextField()
