@@ -10,30 +10,49 @@ class VisitSerializer(serializers.ModelSerializer):
     )
 
     appointment = serializers.PrimaryKeyRelatedField(
-    queryset=Appointment.objects.all(),
-    required=False,
-    allow_null=True
-)
+        queryset=Appointment.objects.all()
+       
+    )
+
+
+    def validate(self, attrs):
+       appointment = attrs.get("appointment")
+
+       if not appointment:
+        raise serializers.ValidationError({
+            "appointment": "An appointment is required to create a visit."
+        })
+
+       if appointment.status != "CONFIRMED":
+        raise serializers.ValidationError({
+            "appointment": "Only confirmed appointments can be used to create a visit."
+        })
+
+       if hasattr(appointment, "visit"):
+         if not self.instance or appointment.visit.pk != self.instance.pk:
+            raise serializers.ValidationError({
+                "appointment": "A visit has already been created for this appointment."
+            })
+
+       return attrs
+
     class Meta:
         model = Visit
         fields = [
-    "id",
-    "appointment",
-    "patient",
-    "patient_name",
-    "visit_date",
-    "reason",
-    "symptoms",
-    "diagnosis",
-    "notes",
-    "created_at",
-]
+            "id",
+            "appointment",
+            "patient",
+            "patient_name",
+            "visit_date",
+            "reason",
+            "symptoms",
+            "diagnosis",
+            "notes",
+            "created_at",
+        ]
 
         read_only_fields = [
-    "id",
-    "patient",
-    "patient_name",
-    "visit_date",
-    "created_at",
-]
-        
+            "id",
+            "visit_date",
+            "created_at",
+        ]

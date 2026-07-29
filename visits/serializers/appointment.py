@@ -1,88 +1,102 @@
-from rest_framework import serializers
-from ..models import Appointment
 from django.utils import timezone
+from rest_framework import serializers
+
+from ..models import Appointment
+
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    patient_name = serializers.CharField(source="patient.user.get_full_name", read_only=True)
-    doctor_name = serializers.CharField(source="doctor.user.get_full_name", read_only=True)
+    patient_name = serializers.CharField(
+        source="patient.user.get_full_name",
+        read_only=True
+    )
+    doctor_name = serializers.CharField(
+        source="doctor.user.get_full_name",
+        read_only=True
+    )
 
     def validate_appointment_date(self, value):
         if value < timezone.now():
             raise serializers.ValidationError(
-            "Appointment date cannot be in the past."
-        )
+                "Appointment date cannot be in the past."
+            )
         return value
 
     def validate(self, attrs):
-      patient = attrs.get(
-       "patient",
-       self.instance.patient if self.instance else None
-       )
-
-      doctor = attrs.get(
-       "doctor",
-       self.instance.doctor if self.instance else None
-        )
-      appointment_date = attrs.get(
-       "appointment_date",
-       self.instance.appointment_date if self.instance else None
+        patient = attrs.get(
+            "patient",
+            self.instance.patient if self.instance else None
         )
 
-      queryset = Appointment.objects.all()
+        doctor = attrs.get(
+            "doctor",
+            self.instance.doctor if self.instance else None
+        )
 
-    # Ignore current object during updates
-      if self.instance:
-        queryset = queryset.exclude(pk=self.instance.pk)
+        appointment_date = attrs.get(
+            "appointment_date",
+            self.instance.appointment_date if self.instance else None
+        )
 
-      if queryset.filter(
-        patient=patient,
-        appointment_date=appointment_date
-      ).exists():
-        raise serializers.ValidationError({
-            "patient": "The patient already has an appointment at this time."
-        })
+        queryset = Appointment.objects.all()
 
-      if queryset.filter(
-        doctor=doctor,
-        appointment_date=appointment_date
-      ).exists():
-        raise serializers.ValidationError({
-         "doctor": "The doctor already has an appointment at this time."
-    })
+        # Ignore current object during updates
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
 
-      appointment_time = appointment_date.time()
+        # Patient cannot have two appointments at the same time
+        if queryset.filter(
+            patient=patient,
+            appointment_date=appointment_date
+        ).exists():
+            raise serializers.ValidationError({
+                "patient": "The patient already has an appointment at this time."
+            })
 
-      if appointment_time.hour < 8 or appointment_time.hour >= 17:
-       raise serializers.ValidationError({
-        "appointment_date":
-        "Appointments can only be booked between 8:00 AM and 5:00 PM."
-    })
+        # Doctor cannot have two appointments at the same time
+        if queryset.filter(
+            doctor=doctor,
+            appointment_date=appointment_date
+        ).exists():
+            raise serializers.ValidationError({
+                "doctor": "The doctor already has an appointment at this time."
+            })
 
+        # Working hours (8:00 AM - 5:00 PM)
+        if appointment_date:
+            appointment_time = appointment_date.time()
 
-      # Validate status transitions
-      if self.instance:
-       current_status = self.instance.status
-       new_status = attrs.get("status", current_status)
+            if appointment_time.hour < 8 or appointment_time.hour >= 17:
+                raise serializers.ValidationError({
+                    "appointment_date": (
+                        "Appointments can only be booked between "
+                        "8:00 AM and 5:00 PM."
+                    )
+                })
 
-       allowed_transitions = {
-        "PENDING": ["CONFIRMED", "CANCELLED"],
-        "CONFIRMED": ["COMPLETED", "CANCELLED"],
-        "COMPLETED": [],
-        "CANCELLED": [],
-    }
+        # Validate status transitions (only on updates)
+        if self.instance:
+            current_status = self.instance.status
+            new_status = attrs.get("status", current_status)
 
-      if (
-        new_status != current_status
-        and new_status not in allowed_transitions[current_status]
-    ):
-        raise serializers.ValidationError({
-            "status": (
-                f"Cannot change appointment status from "
-                f"{current_status} to {new_status}."
-            )
-        })
+            allowed_transitions = {
+                "PENDING": ["CONFIRMED", "CANCELLED"],
+                "CONFIRMED": ["COMPLETED", "CANCELLED"],
+                "COMPLETED": [],
+                "CANCELLED": [],
+            }
 
-      return attrs
+            if (
+                new_status != current_status
+                and new_status not in allowed_transitions[current_status]
+            ):
+                raise serializers.ValidationError({
+                    "status": (
+                        f"Cannot change appointment status from "
+                        f"{current_status} to {new_status}."
+                    )
+                })
+
+        return attrs
 
     class Meta:
         model = Appointment
