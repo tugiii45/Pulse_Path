@@ -1,8 +1,14 @@
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIRequestFactory
 from rest_framework.request import Request
+from rest_framework import status
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.response import Response
 from django.utils import timezone
+
+from config.exceptions import custom_exception_handler
+from config.renderers import StandardJSONRenderer
 
 from accounts.models import CustomUser, Patient
 from clinical.models import Diagnosis, ClinicalRecord
@@ -17,6 +23,29 @@ from treatment.serializers.side_effect_report import SideEffectReportSerializer
 from treatment.views.medication_schedule import MedicationScheduleListCreateView
 from treatment.views.recovery_progress import RecoveryProgressListCreateView
 from visits.models import Visit
+
+
+class APIResponseFormattingTests(SimpleTestCase):
+    def test_exception_handler_wraps_validation_errors(self):
+        request = APIRequestFactory().get('/api/treatment/recovery_progress/')
+        exc = DRFValidationError({'pain_level': ['Invalid pain level']})
+        response = custom_exception_handler(exc, {'request': request})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.data['success'])
+        self.assertIn('errors', response.data)
+        self.assertIn('pain_level', response.data['errors'])
+
+    def test_standard_renderer_wraps_success_payloads(self):
+        renderer = StandardJSONRenderer()
+        payload = renderer.render(
+            {'message': 'ok'},
+            accepted_media_type='application/json',
+            renderer_context={'response': Response({'message': 'ok'})}
+        )
+
+        self.assertIn(b'"success":true', payload)
+        self.assertIn(b'"data"', payload)
 
 
 class FilteringAPITests(TestCase):
@@ -138,6 +167,36 @@ class FilteringAPITests(TestCase):
 
         with self.assertRaises(ValidationError):
             progress.full_clean()
+
+    def test_recovery_progress_list_paginates_results(self):
+        for index in range(12):
+            RecoveryProgress.objects.create(
+                patient=self.patient,
+                visit=self.visit,
+                pain_level=2,
+                notes=f'Recovery note {index}',
+                improvement_percentage=50 + index,
+            )
+
+        request = self.factory.get('/recovery_progress/', {'page_size': 5})
+        request.user = self.admin_user
+        drf_request = Request(request)
+        drf_request.user = request.user
+        request = self.factory.get('/api/treatment/recovery_progress/', {'page_size': 5})
+        request.user = self.admin_user
+        drf_request = Request(request)
+        drf_request.user = request.user
+        view = RecoveryProgressListCreateView()
+        view.request = drf_request
+        view.args = ()
+        view.kwargs = {}
+        view.format_kwarg = None
+        view.request.accepted_renderer = None
+        view.request.accepted_media_type = 'application/json'
+        response = view.list(drf_request)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertEqual(len(response.data['results']), 5)
 
     def test_model_full_clean_rejects_invalid_medication_schedule_range(self):
         schedule = MedicationSchedule(

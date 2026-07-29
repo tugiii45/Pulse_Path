@@ -146,6 +146,11 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ),
     "DEFAULT_SCHEMA_CLASS":  "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
+    "DEFAULT_RENDERER_CLASSES": [
+        "config.renderers.StandardJSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
 
     
     "DEFAULT_FILTER_BACKENDS": [
