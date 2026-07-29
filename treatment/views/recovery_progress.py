@@ -1,11 +1,20 @@
-from rest_framework import generics
+from rest_framework import generics, filters
 from ..models import RecoveryProgress
 from accounts.permissions import *
 from treatment.serializers import RecoveryProgressSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class RecoveryProgressListCreateView(generics.ListCreateAPIView):
+    queryset=RecoveryProgress.objects.all()
     serializer_class = RecoveryProgressSerializer
+
+    filter_backends=[DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["patient", ]
+    search_fields = ["notes"]
+    ordering_fields = ["date", ]
+    ordering = ["-date"]
+
     def get_queryset(self):
         user = self.request.user
 
