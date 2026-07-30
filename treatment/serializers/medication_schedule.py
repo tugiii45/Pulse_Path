@@ -3,6 +3,7 @@ from rest_framework import serializers
 from ..models import MedicationSchedule
 
 
+# Medication schedules must have a valid range and cannot overlap while active.
 class MedicationScheduleSerializer(serializers.ModelSerializer):
     prescription_details = serializers.ReadOnlyField(source='prescription.medication.name')
 

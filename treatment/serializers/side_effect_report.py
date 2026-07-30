@@ -3,6 +3,7 @@ from ..models import SideEffectReport
 from treatment.models import MedicationSchedule
 
 
+# Side effect reports are only accepted when they relate to an active medication schedule.
 class SideEffectReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = SideEffectReport

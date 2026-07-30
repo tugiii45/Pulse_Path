@@ -23,6 +23,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
+# Main API routes for authentication, accounts, visits, treatment, notifications, and clinical modules.
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include("accounts.urls")),

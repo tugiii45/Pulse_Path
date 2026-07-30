@@ -136,6 +136,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Configure Django REST Framework with JWT auth, pagination, filtering, and a custom response format.
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES":
     (

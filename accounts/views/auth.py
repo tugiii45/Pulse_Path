@@ -1,54 +1,65 @@
-from django.shortcuts import render
+"""
+Auth API views for PulsePath.
+
+Handles user registration (open to everyone) and profile retrieval
+(restricted to authenticated users). Registration uses the custom
+RegisterSerializer which hashes passwords, and profile retrieval
+uses the ProfileSerializer to expose user details.
+"""
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from ..serializers import RegisterSerializer, ProfileSerializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
-from accounts.permissions import *
 
 
-
-# Create your views here.
-
-
-# API view for registering new users.
-# Accepts user details, validates the input, and creates a new account.
 class RegisterView(APIView):
+    """
+    Public endpoint for creating new user accounts.
+
+    Accepts user registration data, validates it via RegisterSerializer,
+    and returns the created user object with a 201 status code.
+    This endpoint is open to anyone (AllowAny permission).
+    """
+
     permission_classes = [AllowAny]
 
     @extend_schema(request=RegisterSerializer, responses={201: RegisterSerializer})
-
-    # Handle POST requests for user registration.
     def post(self, request):
+        """
+        Handle user registration.
 
-        # Deserialize and validate the incoming registration data.
+        Deserializes the request body, validates the input, creates
+        a new user account with a hashed password, and returns the
+        created user data.
+        """
         serializer = RegisterSerializer(data=request.data)
 
-        # Save the user if the data is valid.
         if serializer.is_valid():
             serializer.save()
-
-            # Return the created user's data with a 201 Created status.
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # Return validation errors if the submitted data is invalid.
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# API view for retrieving the authenticated user's profile.
-# Only logged-in users are allowed to access this endpoint.
 class ProfileView(APIView):
+    """
+    Authenticated endpoint for retrieving the current user's profile.
 
+    Returns the profile of the currently authenticated user, including
+    their email, name, role, hospital, and other profile fields.
+    """
 
-    # Restrict access to authenticated users only.
     permission_classes = [IsAuthenticated]
 
-    # Handle GET requests to retrieve the current user's profile.
     def get(self, request):
+        """
+        Handle GET requests for the user profile.
 
-        # Serialize the currently authenticated user's information.
+        Serializes the authenticated user's data using ProfileSerializer
+        and returns it in the response.
+        """
         serializer = ProfileSerializer(request.user)
-
-        # Return the serialized profile data.
         return Response(serializer.data)

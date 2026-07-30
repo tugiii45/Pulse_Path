@@ -1,25 +1,39 @@
+"""
+Admin configuration for PulsePath accounts.
+
+Registers all models with the Django admin panel and provides
+customized list views, field layouts, and search capabilities
+for managing users, patients, doctors, hospitals, and departments.
+"""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Patient, Doctor, Hospital, Department
 
 
-# Register the Patient model so it can be managed through the Django admin panel.
+# Register models with default admin interface.
+# These are simple registrations since they don't need custom admin behavior.
 admin.site.register(Patient)
-
-# Register the Doctor model so it can be managed through the Django admin panel.
 admin.site.register(Doctor)
-
 admin.site.register(Hospital)
 admin.site.register(Department)
 
-# Register and customize the CustomUser model in the Django admin panel.
+
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
+    """
+    Custom admin configuration for the CustomUser model.
 
-    # Specify the model this admin configuration applies to.
+    Extends Django's built-in UserAdmin to provide:
+    - A tailored list view showing key user fields.
+    - Organized field groupings for editing users.
+    - A simplified user creation form.
+    - Email-based search functionality.
+    """
+
     model = CustomUser
 
-    # Define the columns displayed in the admin user list.
+    # Columns displayed in the user list view in the admin panel.
     list_display = (
         "email",
         "first_name",
@@ -30,44 +44,52 @@ class CustomUserAdmin(UserAdmin):
         "is_active",
     )
 
-    # Sort users alphabetically by email.
+    # Default sort order for the user list (alphabetical by email).
     ordering = ("email",)
 
-    # Organize fields when viewing or editing an existing user.
+    # Field groupings when viewing or editing an existing user.
+    # Organizes related fields into logical sections.
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal info", {"fields": ("first_name", "last_name", "phone_number")}),
         ("Hospital", {"fields": ("hospital",)}),
         ("Roles", {"fields": ("role",)}),
-        ("Permissions", {
-            "fields": (
-                "is_staff",
-                "is_active",
-                "is_superuser",
-                "groups",
-                "user_permissions"
-            )
-        })
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_staff",
+                    "is_active",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
     )
 
-    # Define the fields displayed when creating a new user from the admin panel.
+    # Fields displayed when creating a new user from the admin panel.
+    # Uses a wider layout for better readability of the form.
     add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": (
-                "email",
-                "password1",
-                "password2",
-                "first_name",
-                "last_name",
-                "phone_number",
-                "role",
-                "hospital",
-                "is_staff",
-                "is_active",
-            ),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "email",
+                    "password1",
+                    "password2",
+                    "first_name",
+                    "last_name",
+                    "phone_number",
+                    "role",
+                    "hospital",
+                    "is_staff",
+                    "is_active",
+                ),
+            },
+        ),
     )
 
-    # Enable searching for users by their email address.
+    # Enable searching for users by their email address in the admin panel.
     search_fields = ("email",)

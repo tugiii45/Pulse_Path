@@ -2,6 +2,7 @@ from rest_framework import serializers
 from ..models import RecoveryProgress
 
 
+# Recovery progress is validated so pain and improvement values remain consistent.
 class RecoveryProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecoveryProgress

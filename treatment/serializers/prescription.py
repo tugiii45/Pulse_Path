@@ -2,6 +2,7 @@ from rest_framework import serializers
 from ..models import Prescription
 
 
+# Prescription validation ensures a treatment plan includes the required medical details.
 class PrescriptionSerializer(serializers.ModelSerializer):
     medication_name = serializers.ReadOnlyField(source='medication.name')
 

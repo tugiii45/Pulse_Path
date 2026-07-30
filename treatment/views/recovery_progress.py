@@ -7,6 +7,8 @@ from accounts.views.mixins import HospitalQuerySetMixin
 
 
 class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+    """Expose recovery progress entries for patients and allow doctors/admins to review them."""
+
     serializer_class = RecoveryProgressSerializer
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
