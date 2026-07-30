@@ -1,13 +1,14 @@
 from rest_framework import generics, filters
 
-from accounts.models import Doctor
+from accounts.models import Doctor, Department
 from accounts.serializers import DoctorSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
+from .mixins import HospitalQuerySetMixin
 
 
 
-class DoctorListCreateView(generics.ListCreateAPIView):
+class DoctorListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
 
@@ -21,7 +22,8 @@ class DoctorListCreateView(generics.ListCreateAPIView):
 
     ordering = ["-created_at"]
 
-
+    use_user_field = False
+    hospital_field = "user__hospital"
 
     def get_permissions(self):
         if self.request.method == "POST":
@@ -32,7 +34,8 @@ class DoctorListCreateView(generics.ListCreateAPIView):
         return [permission() for permission in permission_classes]
 
 
-class DoctorDetailView(generics.RetrieveUpdateDestroyAPIView):
+class DoctorDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     permission_classes = [IsDoctorOrAdmin]
+    hospital_field = "user__hospital"

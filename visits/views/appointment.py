@@ -4,9 +4,10 @@ from ..models import Appointment
 from ..serializers import AppointmentSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class AppointmentListCreateView(generics.ListCreateAPIView):
+class AppointmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
@@ -19,7 +20,7 @@ class AppointmentListCreateView(generics.ListCreateAPIView):
     ordering = ["-appointment_date"]
 
 
-class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AppointmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]

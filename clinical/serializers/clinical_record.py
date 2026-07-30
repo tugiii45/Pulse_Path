@@ -7,6 +7,14 @@ class ClinicalRecordSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source="visit.patient.user.get_full_name", read_only=True)
     visit = serializers.PrimaryKeyRelatedField(queryset=Visit.objects.all())
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request and request.user.hospital_id:
+            self.fields["visit"].queryset = Visit.objects.filter(
+                patient__user__hospital=request.user.hospital
+            )
+
     class Meta:
         model = ClinicalRecord
         fields = [

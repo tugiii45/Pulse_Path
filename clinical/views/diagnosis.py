@@ -4,9 +4,10 @@ from ..models import Diagnosis
 from ..serializers.diagnosis import DiagnosisSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class DiagnosisListCreateView(generics.ListCreateAPIView):
+class DiagnosisListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
@@ -17,8 +18,11 @@ class DiagnosisListCreateView(generics.ListCreateAPIView):
     ordering_fields = ["diagnosed_at", "severity"]
     ordering = ["-diagnosed_at"]
 
+    hospital_field = "visit__patient__user__hospital"
 
-class DiagnosisDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+class DiagnosisDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+    hospital_field = "visit__patient__user__hospital"

@@ -3,9 +3,10 @@ from ..models import RecoveryProgress
 from accounts.permissions import *
 from treatment.serializers import RecoveryProgressSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class RecoveryProgressListCreateView(generics.ListCreateAPIView):
+class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     serializer_class = RecoveryProgressSerializer
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -17,7 +18,12 @@ class RecoveryProgressListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
 
+        if user.is_superuser:
+            return RecoveryProgress.objects.all()
+
         if user.role in ["ADMIN", "DOCTOR"]:
+            if user.hospital_id:
+                return RecoveryProgress.objects.filter(patient__user__hospital=user.hospital)
             return RecoveryProgress.objects.all()
 
         return RecoveryProgress.objects.filter(patient__user=user)
@@ -32,14 +38,19 @@ class RecoveryProgressListCreateView(generics.ListCreateAPIView):
         return [permission() for permission in permission_classes]
 
 
-class RecoveryProgressDetailView(generics.RetrieveUpdateDestroyAPIView):
+class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
         serializer_class = RecoveryProgressSerializer        
         permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
         def get_queryset(self):
             user = self.request.user
 
+            if user.is_superuser:
+                return RecoveryProgress.objects.all()
+
             if user.role in ["ADMIN", "DOCTOR"]:
+                if user.hospital_id:
+                    return RecoveryProgress.objects.filter(patient__user__hospital=user.hospital)
                 return RecoveryProgress.objects.all()
 
             return RecoveryProgress.objects.filter(patient__user=user)

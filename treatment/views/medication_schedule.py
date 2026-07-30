@@ -4,9 +4,10 @@ from treatment.models import MedicationSchedule
 from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class MedicationScheduleListCreateView(generics.ListCreateAPIView):
+class MedicationScheduleListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     serializer_class = MedicationScheduleSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
 
@@ -16,6 +17,8 @@ class MedicationScheduleListCreateView(generics.ListCreateAPIView):
     ordering_fields = ["start_date", "end_date", "scheduled_time", "created_at"]
     ordering = ["start_date"]
 
+    hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
+
     def get_queryset(self):
         queryset = MedicationSchedule.objects.all()
         if self.request.query_params.get("is_active") is None and not self.request.query_params.get("all"):
@@ -23,7 +26,8 @@ class MedicationScheduleListCreateView(generics.ListCreateAPIView):
         return queryset
 
 
-class MedicationScheduleDetailView(generics.RetrieveUpdateDestroyAPIView):
+class MedicationScheduleDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = MedicationSchedule.objects.all()
     serializer_class = MedicationScheduleSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+    hospital_field = "prescription__diagnosis__visit__patient__user__hospital"

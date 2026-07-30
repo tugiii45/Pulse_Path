@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Patient, Doctor
+from .models import CustomUser, Patient, Doctor, Hospital, Department
 
 
 # Register the Patient model so it can be managed through the Django admin panel.
@@ -9,7 +9,8 @@ admin.site.register(Patient)
 # Register the Doctor model so it can be managed through the Django admin panel.
 admin.site.register(Doctor)
 
-
+admin.site.register(Hospital)
+admin.site.register(Department)
 
 # Register and customize the CustomUser model in the Django admin panel.
 @admin.register(CustomUser)
@@ -24,6 +25,7 @@ class CustomUserAdmin(UserAdmin):
         "first_name",
         "last_name",
         "role",
+        "hospital",
         "is_staff",
         "is_active",
     )
@@ -35,6 +37,7 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal info", {"fields": ("first_name", "last_name", "phone_number")}),
+        ("Hospital", {"fields": ("hospital",)}),
         ("Roles", {"fields": ("role",)}),
         ("Permissions", {
             "fields": (
@@ -59,6 +62,7 @@ class CustomUserAdmin(UserAdmin):
                 "last_name",
                 "phone_number",
                 "role",
+                "hospital",
                 "is_staff",
                 "is_active",
             ),

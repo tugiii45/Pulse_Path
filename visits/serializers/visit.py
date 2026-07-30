@@ -11,9 +11,15 @@ class VisitSerializer(serializers.ModelSerializer):
 
     appointment = serializers.PrimaryKeyRelatedField(
         queryset=Appointment.objects.all()
-       
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request and request.user.hospital_id:
+            self.fields["appointment"].queryset = Appointment.objects.filter(
+                doctor__user__hospital=request.user.hospital
+            )
 
     def validate(self, attrs):
        appointment = attrs.get("appointment")

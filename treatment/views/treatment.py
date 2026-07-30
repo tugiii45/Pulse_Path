@@ -3,21 +3,33 @@ from ..models import Treatment
 from ..serializers import TreatmentSerializer
 from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import *
+from accounts.views.mixins import HospitalQuerySetMixin
 
-class TreatmentListCreateView(generics.ListCreateAPIView):
+class TreatmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     serializer_class = TreatmentSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
+
+    hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
 
     def get_queryset(self):
         user = self.request.user
 
+        if user.is_superuser:
+            return Treatment.objects.all()
+
         if user.is_authenticated and hasattr(user, "patient"):
             return Treatment.objects.filter(prescription__diagnosis__visit__patient=user.patient)
 
-        return Treatment.objects.all()
+        if user.hospital_id:
+            return Treatment.objects.filter(
+                prescription__diagnosis__visit__patient__user__hospital=user.hospital
+            )
+
+        return Treatment.objects.none()
 
 
-class TreatmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+class TreatmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Treatment.objects.all()
     serializer_class = TreatmentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+    hospital_field = "prescription__diagnosis__visit__patient__user__hospital"

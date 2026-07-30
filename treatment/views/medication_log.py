@@ -5,9 +5,10 @@ from treatment.models import MedicationLog
 from treatment.serializers import MedicationLogSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class MedicationLogListCreateView(generics.ListCreateAPIView):
+class MedicationLogListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = MedicationLog.objects.all()
     serializer_class = MedicationLogSerializer
     permission_classes = [IsAuthenticated]
@@ -18,7 +19,10 @@ class MedicationLogListCreateView(generics.ListCreateAPIView):
     ordering_fields = ["taken_at", "status"]
     ordering = ["-taken_at"]
 
-class MedicationLogDetailView(generics.RetrieveUpdateDestroyAPIView):
+    hospital_field = "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
+
+class MedicationLogDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = MedicationLog.objects.all()
     serializer_class = MedicationLogSerializer    
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+    hospital_field = "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"

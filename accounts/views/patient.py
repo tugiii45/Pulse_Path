@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from accounts.models import Patient
 from accounts.serializers import PatientSerializer
+from .mixins import HospitalQuerySetMixin
 
 
 # API view for retrieving and updating the authenticated patient's profile.
@@ -23,7 +24,8 @@ class PatientProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return Patient.objects.get(user=self.request.user)
 
-class PatientListCreateView(generics.ListCreateAPIView):
+class PatientListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer    
     permission_classes = [IsAuthenticated]
+    hospital_field = "user__hospital"

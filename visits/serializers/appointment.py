@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from ..models import Appointment
+from accounts.models import Patient, Doctor
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -13,6 +14,18 @@ class AppointmentSerializer(serializers.ModelSerializer):
         source="doctor.user.get_full_name",
         read_only=True
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request and request.user.hospital_id:
+            hospital = request.user.hospital
+            self.fields["patient"].queryset = Patient.objects.filter(
+                user__hospital=hospital
+            )
+            self.fields["doctor"].queryset = Doctor.objects.filter(
+                user__hospital=hospital
+            )
 
     def validate_appointment_date(self, value):
         if value < timezone.now():

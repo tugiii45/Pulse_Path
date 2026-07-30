@@ -4,9 +4,10 @@ from ..serializers import PrescriptionSerializer
 from accounts.permissions import *
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class PrescriptionListCreateView(generics.ListCreateAPIView):
+class PrescriptionListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
@@ -17,8 +18,11 @@ class PrescriptionListCreateView(generics.ListCreateAPIView):
     ordering_fields = ["prescribed_at", "duration"]
     ordering = ["-prescribed_at"]
 
+    hospital_field = "diagnosis__visit__patient__user__hospital"
 
-class PrescriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+class PrescriptionDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+    hospital_field = "diagnosis__visit__patient__user__hospital"

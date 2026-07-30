@@ -5,9 +5,10 @@ from ..models import ClinicalRecord
 from ..serializers.clinical_record import ClinicalRecordSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class ClinicalRecordListCreateView(generics.ListCreateAPIView):
+class ClinicalRecordListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = ClinicalRecord.objects.all()
     serializer_class = ClinicalRecordSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
@@ -18,8 +19,11 @@ class ClinicalRecordListCreateView(generics.ListCreateAPIView):
     ordering_fields = ["created_at", "updated_at"]
     ordering = ["-created_at"]
 
+    hospital_field = "visit__patient__user__hospital"
 
-class ClinicalRecordDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+class ClinicalRecordDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = ClinicalRecord.objects.all()
     serializer_class = ClinicalRecordSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+    hospital_field = "visit__patient__user__hospital"
