@@ -13,8 +13,16 @@ from accounts.serializers import DoctorSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins import HospitalQuerySetMixin
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
+@extend_schema_view(
+    post=extend_schema(
+        request=DoctorSerializer,
+        responses={201: DoctorSerializer},
+        description="Create a new doctor profile. The authenticated user is automatically assigned as the doctor's user.",
+    ),
+)
 class DoctorListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     """
     List all doctors (with filtering) or create a new doctor profile.

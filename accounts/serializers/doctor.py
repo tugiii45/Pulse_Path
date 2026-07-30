@@ -49,6 +49,7 @@ class DoctorSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
+            "user",
             "created_at",
             "full_name",
             "email",
@@ -67,6 +68,16 @@ class DoctorSerializer(serializers.ModelSerializer):
             self.fields["department"].queryset = Department.objects.filter(
                 hospital=request.user.hospital
             )
+
+    def create(self, validated_data):
+        """
+        Auto-assign the authenticated user as the doctor's user.
+
+        The user is extracted from the request context instead of
+        requiring the client to provide a user ID in the POST body.
+        """
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
 
     def validate_department(self, value):
         """
