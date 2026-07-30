@@ -64,7 +64,11 @@ class DoctorSerializer(serializers.ModelSerializer):
         """
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
-        if request and request.user.hospital_id:
+        if (
+            request
+            and request.user.is_authenticated
+            and request.user.hospital_id
+        ):
             self.fields["department"].queryset = Department.objects.filter(
                 hospital=request.user.hospital
             )

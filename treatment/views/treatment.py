@@ -12,12 +12,16 @@ class TreatmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView)
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
 
     def get_queryset(self):
+        # Schema generation uses AnonymousUser — return empty queryset
+        if not self.request.user.is_authenticated:
+            return Treatment.objects.none()
+
         user = self.request.user
 
         if user.is_superuser:
             return Treatment.objects.all()
 
-        if user.is_authenticated and hasattr(user, "patient"):
+        if hasattr(user, "patient"):
             return Treatment.objects.filter(prescription__diagnosis__visit__patient=user.patient)
 
         if user.hospital_id:

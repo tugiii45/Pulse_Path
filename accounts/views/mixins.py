@@ -51,6 +51,12 @@ class HospitalQuerySetMixin:
         get an empty queryset. Otherwise, the queryset is filtered
         using the configured hospital field path.
         """
+        # Schema generation (drf-spectacular) uses AnonymousUser which
+        # does not have a hospital_id attribute. Return empty queryset
+        # to avoid AttributeError during schema introspection.
+        if not self.request.user.is_authenticated:
+            return super().get_queryset().none()
+
         user = self.request.user
 
         # Superusers bypass the hospital filter and see all records.

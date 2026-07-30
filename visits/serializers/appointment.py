@@ -41,7 +41,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
         """
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
-        if request and request.user.hospital_id:
+        if (
+            request
+            and request.user.is_authenticated
+            and request.user.hospital_id
+        ):
             hospital = request.user.hospital
             self.fields["patient"].queryset = Patient.objects.filter(
                 user__hospital=hospital

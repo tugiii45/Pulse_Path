@@ -35,6 +35,10 @@ class VisitListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
         Patients: only their own visits.
         Doctors/Admins: visits within their hospital.
         """
+        # Schema generation uses AnonymousUser — return empty queryset
+        if not self.request.user.is_authenticated:
+            return Visit.objects.none()
+
         user = self.request.user
 
         # Superusers see everything.
@@ -42,7 +46,7 @@ class VisitListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
             return Visit.objects.all()
 
         # Patients see only their own visits.
-        if user.is_authenticated and hasattr(user, "patient"):
+        if hasattr(user, "patient"):
             return Visit.objects.filter(patient=user.patient)
 
         # For admin/doctor, filter by hospital.

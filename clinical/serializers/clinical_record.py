@@ -33,7 +33,11 @@ class ClinicalRecordSerializer(serializers.ModelSerializer):
         """
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
-        if request and request.user.hospital_id:
+        if (
+            request
+            and request.user.is_authenticated
+            and request.user.hospital_id
+        ):
             self.fields["visit"].queryset = Visit.objects.filter(
                 patient__user__hospital=request.user.hospital
             )

@@ -18,6 +18,10 @@ class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateA
     ordering = ["-recorded_at"]
 
     def get_queryset(self):
+        # Schema generation uses AnonymousUser — return empty queryset
+        if not self.request.user.is_authenticated:
+            return RecoveryProgress.objects.none()
+
         user = self.request.user
 
         if user.is_superuser:
@@ -45,6 +49,10 @@ class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateD
         permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
         def get_queryset(self):
+            # Schema generation uses AnonymousUser — return empty queryset
+            if not self.request.user.is_authenticated:
+                return RecoveryProgress.objects.none()
+
             user = self.request.user
 
             if user.is_superuser:

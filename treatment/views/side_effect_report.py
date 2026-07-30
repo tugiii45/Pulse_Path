@@ -9,6 +9,10 @@ class SideEffectReportListCreateView(HospitalQuerySetMixin, generics.ListCreateA
     serializer_class = SideEffectReportSerializer
 
     def get_queryset(self):
+        # Schema generation uses AnonymousUser — return empty queryset
+        if not self.request.user.is_authenticated:
+            return SideEffectReport.objects.none()
+
         user = self.request.user
 
         if user.is_superuser:
@@ -39,6 +43,10 @@ class SideEffectReportDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateD
     permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
     def get_queryset(self):
+        # Schema generation uses AnonymousUser — return empty queryset
+        if not self.request.user.is_authenticated:
+            return SideEffectReport.objects.none()
+
         user = self.request.user
 
         if user.is_superuser:
