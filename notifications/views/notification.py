@@ -7,6 +7,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from accounts.views.mixins import HospitalQuerySetMixin
 # Create your views here.
 
+# The NotificationListCreateView
+
+#  class is a subclass of generics.ListCreateAPIView 
+# and is used to handle the retrieval and creation of notifications.
+# It applies the HospitalQuerySetMixin mixin to filter the queryset based on the user's hospital.
+# The view allows filtering, searching, and ordering of notifications based on various fields. 
+# The perform_create method is overridden to set the created_by field of the newly created notification to the current user.
+
 class NotificationListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
@@ -24,6 +32,11 @@ class NotificationListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVi
     def get_queryset(self):
       if getattr(self, "swagger_fake_view", False):
         return Notification.objects.none()
+
+    #   The get_queryset method is overridden to determine the queryset based on the user's role and hospital.'
+    #   ' If the user is a superuser, it returns all notifications. '
+    #   'If the user is an admin, it returns notifications where the recipient or creator is from the user's hospital. 
+    #   If the user is a doctor, it returns notifications created by the user. Otherwise, it returns notifications where the recipient is the user.
 
       user = self.request.user
 
@@ -47,6 +60,10 @@ class NotificationListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVi
 class NotificationDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [IsOwnerOrDoctor]
+
+    # The NotificationDetailView class is a subclass of generics.RetrieveUpdateDestroyAPIView and is used to handle the retrieval, updating, and deletion of individual notifications.
+    #  It also applies the HospitalQuerySetMixin mixin to filter the queryset based on the user's hospital.
+    #  The view requires the user to have the IsOwnerOrDoctor permission to access the notification.
 
     def get_queryset(self):
         user = self.request.user
