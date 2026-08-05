@@ -29,52 +29,52 @@ function Sidebar() {
         Navigation
       </h5>
 
-      <NavLink to="/" end className={linkClass}>
+      <NavLink to="/dashboard" end className={linkClass}>
         <FaHome className="me-3" />
         Dashboard
       </NavLink>
 
-      <NavLink to="/appointments" className={linkClass}>
+      <NavLink to="appointments" className={linkClass}>
         <FaCalendarAlt className="me-3" />
         Appointments
       </NavLink>
 
-      <NavLink to="/patients" className={linkClass}>
+      <NavLink to="patients" className={linkClass}>
         <FaUserInjured className="me-3" />
         Patients
       </NavLink>
 
-      <NavLink to="/doctors" className={linkClass}>
+      <NavLink to="doctors" className={linkClass}>
         <FaUserMd className="me-3" />
         Doctors
       </NavLink>
 
-      <NavLink to="/clinical" className={linkClass}>
+      <NavLink to="clinical" className={linkClass}>
         <FaFileMedical className="me-3" />
         Clinical
       </NavLink>
 
-      <NavLink to="/treatment" className={linkClass}>
+      <NavLink to="treatment" className={linkClass}>
         <FaPills className="me-3" />
         Treatment
       </NavLink>
 
-      <NavLink to="/notifications" className={linkClass}>
+      <NavLink to="notifications" className={linkClass}>
         <FaBell className="me-3" />
         Notifications
       </NavLink>
 
-      <NavLink to="/hospitals" className={linkClass}>
+      <NavLink to="hospitals" className={linkClass}>
         <FaHospital className="me-3" />
         Hospitals
       </NavLink>
 
-      <NavLink to="/departments" className={linkClass}>
+      <NavLink to="departments" className={linkClass}>
         <FaBuilding className="me-3" />
         Departments
       </NavLink>
 
-      <NavLink to="/profile" className={linkClass}>
+      <NavLink to="profile" className={linkClass}>
         <FaUser className="me-3" />
         Profile
       </NavLink>

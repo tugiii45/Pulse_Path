@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import Login from "../pages/auth/Login";
+import Register from "../pages/auth/Register";
+
 import DashboardLayout from "../layouts/DashboardLayout";
 
 import Dashboard from "../pages/dashboard/Dashboard";
-import Login from "../pages/auth/Login";
-import Register from "../pages/auth/Register";
 import Appointments from "../pages/appointments/Appointments";
 import Patients from "../pages/patients/Patients";
 import Doctors from "../pages/doctors/Doctors";
@@ -19,12 +20,13 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Dashboard Layout */}
-        <Route path="/" element={<DashboardLayout />}>
+        {/* Dashboard Routes */}
+        <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="patients" element={<Patients />} />
@@ -36,6 +38,7 @@ function AppRoutes() {
           <Route path="departments" element={<Departments />} />
           <Route path="profile" element={<Profile />} />
         </Route>
+
       </Routes>
     </BrowserRouter>
   );
