@@ -13,117 +13,71 @@ import {
 } from "react-icons/fa";
 
 function Sidebar() {
+  const linkClass = ({ isActive }) =>
+    `nav-link d-flex align-items-center py-3 px-3 rounded mb-2 ${
+      isActive
+        ? "bg-primary text-white fw-semibold"
+        : "text-dark"
+    }`;
+
   return (
     <div
-      className="bg-light border-end p-3"
-      style={{ width: "260px", minHeight: "100vh" }}
+      className="bg-white border-end shadow-sm p-3"
+      style={{ width: "260px", minHeight: "calc(100vh - 70px)" }}
     >
-      <h4 className="fw-bold text-primary mb-4">PulsePath</h4>
+      <h5 className="fw-bold text-primary mb-4">
+        Navigation
+      </h5>
 
-      <div className="nav flex-column">
+      <NavLink to="/" end className={linkClass}>
+        <FaHome className="me-3" />
+        Dashboard
+      </NavLink>
 
-        <NavLink
-          to="/"
-          end
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaHome className="me-2" />
-          Dashboard
-        </NavLink>
+      <NavLink to="/appointments" className={linkClass}>
+        <FaCalendarAlt className="me-3" />
+        Appointments
+      </NavLink>
 
-        <NavLink
-          to="/appointments"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaCalendarAlt className="me-2" />
-          Appointments
-        </NavLink>
+      <NavLink to="/patients" className={linkClass}>
+        <FaUserInjured className="me-3" />
+        Patients
+      </NavLink>
 
-        <NavLink
-          to="/patients"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaUserInjured className="me-2" />
-          Patients
-        </NavLink>
+      <NavLink to="/doctors" className={linkClass}>
+        <FaUserMd className="me-3" />
+        Doctors
+      </NavLink>
 
-        <NavLink
-          to="/doctors"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaUserMd className="me-2" />
-          Doctors
-        </NavLink>
+      <NavLink to="/clinical" className={linkClass}>
+        <FaFileMedical className="me-3" />
+        Clinical
+      </NavLink>
 
-        <NavLink
-          to="/clinical"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaFileMedical className="me-2" />
-          Clinical
-        </NavLink>
+      <NavLink to="/treatment" className={linkClass}>
+        <FaPills className="me-3" />
+        Treatment
+      </NavLink>
 
-        <NavLink
-          to="/treatment"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaPills className="me-2" />
-          Treatment
-        </NavLink>
+      <NavLink to="/notifications" className={linkClass}>
+        <FaBell className="me-3" />
+        Notifications
+      </NavLink>
 
-        <NavLink
-          to="/notifications"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaBell className="me-2" />
-          Notifications
-        </NavLink>
+      <NavLink to="/hospitals" className={linkClass}>
+        <FaHospital className="me-3" />
+        Hospitals
+      </NavLink>
 
-        <NavLink
-          to="/hospitals"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaHospital className="me-2" />
-          Hospitals
-        </NavLink>
+      <NavLink to="/departments" className={linkClass}>
+        <FaBuilding className="me-3" />
+        Departments
+      </NavLink>
 
-        <NavLink
-          to="/departments"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaBuilding className="me-2" />
-          Departments
-        </NavLink>
-
-        <NavLink
-          to="/profile"
-          className={({ isActive }) =>
-            `nav-link mb-2 ${isActive ? "active fw-bold text-primary" : "text-dark"}`
-          }
-        >
-          <FaUser className="me-2" />
-          Profile
-        </NavLink>
-
-      </div>
+      <NavLink to="/profile" className={linkClass}>
+        <FaUser className="me-3" />
+        Profile
+      </NavLink>
     </div>
   );
 }
