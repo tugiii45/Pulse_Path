@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'treatment',
     'notifications',
     'clinical',
+    'dashboard',
     'django_filters',
 ]
 

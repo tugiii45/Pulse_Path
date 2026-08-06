@@ -15,6 +15,7 @@ function Login() {
 
     try {
       const tokens = await loginUser(email, password);
+      
       saveTokens(tokens);
       navigate("/dashboard");
     } catch (err) {

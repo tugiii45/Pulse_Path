@@ -1,15 +1,33 @@
-import {
-  FaUserInjured,
-  FaUserMd,
-  FaCalendarCheck,
-  FaBell,
-} from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { getDashboardStats } from "../../services/dashboardService";
 
 function Dashboard() {
+  const [stats, setStats] = useState({
+    patients: 0,
+    doctors: 0,
+    appointments: 0,
+    notifications: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Error loading dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
+
   return (
     <div className="container-fluid">
-
-      {/* Welcome Section */}
       <div className="mb-4">
         <h2 className="fw-bold">Welcome Back 👋</h2>
         <p className="text-muted">
@@ -17,76 +35,73 @@ function Dashboard() {
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="row g-4">
-
-        <div className="col-lg-3 col-md-6">
-          <div className="card shadow-sm border-0">
-            <div className="card-body">
-              <FaUserInjured size={35} className="text-primary mb-3" />
-              <h5>Total Patients</h5>
-              <h2 className="fw-bold">245</h2>
-            </div>
+      {loading ? (
+        <div className="text-center mt-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
         </div>
+      ) : (
+        <>
+          <div className="row g-4">
 
-        <div className="col-lg-3 col-md-6">
-          <div className="card shadow-sm border-0">
+            <div className="col-md-3">
+              <div className="card shadow-sm border-0">
+                <div className="card-body text-center">
+                  <h6 className="text-muted">👨‍⚕️ Doctors</h6>
+                  <h2>{stats.doctors}</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="card shadow-sm border-0">
+                <div className="card-body text-center">
+                  <h6 className="text-muted">🧑‍🤝‍🧑 Patients</h6>
+                  <h2>{stats.patients}</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="card shadow-sm border-0">
+                <div className="card-body text-center">
+                  <h6 className="text-muted">📅 Appointments</h6>
+                  <h2>{stats.appointments}</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="card shadow-sm border-0">
+                <div className="card-body text-center">
+                  <h6 className="text-muted">🔔 Notifications</h6>
+                  <h2>{stats.notifications}</h2>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="card shadow-sm border-0 mt-5">
             <div className="card-body">
-              <FaUserMd size={35} className="text-success mb-3" />
-              <h5>Doctors</h5>
-              <h2 className="fw-bold">34</h2>
+              <h4 className="mb-3">Recent Activity</h4>
+
+              <ul className="list-group list-group-flush">
+                <li className="list-group-item">
+                  ✅ Dashboard connected successfully.
+                </li>
+                <li className="list-group-item">
+                  📊 Live statistics loaded from the backend.
+                </li>
+                <li className="list-group-item">
+                  💊 PulsePath is ready for the next module.
+                </li>
+              </ul>
             </div>
           </div>
-        </div>
-
-        <div className="col-lg-3 col-md-6">
-          <div className="card shadow-sm border-0">
-            <div className="card-body">
-              <FaCalendarCheck size={35} className="text-warning mb-3" />
-              <h5>Appointments</h5>
-              <h2 className="fw-bold">18</h2>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-lg-3 col-md-6">
-          <div className="card shadow-sm border-0">
-            <div className="card-body">
-              <FaBell size={35} className="text-danger mb-3" />
-              <h5>Notifications</h5>
-              <h2 className="fw-bold">6</h2>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Recent Activity */}
-      <div className="card shadow-sm border-0 mt-5">
-        <div className="card-body">
-          <h4 className="mb-3">Recent Activity</h4>
-
-          <ul className="list-group list-group-flush">
-            <li className="list-group-item">
-              ✔ New patient registered.
-            </li>
-
-            <li className="list-group-item">
-              ✔ Appointment scheduled for today.
-            </li>
-
-            <li className="list-group-item">
-              ✔ Medication reminder sent.
-            </li>
-
-            <li className="list-group-item">
-              ✔ Recovery progress updated.
-            </li>
-          </ul>
-        </div>
-      </div>
-
+        </>
+      )}
     </div>
   );
 }

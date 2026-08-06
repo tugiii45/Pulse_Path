@@ -6,7 +6,7 @@ export const loginUser = async (email, password) => {
     password,
   });
 
-  return response.data;
+  return response.data.data;
 };
 
 export const saveTokens = (tokens) => {
