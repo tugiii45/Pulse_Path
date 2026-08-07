@@ -26,3 +26,4 @@ export const getAccessToken = () => {
 export const isAuthenticated = () => {
   return !!localStorage.getItem("access");
 };
+
