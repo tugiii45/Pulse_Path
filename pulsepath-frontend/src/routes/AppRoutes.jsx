@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
-
+import LandingPage from "../pages/LandingPage";
 import DashboardLayout from "../layouts/DashboardLayout";
 
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -22,12 +22,14 @@ function AppRoutes() {
       <Routes>
 
         {/* Public Routes */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* Dashboard Routes */}
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
+          
           <Route path="appointments" element={<Appointments />} />
           <Route path="patients" element={<Patients />} />
           <Route path="doctors" element={<Doctors />} />
