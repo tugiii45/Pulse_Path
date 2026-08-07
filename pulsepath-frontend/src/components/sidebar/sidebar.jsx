@@ -25,9 +25,6 @@ function Sidebar() {
       className="bg-white border-end shadow-sm p-3"
       style={{ width: "260px", minHeight: "calc(100vh - 70px)" }}
     >
-      <h5 className="fw-bold text-primary mb-4">
-        Navigation
-      </h5>
 
       <NavLink to="/dashboard" end className={linkClass}>
         <FaHome className="me-3" />
