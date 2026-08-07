@@ -1,13 +1,20 @@
 import api from "./api";
 
 export const loginUser = async (email, password) => {
-  const response = await api.post("login/",  {
+  const response = await api.post("login/", {
     email,
     password,
   });
 
   return response.data.data;
 };
+
+export const registerUser = async (userData) => {
+  const response = await api.post("register/", userData);
+
+  return response.data.data;
+};
+
 
 export const saveTokens = (tokens) => {
   localStorage.setItem("access", tokens.access);
