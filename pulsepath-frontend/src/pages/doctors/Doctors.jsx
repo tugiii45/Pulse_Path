@@ -1,10 +1,29 @@
+import { useEffect, useState } from "react";
+import { getDoctors } from "../../services/DoctorService";
+
 function Doctors() {
-  return (
+  const [doctors, setDoctors] = useState([]);
+
+  const loadDoctors = async () => {
+  try {
+    const response = await getDoctors();
+
+    setDoctors(response.data.results);
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+  }
+};
+
+useEffect(() => {
+  loadDoctors();
+}, []);
+
+ return (
     <div>
       <h2>Doctors</h2>
-      <p>Manage doctor profiles and assignments.</p>
     </div>
   );
+
 }
 
 export default Doctors;

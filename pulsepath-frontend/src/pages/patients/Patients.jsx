@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPatients } from "../../services/patientService";
+import { getPatients } from "../../services/PatientService";
 
 function Patients() {
   const [patients, setPatients] = useState([]);
