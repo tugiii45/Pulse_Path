@@ -34,7 +34,7 @@ function Clinical() {
               </p>
 
               <Link
-                to="/clinical/medical-records"
+                to="/dashboard/clinical/medical-records"
                 className="btn btn-outline-primary btn-sm"
               >
                 View Records

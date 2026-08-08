@@ -36,6 +36,11 @@ function Sidebar() {
         Appointments
       </NavLink>
 
+      <NavLink to="visits" className={linkClass}>
+        <FaCalendarAlt className="me-3" />
+        Visits
+      </NavLink>
+
       <NavLink to="patients" className={linkClass}>
         <FaUserInjured className="me-3" />
         Patients
