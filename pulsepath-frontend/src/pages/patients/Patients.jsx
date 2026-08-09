@@ -1,5 +1,18 @@
 import { useEffect, useState } from "react";
-import { getPatients } from "../../services/PatientService";
+import { createPatient, getPatients } from "../../services/PatientService";
+
+const initialFormState = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone_number: "",
+  password: "",
+  date_of_birth: "",
+  gender: "MALE",
+  blood_group: "",
+  emergency_contact: "",
+  address: "",
+};
 
 function Patients() {
   const [patients, setPatients] = useState([]);
@@ -7,6 +20,11 @@ function Patients() {
   const [previousPage, setPreviousPage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [formData, setFormData] = useState(initialFormState);
 
   const loadPatients = async (url = "patients/", page = 1) => {
     try {
@@ -26,6 +44,52 @@ function Patients() {
     loadPatients();
   }, []);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.first_name || !formData.last_name || !formData.email || !formData.password || !formData.date_of_birth || !formData.emergency_contact) {
+      setError("Please fill out the required patient fields.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
+      const payload = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone_number: formData.phone_number,
+        password: formData.password,
+        role: "PATIENT",
+        date_of_birth: formData.date_of_birth,
+        gender: formData.gender,
+        blood_group: formData.blood_group,
+        emergency_contact: formData.emergency_contact,
+        address: formData.address,
+      };
+
+      await createPatient(payload);
+      setSuccess("Patient added successfully.");
+      setFormData(initialFormState);
+      setShowForm(false);
+      await loadPatients();
+    } catch (err) {
+      console.error("Create patient error:", err);
+      const backendMessage = err?.response?.data?.errors || err?.response?.data?.message;
+      setError(typeof backendMessage === "string" ? backendMessage : "Failed to create patient.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="container-fluid py-4">
       {/* Page Header */}
@@ -37,10 +101,80 @@ function Patients() {
           </p>
         </div>
 
-        <div className="badge bg-primary fs-6 px-3 py-2">
-          {patients.length} Patients
+        <div className="d-flex gap-2 align-items-center">
+          <button className="btn btn-primary" onClick={() => setShowForm((prev) => !prev)}>
+            {showForm ? "Close" : "+ Add Patient"}
+          </button>
+          <div className="badge bg-primary fs-6 px-3 py-2">
+            {patients.length} Patients
+          </div>
         </div>
       </div>
+
+      {error && <div className="alert alert-warning">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+
+      {showForm && (
+        <div className="card border-0 shadow-sm mb-4">
+          <div className="card-body">
+            <h5 className="fw-bold mb-3">Add Patient</h5>
+            <form onSubmit={handleSubmit} className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">First Name</label>
+                <input className="form-control" name="first_name" value={formData.first_name} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Last Name</label>
+                <input className="form-control" name="last_name" value={formData.last_name} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Email</label>
+                <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Password</label>
+                <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Phone Number</label>
+                <input className="form-control" name="phone_number" value={formData.phone_number} onChange={handleChange} />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Date of Birth</label>
+                <input type="date" className="form-control" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Gender</label>
+                <select className="form-select" name="gender" value={formData.gender} onChange={handleChange}>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Blood Group</label>
+                <input className="form-control" name="blood_group" value={formData.blood_group} onChange={handleChange} />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Emergency Contact</label>
+                <input className="form-control" name="emergency_contact" value={formData.emergency_contact} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Address</label>
+                <input className="form-control" name="address" value={formData.address} onChange={handleChange} />
+              </div>
+              <div className="col-12 d-flex justify-content-end gap-2">
+                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving..." : "Create Patient"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Patients Card */}
       <div className="card border-0 shadow-sm">

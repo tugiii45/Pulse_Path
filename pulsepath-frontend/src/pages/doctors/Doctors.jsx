@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { getDoctors } from "../../services/doctorService";
+import { createDoctor, getDoctors } from "../../services/DoctorService";
+
+const initialFormState = {
+  specialization: "",
+  license_number: "",
+  years_of_experience: "0",
+  department: "",
+};
 
 function Doctors() {
   const [doctors, setDoctors] = useState([]);
@@ -8,6 +15,11 @@ function Doctors() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDoctors, setTotalDoctors] = useState(0);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [formData, setFormData] = useState(initialFormState);
 
   const loadDoctors = async (url = "doctors/", page = 1) => {
     try {
@@ -28,6 +40,45 @@ function Doctors() {
     loadDoctors();
   }, []);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.specialization || !formData.license_number) {
+      setError("Please fill in specialization and license number.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
+      const payload = {
+        specialization: formData.specialization,
+        license_number: formData.license_number,
+        years_of_experience: Number(formData.years_of_experience || 0),
+        department: formData.department ? Number(formData.department) : null,
+      };
+
+      await createDoctor(payload);
+      setSuccess("Doctor added successfully.");
+      setFormData(initialFormState);
+      setShowForm(false);
+      await loadDoctors();
+    } catch (err) {
+      console.error("Create doctor error:", err);
+      const backendMessage = err?.response?.data?.errors || err?.response?.data?.message;
+      setError(typeof backendMessage === "string" ? backendMessage : "Failed to create doctor.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="container-fluid py-4">
 
@@ -40,10 +91,78 @@ function Doctors() {
           </p>
         </div>
 
-        <div className="badge bg-primary fs-6 px-3 py-2">
-          {totalDoctors} Doctors
+        <div className="d-flex gap-2 align-items-center">
+          <button className="btn btn-primary" onClick={() => setShowForm((prev) => !prev)}>
+            {showForm ? "Close" : "+ Add Doctor"}
+          </button>
+          <div className="badge bg-primary fs-6 px-3 py-2">
+            {totalDoctors} Doctors
+          </div>
         </div>
       </div>
+
+      {error && <div className="alert alert-warning">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+
+      {showForm && (
+        <div className="card border-0 shadow-sm mb-4">
+          <div className="card-body">
+            <h5 className="fw-bold mb-3">Add Doctor</h5>
+            <form onSubmit={handleSubmit} className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Specialization</label>
+                <input
+                  className="form-control"
+                  name="specialization"
+                  value={formData.specialization}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">License Number</label>
+                <input
+                  className="form-control"
+                  name="license_number"
+                  value={formData.license_number}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Years of Experience</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  name="years_of_experience"
+                  value={formData.years_of_experience}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Department ID</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                />
+              </div>
+              <div className="col-12 d-flex justify-content-end gap-2">
+                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving..." : "Create Doctor"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Doctors Table */}
       <div className="card border-0 shadow-sm">
