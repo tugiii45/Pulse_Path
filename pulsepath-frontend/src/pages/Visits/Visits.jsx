@@ -39,7 +39,7 @@ function Visit() {
 
             const response = await getVisits();
 
-            setVisits(response.data?.results || []);
+            setVisits(Array.isArray(response) ? response : response?.results || []);
         } catch (err) {
             console.error("VISITS ERROR:", err);
             setError("Failed to load visits.");

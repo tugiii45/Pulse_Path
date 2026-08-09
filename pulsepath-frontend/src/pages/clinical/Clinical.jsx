@@ -56,7 +56,7 @@ function Clinical() {
               </p>
 
               <Link
-                to="/clinical/diagnoses"
+                to="/dashboard/clinical/diagnosis"
                 className="btn btn-outline-primary btn-sm"
               >
                 View Diagnoses
