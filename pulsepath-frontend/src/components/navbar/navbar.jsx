@@ -1,14 +1,20 @@
 import { FaBell, FaSearch, FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { logoutUser } from "../../services/AuthService";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Navbar() {
   const navigate = useNavigate();
+  const { profile, logout } = useAuth();
 
   const handleLogout = () => {
-    logoutUser();
+    logout();
     navigate("/");
   };
+
+  const userName = profile?.first_name
+    ? `${profile.first_name} ${profile.last_name || ""}`.trim()
+    : profile?.email || "User";
+  const userRole = profile?.role?.toLowerCase() || "user";
 
   return (
     <nav
@@ -41,9 +47,8 @@ function Navbar() {
           <FaUserCircle size={35} className="me-2" />
 
           <div>
-            <div className="fw-bold">Conrad</div>
-
-            <small>Administrator</small>
+            <div className="fw-bold">{userName}</div>
+            <small className="text-capitalize">{userRole}</small>
           </div>
         </div>
 

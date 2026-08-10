@@ -41,6 +41,20 @@ class AppointmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVie
     ordering_fields = ["appointment_date", "created_at"]
     ordering = ["-appointment_date"]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if not self.request.user.is_authenticated:
+            return queryset.none()
+
+        if self.request.user.is_superuser:
+            return queryset
+
+        if hasattr(self.request.user, "patient"):
+            return queryset.filter(patient=self.request.user.patient)
+
+        return queryset
+
 
 class AppointmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     """

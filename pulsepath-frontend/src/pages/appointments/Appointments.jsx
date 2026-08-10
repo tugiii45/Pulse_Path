@@ -7,6 +7,7 @@ import {
 } from "../../services/AppointmentService";
 import { getPatients } from "../../services/PatientService";
 import { getDoctors } from "../../services/DoctorService";
+import { useAuth } from "../../contexts/AuthContext";
 
 const initialFormState = {
   patient: "",
@@ -27,10 +28,12 @@ function Appointments() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState(initialFormState);
+  const { profile } = useAuth();
+  const canManageAppointments = profile?.role !== "PATIENT";
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [profile]);
 
   const loadData = async () => {
     try {
@@ -39,8 +42,8 @@ function Appointments() {
 
       const [appointmentData, patientData, doctorData] = await Promise.all([
         getAppointments(),
-        getPatients(),
-        getDoctors(),
+        canManageAppointments ? getPatients() : Promise.resolve({ results: [] }),
+        canManageAppointments ? getDoctors() : Promise.resolve({ results: [] }),
       ]);
 
       setAppointments(Array.isArray(appointmentData) ? appointmentData : []);
@@ -179,18 +182,20 @@ function Appointments() {
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            if (showForm) {
-              resetForm();
-            } else {
-              setShowForm(true);
-            }
-          }}
-        >
-          {showForm ? "Close form" : "+ New Appointment"}
-        </button>
+        {canManageAppointments && (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+              } else {
+                setShowForm(true);
+              }
+            }}
+          >
+            {showForm ? "Close form" : "+ New Appointment"}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -345,18 +350,24 @@ function Appointments() {
                         </span>
                       </td>
                       <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-primary me-2"
-                          onClick={() => handleEdit(appointment)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDelete(appointment.id)}
-                        >
-                          Delete
-                        </button>
+                        {canManageAppointments ? (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline-primary me-2"
+                              onClick={() => handleEdit(appointment)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDelete(appointment.id)}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted">No actions</span>
+                        )}
                       </td>
                     </tr>
                   ))}

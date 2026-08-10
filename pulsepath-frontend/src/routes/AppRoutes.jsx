@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import LandingPage from "../pages/LandingPage";
+import ProtectedRoute from "../components/routes/ProtectedRoute";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -35,27 +36,36 @@ function AppRoutes() {
         />
 
         {/* Dashboard Routes */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
 
-          <Route path="appointments" element={<Appointments />} />
-          <Route path="visits" element={<Visits />} />
+            <Route path="appointments" element={<Appointments />} />
+            <Route path="visits" element={<Visits />} />
 
-          <Route path="patients" element={<Patients />} />
-          <Route path="doctors" element={<Doctors />} />
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN", "DOCTOR"]} />}>
+              <Route path="patients" element={<Patients />} />
+            </Route>
 
-          {/* Clinical */}
-          <Route path="clinical" element={<Clinical />} />
-          <Route path="clinical/medical-records" element={<MedicalRecords />} />
-          <Route path="clinical/diagnosis" element={<Diagnosis />} />
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+              <Route path="doctors" element={<Doctors />} />
+              <Route path="hospitals" element={<Hospitals />} />
+              <Route path="departments" element={<Departments />} />
+            </Route>
 
-          <Route path="treatment" element={<Treatment />} />
-          <Route path="treatment/prescriptions" element={<Prescriptions />} />
-          <Route path="treatment/medications" element={<Medications />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="hospitals" element={<Hospitals />} />
-          <Route path="departments" element={<Departments />} />
-          <Route path="profile" element={<Profile />} />
+            {/* Clinical */}
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN", "DOCTOR"]} />}>
+              <Route path="clinical" element={<Clinical />} />
+              <Route path="clinical/medical-records" element={<MedicalRecords />} />
+              <Route path="clinical/diagnosis" element={<Diagnosis />} />
+              <Route path="treatment" element={<Treatment />} />
+              <Route path="treatment/prescriptions" element={<Prescriptions />} />
+              <Route path="treatment/medications" element={<Medications />} />
+            </Route>
+
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

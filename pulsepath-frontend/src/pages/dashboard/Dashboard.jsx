@@ -1,32 +1,11 @@
-import { useEffect, useState } from "react";
-
-import { getProfile } from "../../services/profileService";
+import { useAuth } from "../../contexts/AuthContext";
 
 import AdminDashboard from "./AdminDashboard";
 import DoctorDashboard from "./DoctorDashboard";
 import PatientDashboard from "./PatientDashboard";
 
 function Dashboard() {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      const response = await getProfile();
-
-      console.log("DASHBOARD PROFILE:", response);
-
-      setProfile(response.data);
-    } catch (error) {
-      console.error("Failed to load profile:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { profile, loading } = useAuth();
 
   if (loading) {
     return <p>Loading dashboard...</p>;

@@ -30,30 +30,26 @@ class NotificationListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVi
     
 
     def get_queryset(self):
-      if getattr(self, "swagger_fake_view", False):
-        return Notification.objects.none()
+        if getattr(self, "swagger_fake_view", False):
+            return Notification.objects.none()
 
-    #   The get_queryset method is overridden to determine the queryset based on the user's role and hospital.'
-    #   ' If the user is a superuser, it returns all notifications. '
-    #   'If the user is an admin, it returns notifications where the recipient or creator is from the user's hospital. 
-    #   If the user is a doctor, it returns notifications created by the user. Otherwise, it returns notifications where the recipient is the user.
+        user = self.request.user
 
-      user = self.request.user
+        if user.is_superuser:
+            return Notification.objects.all()
 
-      if user.is_superuser:
-        return Notification.objects.all()
+        if user.role == "ADMIN":
+            return Notification.objects.filter(
+                recipient__hospital=user.hospital
+            ) | Notification.objects.filter(
+                created_by__hospital=user.hospital
+            )
 
-      if user.role == "ADMIN":
-        return Notification.objects.filter(
-            recipient__hospital=user.hospital
-        ) | Notification.objects.filter(
-            created_by__hospital=user.hospital
-        )
+        if user.role == "DOCTOR":
+            return Notification.objects.filter(created_by=user)
 
-      if user.role == "DOCTOR":
-        return Notification.objects.filter(created_by=user)
+        return Notification.objects.filter(recipient=user)
 
-      return Notification.objects.filter(recipient=user)
     permission_classes = [IsOwnerOrDoctor]
 
 
@@ -66,6 +62,9 @@ class NotificationDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestr
     #  The view requires the user to have the IsOwnerOrDoctor permission to access the notification.
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Notification.objects.none()
+
         user = self.request.user
 
         if user.is_superuser:

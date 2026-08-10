@@ -6,6 +6,7 @@ import {
     FaPlus,
     FaTimes,
 } from "react-icons/fa";
+import { useAuth } from "../../contexts/AuthContext";
 import { getVisits, createVisit } from "../../services/visitService";
 import { getAppointments } from "../../services/appointmentService";
 
@@ -31,6 +32,8 @@ function Visit() {
         diagnosis: "",
         notes: "",
     });
+    const { profile } = useAuth();
+    const canManageVisits = profile?.role !== "PATIENT";
 
     const loadVisits = async () => {
         try {
@@ -90,6 +93,10 @@ function Visit() {
     };
 
     const handleShowForm = async () => {
+        if (!canManageVisits) {
+            return;
+        }
+
         setShowForm(true);
         setFormError("");
 
@@ -163,10 +170,12 @@ function Visit() {
                             Refresh
                         </button>
 
-                        <button className="btn btn-primary" onClick={handleShowForm}>
-                            <FaPlus className="me-2" />
-                            New Visit
-                        </button>
+                        {canManageVisits && (
+                            <button className="btn btn-primary" onClick={handleShowForm}>
+                                <FaPlus className="me-2" />
+                                New Visit
+                            </button>
+                        )}
                     </div>
                 </div>
 
