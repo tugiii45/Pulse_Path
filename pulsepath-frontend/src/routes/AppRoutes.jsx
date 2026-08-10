@@ -6,12 +6,12 @@ import LandingPage from "../pages/LandingPage";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
-
+import Medications from "../pages/treatment/Medications";
 import Appointments from "../pages/appointments/Appointments";
 import Visits from "../pages/Visits/Visits";
 import Patients from "../pages/patients/Patients";
 import Doctors from "../pages/doctors/Doctors";
-
+import Prescriptions from "../pages/treatment/Prescriptions";
 import Clinical from "../pages/clinical/Clinical";
 import MedicalRecords from "../pages/clinical/MedicalRecords";
 import Diagnosis from "../pages/clinical/Diagnosis";
@@ -29,7 +29,10 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/clinical/diagnosis" element={<Navigate to="/dashboard/clinical/diagnosis" replace />} />
+        <Route
+          path="/clinical/diagnosis"
+          element={<Navigate to="/dashboard/clinical/diagnosis" replace />}
+        />
 
         {/* Dashboard Routes */}
         <Route path="/dashboard" element={<DashboardLayout />}>
@@ -47,6 +50,8 @@ function AppRoutes() {
           <Route path="clinical/diagnosis" element={<Diagnosis />} />
 
           <Route path="treatment" element={<Treatment />} />
+          <Route path="treatment/prescriptions" element={<Prescriptions />} />
+          <Route path="treatment/medications" element={<Medications />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="hospitals" element={<Hospitals />} />
           <Route path="departments" element={<Departments />} />
