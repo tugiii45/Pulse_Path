@@ -1,109 +1,54 @@
 import { useEffect, useState } from "react";
-import { getDashboardStats } from "../../services/dashboardService";
+
+import { getProfile } from "../../services/profileService";
+
+import AdminDashboard from "./AdminDashboard";
+import DoctorDashboard from "./DoctorDashboard";
+import PatientDashboard from "./PatientDashboard";
 
 function Dashboard() {
-  const [stats, setStats] = useState({
-    patients: 0,
-    doctors: 0,
-    appointments: 0,
-    notifications: 0,
-  });
-
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        const data = await getDashboardStats();
-        setStats(data);
-      } catch (error) {
-        console.error("Error loading dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
+    loadProfile();
   }, []);
 
-  return (
-    <div className="container-fluid">
-      <div className="mb-4">
-        <h2 className="fw-bold">Welcome Back 👋</h2>
-        <p className="text-muted">
-          Here's an overview of your PulsePath healthcare system.
-        </p>
-      </div>
+  const loadProfile = async () => {
+    try {
+      const response = await getProfile();
 
-      {loading ? (
-        <div className="text-center mt-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="row g-4">
+      console.log("DASHBOARD PROFILE:", response);
 
-            <div className="col-md-3">
-              <div className="card shadow-sm border-0">
-                <div className="card-body text-center">
-                  <h6 className="text-muted">👨‍⚕️ Doctors</h6>
-                  <h2>{stats.doctors}</h2>
-                </div>
-              </div>
-            </div>
+      setProfile(response.data);
+    } catch (error) {
+      console.error("Failed to load profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <div className="col-md-3">
-              <div className="card shadow-sm border-0">
-                <div className="card-body text-center">
-                  <h6 className="text-muted">🧑‍🤝‍🧑 Patients</h6>
-                  <h2>{stats.patients}</h2>
-                </div>
-              </div>
-            </div>
+  if (loading) {
+    return <p>Loading dashboard...</p>;
+  }
 
-            <div className="col-md-3">
-              <div className="card shadow-sm border-0">
-                <div className="card-body text-center">
-                  <h6 className="text-muted">📅 Appointments</h6>
-                  <h2>{stats.appointments}</h2>
-                </div>
-              </div>
-            </div>
+  if (!profile) {
+    return <p>Unable to load profile.</p>;
+  }
 
-            <div className="col-md-3">
-              <div className="card shadow-sm border-0">
-                <div className="card-body text-center">
-                  <h6 className="text-muted">🔔 Notifications</h6>
-                  <h2>{stats.notifications}</h2>
-                </div>
-              </div>
-            </div>
+  switch (profile.role) {
+    case "ADMIN":
+      return <AdminDashboard />;
 
-          </div>
+    case "DOCTOR":
+      return <DoctorDashboard />;
 
-          <div className="card shadow-sm border-0 mt-5">
-            <div className="card-body">
-              <h4 className="mb-3">Recent Activity</h4>
+    case "PATIENT":
+      return <PatientDashboard />;
 
-              <ul className="list-group list-group-flush">
-                <li className="list-group-item">
-                  ✅ Dashboard connected successfully.
-                </li>
-                <li className="list-group-item">
-                  📊 Live statistics loaded from the backend.
-                </li>
-                <li className="list-group-item">
-                  💊 PulsePath is ready for the next module.
-                </li>
-              </ul>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+    default:
+      return <p>Unknown user role.</p>;
+  }
 }
 
 export default Dashboard;
