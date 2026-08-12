@@ -24,7 +24,8 @@ export function AuthProvider({ children }) {
 
     try {
       const response = await getProfile();
-      setProfile(response.data ?? response);
+      const normalizedProfile = response?.data ?? response;
+      setProfile(normalizedProfile);
     } catch (error) {
       console.error("Unable to load current profile:", error);
       logoutUser();

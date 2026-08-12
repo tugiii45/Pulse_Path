@@ -1,5 +1,5 @@
 from django.test import TestCase
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIClient, APIRequestFactory
 
 from accounts.models import CustomUser, Patient
 from accounts.permissions import IsDoctorOrAdminOrPatientOwner
@@ -79,3 +79,22 @@ class PermissionTests(TestCase):
         self.assertTrue(permission.has_permission(admin_request, None))
         self.assertTrue(permission.has_object_permission(doctor_request, None, self.other_patient_profile))
         self.assertTrue(permission.has_object_permission(admin_request, None, self.patient_profile))
+
+    def test_admin_and_doctor_can_login_with_email(self):
+        client = APIClient()
+
+        admin_login = client.post(
+            "/api/login/",
+            {"email": self.admin.email, "password": "secret123"},
+            format="json",
+        )
+        doctor_login = client.post(
+            "/api/login/",
+            {"email": self.doctor.email, "password": "secret123"},
+            format="json",
+        )
+
+        self.assertEqual(admin_login.status_code, 200, admin_login.content)
+        self.assertIn("access", admin_login.data)
+        self.assertEqual(doctor_login.status_code, 200, doctor_login.content)
+        self.assertIn("access", doctor_login.data)
