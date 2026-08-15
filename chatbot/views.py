@@ -1,15 +1,15 @@
 from groq import Groq
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.conf import settings
 
 client = Groq(api_key=settings.GROQ_API_KEY)
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # switch to IsAuthenticated once auth is wired up
+@permission_classes([IsAuthenticated])
 def chat_view(request):
-    messages = request.data.get('messages', [])  # [{role, content}, ...]
+    messages = request.data.get('messages', [])
 
     system_message = {
         "role": "system",

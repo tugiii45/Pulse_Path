@@ -1,0 +1,224 @@
+:root {
+  --pp-navy: #1c2e4a;
+  --pp-coral: #e1614f;
+  --pp-sage: #7fa99b;
+  --pp-bg: #f5f6f4;
+  --pp-surface: #ffffff;
+  --pp-text: #22262b;
+  --pp-text-muted: #6b7280;
+  --pp-border: #e6e8eb;
+}
+
+.pp-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--pp-navy);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(28, 46, 74, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 1000;
+}
+
+.pp-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(28, 46, 74, 0.34);
+}
+
+.pp-fab svg {
+  width: 26px;
+  height: 26px;
+  stroke: var(--pp-sage);
+}
+
+.pp-panel {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 360px;
+  height: 520px;
+  background: var(--pp-surface);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(28, 46, 74, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: "Inter", -apple-system, sans-serif;
+  z-index: 1000;
+  animation: pp-rise 0.18s ease-out;
+}
+
+@keyframes pp-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pp-header {
+  background: var(--pp-navy);
+  color: white;
+  padding: 16px 18px 14px;
+}
+
+.pp-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pp-header-title {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.pp-header-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}
+
+.pp-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px;
+}
+.pp-close:hover { color: white; }
+
+/* signature pulse divider */
+.pp-pulse-line {
+  height: 20px;
+  margin-top: 10px;
+}
+.pp-pulse-line svg { width: 100%; height: 100%; }
+.pp-pulse-line path {
+  fill: none;
+  stroke: var(--pp-sage);
+  stroke-width: 1.5;
+  opacity: 0.8;
+}
+
+.pp-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--pp-bg);
+}
+
+.pp-msg {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.pp-msg.user {
+  align-self: flex-end;
+  background: var(--pp-coral);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.pp-msg.assistant {
+  align-self: flex-start;
+  background: var(--pp-surface);
+  color: var(--pp-text);
+  border: 1px solid var(--pp-border);
+  border-bottom-left-radius: 4px;
+}
+
+.pp-empty {
+  color: var(--pp-text-muted);
+  font-size: 13px;
+  text-align: center;
+  margin: auto 0;
+  padding: 0 20px;
+  line-height: 1.5;
+}
+
+/* thinking indicator: animated pulse/ECG line */
+.pp-thinking {
+  align-self: flex-start;
+  width: 64px;
+  height: 24px;
+}
+.pp-thinking svg { width: 100%; height: 100%; }
+.pp-thinking path {
+  fill: none;
+  stroke: var(--pp-sage);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: pp-draw 1.1s linear infinite;
+}
+@keyframes pp-draw {
+  0% { stroke-dashoffset: 120; }
+  100% { stroke-dashoffset: -120; }
+}
+
+.pp-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--pp-border);
+  background: var(--pp-surface);
+}
+
+.pp-input-row input {
+  flex: 1;
+  border: 1px solid var(--pp-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  color: var(--pp-text);
+}
+.pp-input-row input:focus {
+  border-color: var(--pp-sage);
+  box-shadow: 0 0 0 3px rgba(127, 169, 155, 0.18);
+}
+
+.pp-send {
+  background: var(--pp-navy);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.pp-send:hover { background: #16263c; }
+.pp-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-panel, .pp-thinking path { animation: none; }
+}
+
+@media (max-width: 480px) {
+  .pp-panel {
+    width: calc(100vw - 24px);
+    height: calc(100vh - 100px);
+    right: 12px;
+    bottom: 12px;
+  }
+}
