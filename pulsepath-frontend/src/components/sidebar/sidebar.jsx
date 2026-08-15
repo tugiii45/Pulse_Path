@@ -10,6 +10,8 @@ import {
   FaPills,
   FaBell,
   FaUser,
+  FaClock,
+  FaClipboardCheck,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -66,11 +68,13 @@ function Sidebar() {
       label: "Doctors",
       icon: <FaUserMd className="me-3" />,
     });
+
     menuItems.push({
       to: "/dashboard/hospitals",
       label: "Hospitals",
       icon: <FaHospital className="me-3" />,
     });
+
     menuItems.push({
       to: "/dashboard/departments",
       label: "Departments",
@@ -84,16 +88,31 @@ function Sidebar() {
       label: "Clinical",
       icon: <FaFileMedical className="me-3" />,
     });
+
     menuItems.push({
       to: "/dashboard/treatment",
       label: "Treatment",
       icon: <FaPills className="me-3" />,
     });
+
     menuItems.push({
       to: "/dashboard/treatment/medication",
       label: "Medications",
       icon: <FaPills className="me-3" />,
     });
+
+    menuItems.push({
+      to: "/dashboard/treatment/medication-schedule",
+      label: "Medication Schedule",
+      icon: <FaClock className="me-3" />,
+    });
+
+    menuItems.push({
+      to: "/dashboard/treatment/medication-log",
+      label: "Medication Log",
+      icon: <FaClipboardCheck className="me-3" />,
+    });
+
     menuItems.push({
       to: "/dashboard/treatment/prescriptions",
       label: "Prescriptions",
@@ -106,6 +125,7 @@ function Sidebar() {
     label: "Notifications",
     icon: <FaBell className="me-3" />,
   });
+
   menuItems.push({
     to: "/dashboard/profile",
     label: "Profile",
