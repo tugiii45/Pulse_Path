@@ -1,399 +1,767 @@
 import { useEffect, useState } from "react";
 import {
-    FaNotesMedical,
-    FaEye,
-    FaSyncAlt,
-    FaPlus,
-    FaTimes,
-} from "react-icons/fa";
+  createVisit,
+  deleteVisit,
+  getVisits,
+  updateVisit,
+} from "../../services/visitService";
+import { getAppointments } from "../../services/AppointmentService";
 import { useAuth } from "../../contexts/AuthContext";
-import { getVisits, createVisit } from "../../services/visitService";
-import { getAppointments } from "../../services/appointmentService";
 
-function Visit() {
-    const [visits, setVisits] = useState([]);
-    const [appointments, setAppointments] = useState([]);
+const initialFormState = {
+  appointment: "",
+  patient: "",
+  reason: "",
+  symptoms: "",
+  diagnosis: "",
+  notes: "",
+};
 
-    const [loading, setLoading] = useState(true);
-    const [loadingAppointments, setLoadingAppointments] = useState(false);
-    const [saving, setSaving] = useState(false);
+function Visits() {
+  // =========================================================
+  // AUTHENTICATION / ROLE
+  // =========================================================
 
-    const [error, setError] = useState("");
-    const [formError, setFormError] = useState("");
+  const { profile } = useAuth();
 
-    const [showForm, setShowForm] = useState(false);
+  const role = profile?.role;
 
-    const [formData, setFormData] = useState({
-        appointment: "",
-        patient: "",
-        patientName: "",
-        reason: "",
-        symptoms: "",
-        diagnosis: "",
-        notes: "",
-    });
-    const { profile } = useAuth();
-    const canManageVisits = profile?.role !== "PATIENT";
+  const isPatient = role === "PATIENT";
+  const isDoctor = role === "DOCTOR";
+  const isAdmin = role === "ADMIN";
 
-    const loadVisits = async () => {
-        try {
-            setLoading(true);
-            setError("");
+  // =========================================================
+  // STATE
+  // =========================================================
 
-            const response = await getVisits();
+  const [visits, setVisits] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
-            setVisits(Array.isArray(response) ? response : response?.results || []);
-        } catch (err) {
-            console.error("VISITS ERROR:", err);
-            setError("Failed to load visits.");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-    const loadAppointments = async () => {
-        try {
-            setLoadingAppointments(true);
+  const [showForm, setShowForm] = useState(false);
 
-            const response = await getAppointments();
+  // Stores the ID when ADMIN or DOCTOR is editing a visit.
+  const [editingId, setEditingId] = useState(null);
 
-            setAppointments(response.results || []);
-        } catch (err) {
-            console.error("APPOINTMENTS ERROR:", err);
-            setFormError("Failed to load appointments.");
-        } finally {
-            setLoadingAppointments(false);
-        }
-    };
+  const [formData, setFormData] = useState(initialFormState);
 
-    useEffect(() => {
-        loadVisits();
-    }, []);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    const handleAppointmentChange = (e) => {
-        const appointmentId = e.target.value;
+  // =========================================================
+  // LOAD DATA
+  // =========================================================
 
-        const selectedAppointment = appointments.find(
-            (appointment) => String(appointment.id) === appointmentId,
+  useEffect(() => {
+    if (!profile) return;
+
+    loadData();
+  }, [profile]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // -------------------------------------------------------
+      // LOAD VISITS
+      // -------------------------------------------------------
+      //
+      // The backend should already filter the visits according
+      // to the authenticated user's permissions.
+      //
+
+      const visitData = await getVisits();
+
+      setVisits(
+        Array.isArray(visitData) ? visitData : []
+      );
+
+      // -------------------------------------------------------
+      // LOAD APPOINTMENTS
+      // -------------------------------------------------------
+      //
+      // Doctors and Admins need appointments when creating
+      // a visit.
+      //
+      if (isDoctor || isAdmin) {
+        const appointmentData = await getAppointments();
+
+        setAppointments(
+          Array.isArray(appointmentData)
+            ? appointmentData
+            : []
         );
+      }
+    } catch (err) {
+      console.error("VISITS LOAD ERROR:", err);
 
-        setFormData({
-            ...formData,
-            appointment: appointmentId,
-            patient: selectedAppointment?.patient || "",
-            patientName: selectedAppointment?.patient_name || "",
-        });
-    };
+      setError("Failed to load visits.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
-    };
+  // =========================================================
+  // FORM INPUT HANDLER
+  // =========================================================
 
-    const handleShowForm = async () => {
-        if (!canManageVisits) {
-            return;
-        }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-        setShowForm(true);
-        setFormError("");
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
 
-        if (appointments.length === 0) {
-            await loadAppointments();
-        }
-    };
+    // ---------------------------------------------------------
+    // WHEN AN APPOINTMENT IS SELECTED
+    // ---------------------------------------------------------
+    //
+    // The appointment already belongs to a patient.
+    //
+    // Therefore, we automatically set the patient ID instead
+    // of allowing the user to select a different patient.
+    //
 
-    const handleCloseForm = () => {
-        setShowForm(false);
-        setFormError("");
+    if (name === "appointment") {
+      const selectedAppointment = appointments.find(
+        (appointment) =>
+          String(appointment.id) === String(value)
+      );
 
-        setFormData({
-            appointment: "",
-            patient: "",
-            patientName: "",
-            reason: "",
-            symptoms: "",
-            diagnosis: "",
-            notes: "",
-        });
-    };
+      setFormData((previous) => ({
+        ...previous,
+        appointment: value,
+        patient: selectedAppointment?.patient || "",
+      }));
+    }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  // =========================================================
+  // RESET FORM
+  // =========================================================
 
-        try {
-            setSaving(true);
-            setFormError("");
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setEditingId(null);
+    setShowForm(false);
+  };
 
-                await createVisit({
-                    appointment: Number(formData.appointment),
-                    patient: Number(formData.patient),
-                    reason: formData.reason,
-                    symptoms: formData.symptoms,
-                    diagnosis: formData.diagnosis,
-                    notes: formData.notes,
-                });
+  // =========================================================
+  // CREATE / UPDATE VISIT
+  // =========================================================
 
-                handleCloseForm();
-                await loadVisits();
-            } catch (err) {
-                console.error("CREATE VISIT ERROR:", err);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-                setFormError(err.response?.data?.message || "Failed to create visit.");
-            } finally {
-                setSaving(false);
-            }
-        };
+    setError("");
+    setSuccess("");
 
-        return (
-            <div className="container-fluid py-4">
-                {/* Header */}
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 className="fw-bold mb-1">
-                            <FaNotesMedical className="text-primary me-2" />
-                            Visits
-                        </h2>
+    // -------------------------------------------------------
+    // BASIC VALIDATION
+    // -------------------------------------------------------
 
-                        <p className="text-muted mb-0">Patient visits and consultations</p>
-                    </div>
-
-                    <div className="d-flex gap-2">
-                        <button
-                            className="btn btn-outline-primary"
-                            onClick={loadVisits}
-                            disabled={loading}
-                        >
-                            <FaSyncAlt className="me-2" />
-                            Refresh
-                        </button>
-
-                        {canManageVisits && (
-                            <button className="btn btn-primary" onClick={handleShowForm}>
-                                <FaPlus className="me-2" />
-                                New Visit
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Create Visit Form */}
-                {showForm && (
-                    <div className="card border-0 shadow-sm mb-4">
-                        <div className="card-body p-4">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <div>
-                                    <h4 className="fw-bold mb-1">Create Visit</h4>
-
-                                    <p className="text-muted mb-0">
-                                        Record a patient consultation.
-                                    </p>
-                                </div>
-
-                                <button className="btn btn-light" onClick={handleCloseForm}>
-                                    <FaTimes />
-                                </button>
-                            </div>
-
-                            {formError && <div className="alert alert-danger">{formError}</div>}
-
-                            <form onSubmit={handleSubmit}>
-                                {/* Appointment */}
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Appointment</label>
-
-                                    <select
-                                        className="form-select"
-                                        value={formData.appointment}
-                                        onChange={handleAppointmentChange}
-                                        required
-                                        disabled={loadingAppointments}
-                                    >
-                                        <option value="">
-                                            {loadingAppointments
-                                                ? "Loading appointments..."
-                                                : "Select an appointment"}
-                                        </option>
-
-                                        {appointments.map((appointment) => (
-                                            <option key={appointment.id} value={appointment.id}>
-                                                {appointment.patient_name} — {appointment.doctor_name} —{" "}
-                                                {new Date(appointment.appointment_date).toLocaleString()}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Patient */}
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Patient</label>
-
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        value={formData.patientName || "Select an appointment first"}
-                                        disabled
-                                    />
-                                </div>
-
-                                {/* Reason */}
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">
-                                        Reason for Visit
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="reason"
-                                        className="form-control"
-                                        placeholder="e.g. Follow-up consultation"
-                                        value={formData.reason}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-
-                                {/* Symptoms */}
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Symptoms</label>
-
-                                    <textarea
-                                        name="symptoms"
-                                        className="form-control"
-                                        rows="3"
-                                        placeholder="Describe the patient's symptoms"
-                                        value={formData.symptoms}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-
-                                {/* Diagnosis */}
-                                <div className="mb-3">
-                                    <label className="form-label fw-semibold">Diagnosis</label>
-
-                                    <textarea
-                                        name="diagnosis"
-                                        className="form-control"
-                                        rows="3"
-                                        placeholder="Enter the consultation diagnosis"
-                                        value={formData.diagnosis}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-
-                                {/* Notes */}
-                                <div className="mb-4">
-                                    <label className="form-label fw-semibold">Notes</label>
-
-                                    <textarea
-                                        name="notes"
-                                        className="form-control"
-                                        rows="4"
-                                        placeholder="Additional consultation notes"
-                                        value={formData.notes}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-
-                                <div className="d-flex justify-content-end gap-2">
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={handleCloseForm}
-                                    >
-                                        Cancel
-                                    </button>
-
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary"
-                                        disabled={saving}
-                                    >
-                                        {saving ? "Creating..." : "Create Visit"}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
-
-                {/* Error */}
-                {error && <div className="alert alert-danger">{error}</div>}
-
-                {/* Visits */}
-                {loading ? (
-                    <div className="text-center py-5">
-                        <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-
-                        <p className="text-muted mt-3">Loading visits...</p>
-                    </div>
-                ) : visits.length === 0 ? (
-                    <div className="card border-0 shadow-sm">
-                        <div className="card-body text-center py-5">
-                            <FaNotesMedical size={45} className="text-muted mb-3" />
-
-                            <h5 className="fw-bold">No visits found</h5>
-
-                            <p className="text-muted mb-0">Patient visits will appear here.</p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="row g-4">
-                        {visits.map((visit) => (
-                            <div className="col-md-6 col-xl-4" key={visit.id}>
-                                <div className="card border-0 shadow-sm h-100">
-                                    <div className="card-body">
-                                        <div className="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h5 className="fw-bold mb-1">{visit.patient_name}</h5>
-
-                                                <small className="text-muted">Visit #{visit.id}</small>
-                                            </div>
-
-                                            <FaNotesMedical className="text-primary" size={24} />
-                                        </div>
-
-                                        <hr />
-
-                                        <p className="mb-2">
-                                            <strong>Reason:</strong> {visit.reason || "Not provided"}
-                                        </p>
-
-                                        <p className="mb-2">
-                                            <strong>Symptoms:</strong>{" "}
-                                            {visit.symptoms || "None recorded"}
-                                        </p>
-
-                                        <p className="mb-2">
-                                            <strong>Diagnosis:</strong>{" "}
-                                            {visit.diagnosis || "Not recorded"}
-                                        </p>
-
-                                        <p className="mb-2">
-                                            <strong>Notes:</strong> {visit.notes || "No notes"}
-                                        </p>
-
-                                        <p className="text-muted small mt-3">
-                                            Visit date:{" "}
-                                            {new Date(visit.visit_date).toLocaleDateString()}
-                                        </p>
-
-                                        <button className="btn btn-outline-primary btn-sm">
-                                            <FaEye className="me-2" />
-                                            View Details
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
+    if (!formData.appointment) {
+      setError("Please select an appointment.");
+      return;
     }
 
-    export default Visit;
+    if (!formData.patient) {
+      setError(
+        "Unable to determine the patient from the selected appointment."
+      );
+      return;
+    }
+
+    if (!formData.reason.trim()) {
+      setError("Please enter the reason for the visit.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // -------------------------------------------------------
+      // VISIT PAYLOAD
+      // -------------------------------------------------------
+      //
+      // This matches your backend POST schema:
+      //
+      // {
+      //   appointment: 0,
+      //   patient: 0,
+      //   reason: "...",
+      //   symptoms: "...",
+      //   diagnosis: "...",
+      //   notes: "..."
+      // }
+      //
+
+      const payload = {
+        appointment: Number(formData.appointment),
+        patient: Number(formData.patient),
+        reason: formData.reason,
+        symptoms: formData.symptoms,
+        diagnosis: formData.diagnosis,
+        notes: formData.notes,
+      };
+
+      // -------------------------------------------------------
+      // UPDATE EXISTING VISIT
+      // -------------------------------------------------------
+
+      if (editingId) {
+        await updateVisit(editingId, payload);
+
+        setSuccess("Visit updated successfully.");
+
+        resetForm();
+
+        await loadData();
+
+        return;
+      }
+
+      // -------------------------------------------------------
+      // CREATE NEW VISIT
+      // -------------------------------------------------------
+
+      await createVisit(payload);
+
+      setSuccess("Visit created successfully.");
+
+      resetForm();
+
+      await loadData();
+    } catch (err) {
+      console.error("VISIT SAVE ERROR:", err);
+
+      const backendMessage =
+        err?.response?.data?.errors ||
+        err?.response?.data?.message ||
+        err?.response?.data?.detail;
+
+      setError(
+        typeof backendMessage === "string"
+          ? backendMessage
+          : editingId
+          ? "Failed to update visit."
+          : "Failed to create visit."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // =========================================================
+  // EDIT VISIT
+  // =========================================================
+  //
+  // Both Doctor and Admin can edit according to our frontend
+  // role design.
+  //
+
+  const handleEdit = (visit) => {
+    if (!isDoctor && !isAdmin) return;
+
+    setEditingId(visit.id);
+
+    setFormData({
+      appointment: visit.appointment || "",
+      patient: visit.patient || "",
+      reason: visit.reason || "",
+      symptoms: visit.symptoms || "",
+      diagnosis: visit.diagnosis || "",
+      notes: visit.notes || "",
+    });
+
+    setShowForm(true);
+
+    setError("");
+    setSuccess("");
+  };
+
+  // =========================================================
+  // DELETE VISIT
+  // =========================================================
+  //
+  // Only ADMIN gets the delete action in the frontend.
+  //
+
+  const handleDelete = async (id) => {
+    if (!isAdmin) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this visit?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setError("");
+      setSuccess("");
+
+      await deleteVisit(id);
+
+      setSuccess("Visit deleted successfully.");
+
+      await loadData();
+    } catch (err) {
+      console.error("DELETE VISIT ERROR:", err);
+
+      setError("Failed to delete visit.");
+    }
+  };
+
+  // =========================================================
+  // FORMAT DATE
+  // =========================================================
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "—";
+
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return dateValue;
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  // =========================================================
+  // PAGE TEXT
+  // =========================================================
+
+  const pageTitle = isPatient
+    ? "My Visits"
+    : "Visits";
+
+  const pageDescription = isPatient
+    ? "View your medical visit history."
+    : "View and manage patient visits.";
+
+  // =========================================================
+  // RENDER
+  // =========================================================
+
+  return (
+    <div className="container-fluid py-4">
+
+      {/* =====================================================
+          PAGE HEADER
+      ====================================================== */}
+
+      <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+
+        <div>
+          <h2 className="fw-bold mb-1">
+            {pageTitle}
+          </h2>
+
+          <p className="text-muted mb-0">
+            {pageDescription}
+          </p>
+        </div>
+
+        {/* ---------------------------------------------------
+            ONLY DOCTOR AND ADMIN CAN CREATE VISITS
+            --------------------------------------------------- */}
+
+        {(isDoctor || isAdmin) && (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+              } else {
+                setShowForm(true);
+                setError("");
+                setSuccess("");
+              }
+            }}
+          >
+            {showForm
+              ? "Close Form"
+              : editingId
+              ? "Edit Visit"
+              : "+ New Visit"}
+          </button>
+        )}
+      </div>
+
+      {/* =====================================================
+          ERROR MESSAGE
+      ====================================================== */}
+
+      {error && (
+        <div className="alert alert-warning">
+          {error}
+        </div>
+      )}
+
+      {/* =====================================================
+          SUCCESS MESSAGE
+      ====================================================== */}
+
+      {success && (
+        <div className="alert alert-success">
+          {success}
+        </div>
+      )}
+
+      {/* =====================================================
+          CREATE / EDIT FORM
+      ====================================================== */}
+
+      {showForm && (isDoctor || isAdmin) && (
+        <div className="card border-0 shadow-sm mb-4">
+
+          <div className="card-body">
+
+            <h5 className="fw-bold mb-4">
+              {editingId
+                ? "Edit Visit"
+                : "Create Visit"}
+            </h5>
+
+            <form onSubmit={handleSubmit}>
+
+              <div className="row g-3">
+
+                {/* =================================================
+                    APPOINTMENT
+                ================================================== */}
+
+                <div className="col-md-6">
+
+                  <label className="form-label fw-semibold">
+                    Appointment
+                  </label>
+
+                  <select
+                    className="form-select"
+                    name="appointment"
+                    value={formData.appointment}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select an appointment
+                    </option>
+
+                    {appointments.map((appointment) => (
+                      <option
+                        key={appointment.id}
+                        value={appointment.id}
+                      >
+                        {appointment.patient_name ||
+                          `Appointment #${appointment.id}`}
+                        {" — "}
+                        {formatDate(
+                          appointment.appointment_date
+                        )}
+                      </option>
+                    ))}
+                  </select>
+
+                </div>
+
+                {/* =================================================
+                    PATIENT
+                    ==================================================
+                    
+                    Patient is automatically determined from the
+                    selected appointment.
+                ================================================== */}
+
+                <div className="col-md-6">
+
+                  <label className="form-label fw-semibold">
+                    Patient
+                  </label>
+
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={
+                      formData.patient
+                        ? `Patient #${formData.patient}`
+                        : "Select an appointment first"
+                    }
+                    disabled
+                  />
+
+                  <div className="form-text">
+                    Patient is automatically linked to the
+                    selected appointment.
+                  </div>
+
+                </div>
+
+                {/* =================================================
+                    REASON
+                ================================================== */}
+
+                <div className="col-12">
+
+                  <label className="form-label fw-semibold">
+                    Reason for Visit
+                  </label>
+
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="reason"
+                    value={formData.reason}
+                    onChange={handleChange}
+                    placeholder="Enter reason for the visit"
+                    required
+                  />
+
+                </div>
+
+                {/* =================================================
+                    SYMPTOMS
+                ================================================== */}
+
+                <div className="col-md-6">
+
+                  <label className="form-label fw-semibold">
+                    Symptoms
+                  </label>
+
+                  <textarea
+                    className="form-control"
+                    name="symptoms"
+                    value={formData.symptoms}
+                    onChange={handleChange}
+                    rows="4"
+                    placeholder="Describe the patient's symptoms"
+                  />
+
+                </div>
+
+                {/* =================================================
+                    DIAGNOSIS
+                ================================================== */}
+
+                <div className="col-md-6">
+
+                  <label className="form-label fw-semibold">
+                    Diagnosis
+                  </label>
+
+                  <textarea
+                    className="form-control"
+                    name="diagnosis"
+                    value={formData.diagnosis}
+                    onChange={handleChange}
+                    rows="4"
+                    placeholder="Enter diagnosis"
+                  />
+
+                </div>
+
+                {/* =================================================
+                    NOTES
+                ================================================== */}
+
+                <div className="col-12">
+
+                  <label className="form-label fw-semibold">
+                    Notes
+                  </label>
+
+                  <textarea
+                    className="form-control"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows="4"
+                    placeholder="Additional notes"
+                  />
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  FORM ACTIONS
+              ================================================== */}
+
+              <div className="d-flex justify-content-end gap-2 mt-4">
+
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={saving}
+                >
+                  {saving
+                    ? "Saving..."
+                    : editingId
+                    ? "Save Changes"
+                    : "Create Visit"}
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          VISITS TABLE
+      ====================================================== */}
+
+      <div className="card border-0 shadow-sm">
+
+        <div className="card-body">
+
+          {loading ? (
+
+            <div className="text-muted py-3">
+              Loading visits...
+            </div>
+
+          ) : visits.length === 0 ? (
+
+            <div className="text-muted py-3">
+              No visits available.
+            </div>
+
+          ) : (
+
+            <div className="table-responsive">
+
+              <table className="table align-middle mb-0">
+
+                <thead>
+                  <tr>
+
+                    <th>Patient</th>
+                    <th>Visit Date</th>
+                    <th>Reason</th>
+                    <th>Diagnosis</th>
+                    <th>Actions</th>
+
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {visits.map((visit) => (
+
+                    <tr key={visit.id}>
+
+                      {/* Patient name comes directly from
+                          the Visit API response. */}
+
+                      <td className="fw-semibold">
+                        {visit.patient_name || "—"}
+                      </td>
+
+                      {/* Visit date */}
+
+                      <td>
+                        {formatDate(visit.visit_date)}
+                      </td>
+
+                      {/* Reason */}
+
+                      <td>
+                        {visit.reason || "—"}
+                      </td>
+
+                      {/* Diagnosis */}
+
+                      <td>
+                        {visit.diagnosis || "—"}
+                      </td>
+
+                      {/* =================================================
+                          ACTIONS
+                      ================================================== */}
+
+                      <td>
+
+                        {/* ---------------------------------------------
+                            DOCTOR + ADMIN
+                            --------------------------------------------- */}
+
+                        {(isDoctor || isAdmin) && (
+                          <button
+                            className="btn btn-sm btn-outline-primary me-2"
+                            onClick={() =>
+                              handleEdit(visit)
+                            }
+                          >
+                            Edit
+                          </button>
+                        )}
+
+                        {/* ---------------------------------------------
+                            ADMIN ONLY
+                            --------------------------------------------- */}
+
+                        {isAdmin && (
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() =>
+                              handleDelete(visit.id)
+                            }
+                          >
+                            Delete
+                          </button>
+                        )}
+
+                        {/* ---------------------------------------------
+                            PATIENT
+                            --------------------------------------------- */}
+
+                        {isPatient && (
+                          <span className="text-muted">
+                            View only
+                          </span>
+                        )}
+
+                      </td>
+
+                    </tr>
+
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            </div>
+          )}
+
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+export default Visits;

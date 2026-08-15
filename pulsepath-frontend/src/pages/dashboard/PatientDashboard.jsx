@@ -11,7 +11,7 @@ import {
 import { getAppointments } from "../../services/AppointmentService";
 import { getVisits } from "../../services/VisitService";
 import { getDiagnoses } from "../../services/diagnosisService";
-import { getMedications } from "../../services/medicationService";
+import { getMedications } from "../../services/Treatment/medicationService";
 import { getNotifications } from "../../services/notificationService";
 
 function PatientDashboard() {
