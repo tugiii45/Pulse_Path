@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
-import { getDiagnoses } from "../../services/diagnosisService";
-import {
-  getMedications,
-} from "../../services/medicationService";
 import {
   getPrescriptions,
   createPrescription,
 } from "../../services/prescriptionService";
 
-function Prescriptions() {
-  const [diagnoses, setDiagnoses] = useState([]);
-  const [medications, setMedications] = useState([]);
+import { getMedications } from "../../services/medicationService";
+import { getDiagnoses } from "../../services/diagnosisService";
+
+function Prescription() {
+  // Stores all prescription records.
   const [prescriptions, setPrescriptions] = useState([]);
 
+  // Stores diagnoses for the diagnosis dropdown.
+  const [diagnoses, setDiagnoses] = useState([]);
+
+  // Stores medications for the medication dropdown.
+  const [medications, setMedications] = useState([]);
+
+  // Form state.
   const [formData, setFormData] = useState({
     diagnosis: "",
     medication: "",
@@ -22,41 +27,41 @@ function Prescriptions() {
     instructions: "",
   });
 
+  // Loading and error states.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
+  // Load prescriptions, diagnoses and medications.
   const loadData = async () => {
     try {
       setLoading(true);
+      setError("");
 
-      const [diagnosisData, medicationData, prescriptionData] =
+      const [prescriptionData, diagnosisData, medicationData] =
         await Promise.all([
+          getPrescriptions(),
           getDiagnoses(),
           getMedications(),
-          getPrescriptions(),
         ]);
 
-      console.log("DIAGNOSES:", diagnosisData);
-      console.log("MEDICATIONS:", medicationData);
-      console.log("PRESCRIPTIONS:", prescriptionData);
-
-      setDiagnoses(diagnosisData.results || []);
-      setMedications(medicationData.results || []);
-      setPrescriptions(prescriptionData.results || []);
+      setPrescriptions(prescriptionData);
+      setDiagnoses(diagnosisData);
+      setMedications(medicationData);
     } catch (err) {
-      console.error("Failed to load prescription data:", err);
-      setError("Failed to load prescription data.");
+      console.error("Unable to load prescription data:", err);
+      setError("Unable to load prescription data.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Update form fields when the user types/selects something.
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
     setFormData((previous) => ({
       ...previous,
@@ -64,13 +69,15 @@ function Prescriptions() {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Submit a new prescription.
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     try {
       setError("");
 
-      const data = {
+      // Convert IDs and duration to numbers before sending them.
+      const payload = {
         diagnosis: Number(formData.diagnosis),
         medication: Number(formData.medication),
         dosage: formData.dosage,
@@ -79,10 +86,9 @@ function Prescriptions() {
         instructions: formData.instructions,
       };
 
-      const newPrescription = await createPrescription(data);
+      await createPrescription(payload);
 
-      console.log("NEW PRESCRIPTION:", newPrescription);
-
+      // Clear the form after successful creation.
       setFormData({
         diagnosis: "",
         medication: "",
@@ -92,21 +98,26 @@ function Prescriptions() {
         instructions: "",
       });
 
-      loadData();
+      // Refresh the prescription records.
+      await loadData();
     } catch (err) {
-      console.error("Failed to create prescription:", err);
-      setError("Failed to create prescription.");
+      console.error("Unable to create prescription:", err);
+      setError("Unable to create prescription.");
     }
   };
 
-  if (loading) {
-    return <div className="container mt-4">Loading...</div>;
-  }
-
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">Prescriptions</h2>
+    <div className="container-fluid py-4">
 
+      {/* Page heading */}
+      <div className="mb-4">
+        <h2>Prescriptions</h2>
+        <p className="text-muted">
+          Create and manage patient prescriptions.
+        </p>
+      </div>
+
+      {/* Display API errors */}
       {error && (
         <div className="alert alert-danger">
           {error}
@@ -115,12 +126,14 @@ function Prescriptions() {
 
       {/* Add Prescription */}
       <div className="card shadow-sm mb-4">
-        <div className="card-header">
-          <h5 className="mb-0">Add Prescription</h5>
-        </div>
-
         <div className="card-body">
+
+          <h5 className="card-title mb-4">
+            Add Prescription
+          </h5>
+
           <form onSubmit={handleSubmit}>
+
             <div className="row">
 
               {/* Diagnosis */}
@@ -145,8 +158,8 @@ function Prescriptions() {
                       key={diagnosis.id}
                       value={diagnosis.id}
                     >
-                      {diagnosis.condition} -{" "}
-                      {diagnosis.icd10_code}
+                      {diagnosis.condition} —{" "}
+                      {diagnosis.patient_name}
                     </option>
                   ))}
                 </select>
@@ -174,10 +187,7 @@ function Prescriptions() {
                       key={medication.id}
                       value={medication.id}
                     >
-                      {medication.name}{" "}
-                      {medication.strength
-                        ? `- ${medication.strength}`
-                        : ""}
+                      {medication.name}
                     </option>
                   ))}
                 </select>
@@ -193,9 +203,9 @@ function Prescriptions() {
                   type="text"
                   className="form-control"
                   name="dosage"
-                  placeholder="e.g. 500 mg"
                   value={formData.dosage}
                   onChange={handleChange}
+                  placeholder="e.g. 500mg"
                   required
                 />
               </div>
@@ -210,9 +220,9 @@ function Prescriptions() {
                   type="text"
                   className="form-control"
                   name="frequency"
-                  placeholder="e.g. Twice per day"
                   value={formData.frequency}
                   onChange={handleChange}
+                  placeholder="e.g. Twice daily"
                   required
                 />
               </div>
@@ -227,9 +237,9 @@ function Prescriptions() {
                   type="number"
                   className="form-control"
                   name="duration"
-                  min="1"
                   value={formData.duration}
                   onChange={handleChange}
+                  min="1"
                   required
                 />
               </div>
@@ -240,13 +250,13 @@ function Prescriptions() {
                   Instructions
                 </label>
 
-                <input
-                  type="text"
+                <textarea
                   className="form-control"
                   name="instructions"
-                  placeholder="e.g. Take after meals"
                   value={formData.instructions}
                   onChange={handleChange}
+                  placeholder="Enter medication instructions"
+                  rows="2"
                   required
                 />
               </div>
@@ -259,35 +269,44 @@ function Prescriptions() {
             >
               Add Prescription
             </button>
+
           </form>
         </div>
       </div>
 
-      {/* Prescription List */}
+      {/* Prescription Records */}
       <div className="card shadow-sm">
-        <div className="card-header">
-          <h5 className="mb-0">Prescription Records</h5>
-        </div>
+        <div className="card-body">
 
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
+          <h5 className="card-title mb-4">
+            Prescription Records
+          </h5>
 
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Diagnosis</th>
-                  <th>Medication</th>
-                  <th>Dosage</th>
-                  <th>Frequency</th>
-                  <th>Duration</th>
-                  <th>Instructions</th>
-                </tr>
-              </thead>
+          {loading ? (
+            <p>Loading prescriptions...</p>
+          ) : prescriptions.length === 0 ? (
+            <p className="text-muted">
+              No prescriptions found.
+            </p>
+          ) : (
+            <div className="table-responsive">
 
-              <tbody>
-                {prescriptions.length > 0 ? (
-                  prescriptions.map((prescription) => (
+              <table className="table table-hover align-middle">
+
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Diagnosis</th>
+                    <th>Medication</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Duration</th>
+                    <th>Instructions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {prescriptions.map((prescription) => (
                     <tr key={prescription.id}>
                       <td>{prescription.id}</td>
 
@@ -296,7 +315,7 @@ function Prescriptions() {
                       </td>
 
                       <td>
-                        {prescription.medication}
+                        {prescription.medication_name}
                       </td>
 
                       <td>
@@ -315,25 +334,19 @@ function Prescriptions() {
                         {prescription.instructions}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="7"
-                      className="text-center py-4"
-                    >
-                      No prescriptions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+                  ))}
+                </tbody>
 
-            </table>
-          </div>
+              </table>
+
+            </div>
+          )}
+
         </div>
       </div>
+
     </div>
   );
 }
 
-export default Prescriptions;
+export default Prescription;
