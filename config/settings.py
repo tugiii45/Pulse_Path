@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'clinical',
     'dashboard',
     'django_filters',
+    'chatbot',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,10 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+OPENAI_API_KEY = config('OPENAI_API_KEY')
 
 ROOT_URLCONF = 'config.urls'
 
