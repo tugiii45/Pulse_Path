@@ -37,6 +37,23 @@ export const logoutUser = () => {
   localStorage.removeItem("refresh");
 };
 
+export const setAuthMessage = (message) => {
+  if (message) {
+    sessionStorage.setItem("auth_message", message);
+    return;
+  }
+
+  sessionStorage.removeItem("auth_message");
+};
+
+export const getAuthMessage = () => {
+  return sessionStorage.getItem("auth_message") || "";
+};
+
+export const clearAuthMessage = () => {
+  sessionStorage.removeItem("auth_message");
+};
+
 export const getAccessToken = () => {
   return localStorage.getItem("access");
 };

@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../layouts/AuthLayout";
-import { loginUser, saveTokens } from "../../services/AuthService";
+import {
+  clearAuthMessage,
+  getAuthMessage,
+  loginUser,
+  saveTokens,
+} from "../../services/AuthService";
 
 function Login() {
   const navigate = useNavigate();
@@ -9,6 +14,15 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const authMessage = getAuthMessage();
+
+    if (authMessage) {
+      setError(authMessage);
+      clearAuthMessage();
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

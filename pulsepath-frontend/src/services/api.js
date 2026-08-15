@@ -1,5 +1,14 @@
 import axios from "axios";
 
+const setAuthMessage = (message) => {
+  if (message) {
+    sessionStorage.setItem("auth_message", message);
+    return;
+  }
+
+  sessionStorage.removeItem("auth_message");
+};
+
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api/",
 });
@@ -46,6 +55,7 @@ api.interceptors.response.use(
       // If we reach here, refresh failed or was not available — clear tokens and redirect to login
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
+      setAuthMessage("Your session expired. Please log in again.");
       try {
         window.location.href = "/login";
       } catch (e) {}
