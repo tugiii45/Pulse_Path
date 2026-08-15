@@ -12,6 +12,7 @@ import {
   FaUser,
   FaClock,
   FaClipboardCheck,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -113,6 +114,12 @@ function Sidebar() {
       to: "/dashboard/treatment/medication-log",
       label: "Medication Log",
       icon: <FaClipboardCheck className="me-3" />,
+    });
+
+    menuItems.push({
+      to: "/dashboard/treatment/side-effects",
+      label: "Side Effects",
+      icon: <FaExclamationTriangle className="me-3" />,
     });
 
     menuItems.push({

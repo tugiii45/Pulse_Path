@@ -12,6 +12,7 @@ import Medication from "../pages/treatment/Medication";
 import Medications from "../pages/treatment/Medications";
 import MedicationSchedule from "../pages/treatment/MedicationSchedule";
 import MedicationLog from "../pages/treatment/MedicationLog";
+import SideEffect from "../pages/treatment/SideEffect";
 
 import Appointments from "../pages/appointments/Appointments";
 import Visits from "../pages/Visits/Visits";
@@ -35,7 +36,6 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -43,98 +43,52 @@ function AppRoutes() {
 
         <Route
           path="/clinical/diagnosis"
-          element={
-            <Navigate
-              to="/dashboard/clinical/diagnosis"
-              replace
-            />
-          }
+          element={<Navigate to="/dashboard/clinical/diagnosis" replace />}
         />
 
         {/* Dashboard Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
-
             <Route index element={<Dashboard />} />
 
             {/* Appointments & Visits */}
-            <Route
-              path="appointments"
-              element={<Appointments />}
-            />
+            <Route path="appointments" element={<Appointments />} />
 
-            <Route
-              path="visits"
-              element={<Visits />}
-            />
+            <Route path="visits" element={<Visits />} />
 
             {/* Patients */}
             <Route
-              element={
-                <ProtectedRoute
-                  allowedRoles={["ADMIN", "DOCTOR"]}
-                />
-              }
+              element={<ProtectedRoute allowedRoles={["ADMIN", "DOCTOR"]} />}
             >
-              <Route
-                path="patients"
-                element={<Patients />}
-              />
+              <Route path="patients" element={<Patients />} />
             </Route>
 
             {/* Admin Routes */}
-            <Route
-              element={
-                <ProtectedRoute
-                  allowedRoles={["ADMIN"]}
-                />
-              }
-            >
-              <Route
-                path="doctors"
-                element={<Doctors />}
-              />
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+              <Route path="doctors" element={<Doctors />} />
 
-              <Route
-                path="hospitals"
-                element={<Hospitals />}
-              />
+              <Route path="hospitals" element={<Hospitals />} />
 
-              <Route
-                path="departments"
-                element={<Departments />}
-              />
+              <Route path="departments" element={<Departments />} />
             </Route>
 
             {/* Clinical & Treatment */}
             <Route
-              element={
-                <ProtectedRoute
-                  allowedRoles={["ADMIN", "DOCTOR"]}
-                />
-              }
+              element={<ProtectedRoute allowedRoles={["ADMIN", "DOCTOR"]} />}
             >
               {/* Clinical */}
-              <Route
-                path="clinical"
-                element={<Clinical />}
-              />
+              <Route path="clinical" element={<Clinical />} />
 
               <Route
                 path="clinical/medical-records"
                 element={<MedicalRecords />}
               />
 
-              <Route
-                path="clinical/diagnosis"
-                element={<Diagnosis />}
-              />
+              <Route path="clinical/diagnosis" element={<Diagnosis />} />
+              <Route path="treatment/side-effects" element={<SideEffect />} />
 
               {/* Treatment */}
-              <Route
-                path="treatment"
-                element={<Treatment />}
-              />
+              <Route path="treatment" element={<Treatment />} />
 
               <Route
                 path="treatment/prescriptions"
@@ -142,15 +96,9 @@ function AppRoutes() {
               />
 
               {/* Medications */}
-              <Route
-                path="treatment/medication"
-                element={<Medication />}
-              />
+              <Route path="treatment/medication" element={<Medication />} />
 
-              <Route
-                path="treatment/medications"
-                element={<Medications />}
-              />
+              <Route path="treatment/medications" element={<Medications />} />
 
               {/* Medication Schedule */}
               <Route
@@ -165,27 +113,16 @@ function AppRoutes() {
               />
 
               {/* Existing medication route */}
-              <Route
-                path="medication"
-                element={<Medication />}
-              />
+              <Route path="medication" element={<Medication />} />
             </Route>
 
             {/* Notifications */}
-            <Route
-              path="notifications"
-              element={<Notifications />}
-            />
+            <Route path="notifications" element={<Notifications />} />
 
             {/* Profile */}
-            <Route
-              path="profile"
-              element={<Profile />}
-            />
-
+            <Route path="profile" element={<Profile />} />
           </Route>
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
