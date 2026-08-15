@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "../api";
 
 // Normalize paginated and non-paginated API responses.
 const normalizeListResponse = (response) => {

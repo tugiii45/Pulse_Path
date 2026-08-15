@@ -29,7 +29,9 @@ function Sidebar() {
         className="bg-white border-end shadow-sm p-3"
         style={{ width: "260px", minHeight: "calc(100vh - 70px)" }}
       >
-        <div className="text-center py-4 text-muted">Loading menu...</div>
+        <div className="text-center py-4 text-muted">
+          Loading menu...
+        </div>
       </div>
     );
   }
