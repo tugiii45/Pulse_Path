@@ -89,6 +89,16 @@ function Sidebar() {
       label: "Treatment",
       icon: <FaPills className="me-3" />,
     });
+    menuItems.push({
+      to: "/dashboard/treatment/medication",
+      label: "Medications",
+      icon: <FaPills className="me-3" />,
+    });
+    menuItems.push({
+      to: "/dashboard/treatment/prescriptions",
+      label: "Prescriptions",
+      icon: <FaFileMedical className="me-3" />,
+    });
   }
 
   menuItems.push({

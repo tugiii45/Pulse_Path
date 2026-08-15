@@ -7,6 +7,7 @@ import ProtectedRoute from "../components/routes/ProtectedRoute";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
+import Medication from "../pages/treatment/Medication";
 import Medications from "../pages/treatment/Medications";
 import Appointments from "../pages/appointments/Appointments";
 import Visits from "../pages/Visits/Visits";
@@ -60,7 +61,9 @@ function AppRoutes() {
               <Route path="clinical/diagnosis" element={<Diagnosis />} />
               <Route path="treatment" element={<Treatment />} />
               <Route path="treatment/prescriptions" element={<Prescriptions />} />
+              <Route path="treatment/medication" element={<Medication />} />
               <Route path="treatment/medications" element={<Medications />} />
+              <Route path="medication" element={<Medication />} />
             </Route>
 
             <Route path="notifications" element={<Notifications />} />
