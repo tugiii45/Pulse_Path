@@ -13,6 +13,7 @@ import {
   FaClock,
   FaClipboardCheck,
   FaExclamationTriangle,
+  FaHeartbeat,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -30,9 +31,7 @@ function Sidebar() {
         className="bg-white border-end shadow-sm p-3"
         style={{ width: "260px", minHeight: "calc(100vh - 70px)" }}
       >
-        <div className="text-center py-4 text-muted">
-          Loading menu...
-        </div>
+        <div className="text-center py-4 text-muted">Loading menu...</div>
       </div>
     );
   }
@@ -102,6 +101,11 @@ function Sidebar() {
       to: "/dashboard/treatment/medication",
       label: "Medications",
       icon: <FaPills className="me-3" />,
+    });
+    menuItems.push({
+      to: "/dashboard/treatment/recovery-progress",
+      label: "Recovery Progress",
+      icon: <FaHeartbeat className="me-3" />,
     });
 
     menuItems.push({
