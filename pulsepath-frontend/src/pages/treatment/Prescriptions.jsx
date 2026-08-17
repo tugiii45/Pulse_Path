@@ -4,7 +4,7 @@ import {
   createPrescription,
 } from "../../services/prescriptionService";
 
-import { getMedications } from "../../services/medicationService";
+import { getMedications } from "../../services/Treatment/medicationService";
 import { getDiagnoses } from "../../services/diagnosisService";
 
 function Prescription() {

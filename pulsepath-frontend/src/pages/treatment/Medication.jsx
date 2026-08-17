@@ -4,7 +4,7 @@ import {
   createMedication,
   updateMedication,
   deleteMedication,
-} from "../../services/medicationService";
+} from "../../services/Treatment/medicationService";
 import { useAuth } from "../../contexts/AuthContext";
 
 function Medication() {

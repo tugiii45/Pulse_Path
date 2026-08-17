@@ -19,7 +19,6 @@ import Diagnosis from "../pages/clinical/Diagnosis";
 
 import Treatment from "../pages/treatment/Treatment";
 import Medication from "../pages/treatment/Medication";
-import Medications from "../pages/treatment/Medications";
 import Prescriptions from "../pages/treatment/Prescriptions";
 import RecoveryProgress from "../pages/treatment/RecoveryProgress";
 import SideEffect from "../pages/treatment/SideEffect";
@@ -192,10 +191,7 @@ function AppRoutes() {
                 element={<Medication />}
               />
 
-              <Route
-                path="treatment/medications"
-                element={<Medications />}
-              />
+              
 
               {/* Medication shortcut */}
 
