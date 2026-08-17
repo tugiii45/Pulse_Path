@@ -1,485 +1,453 @@
-import { useEffect, useState } from "react";
+import React from "react";
 import {
-  FaCalendarCheck,
-  FaStethoscope,
-  FaNotesMedical,
+  FaCalendarAlt,
+  FaClock,
   FaPills,
   FaBell,
-  FaHeartbeat,
+  FaChartLine,
+  FaComments,
+  FaUserMd,
+  FaCheckCircle,
+  FaArrowRight,
 } from "react-icons/fa";
 
-import { getAppointments } from "../../services/AppointmentService";
-import { getVisits } from "../../services/VisitService";
-import { getDiagnoses } from "../../services/diagnosisService";
-import { getMedications } from "../../services/Treatment/medicationService";
-import { getNotifications } from "../../services/notificationService";
-
 function PatientDashboard() {
-  const [appointments, setAppointments] = useState([]);
-  const [visits, setVisits] = useState([]);
-  const [diagnoses, setDiagnoses] = useState([]);
-  const [medications, setMedications] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const normalizeList = (response) => {
-    const payload = response?.data ?? response;
-
-    if (Array.isArray(payload)) {
-      return payload;
-    }
-
-    if (payload?.results && Array.isArray(payload.results)) {
-      return payload.results;
-    }
-
-    if (payload?.data && Array.isArray(payload.data)) {
-      return payload.data;
-    }
-
-    if (payload?.data?.results && Array.isArray(payload.data.results)) {
-      return payload.data.results;
-    }
-
-    return [];
+  // Temporary data.
+  // We will replace this with backend API data later.
+  const patient = {
+    name: "Conrad",
   };
 
-  const loadDashboard = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const [
-        appointmentsResponse,
-        visitsResponse,
-        diagnosesResponse,
-        notificationsResponse,
-      ] = await Promise.all([
-        getAppointments(),
-        getVisits(),
-        getDiagnoses(),
-        getNotifications(),
-      ]);
-
-      setAppointments(normalizeList(appointmentsResponse));
-      setVisits(normalizeList(visitsResponse));
-      setDiagnoses(normalizeList(diagnosesResponse));
-      setNotifications(normalizeList(notificationsResponse));
-    } catch (err) {
-      console.error("PATIENT DASHBOARD ERROR:", err);
-      setError("Unable to load your dashboard.");
-    } finally {
-      setLoading(false);
-    }
+  const nextAppointment = {
+    doctor: "Dr. John Kamau",
+    department: "General Medicine",
+    date: "20 August 2026",
+    time: "10:30 AM",
+    hospital: "PulsePath Hospital",
   };
 
-  // --------------------------------
-  // Upcoming appointment
-  // --------------------------------
-  const upcomingAppointments = appointments
-    .filter((appointment) => {
-      const appointmentDate =
-        appointment.appointment_date ||
-        appointment.date ||
-        appointment.scheduled_date;
+  const medications = [
+    {
+      name: "Amoxicillin",
+      time: "8:00 AM",
+      status: "Taken",
+    },
+    {
+      name: "Paracetamol",
+      time: "2:00 PM",
+      status: "Upcoming",
+    },
+    {
+      name: "Amoxicillin",
+      time: "8:00 PM",
+      status: "Upcoming",
+    },
+  ];
 
-      if (!appointmentDate) return false;
+  const reminders = [
+    "Take your medicine at 2:00 PM",
+    "You have an appointment tomorrow",
+  ];
 
-      return new Date(appointmentDate) >= new Date();
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.appointment_date || a.date || a.scheduled_date);
+  const recovery = {
+    progress: 70,
+    feelingBetter: true,
+    lastUpdated: "15 August 2026",
+  };
 
-      const dateB = new Date(b.appointment_date || b.date || b.scheduled_date);
+  const recentResults = [
+    {
+      name: "Blood Test",
+      date: "14 August 2026",
+    },
+    {
+      name: "Blood Pressure Check",
+      date: "12 August 2026",
+    },
+  ];
 
-      return dateA - dateB;
-    });
-
-  const nextAppointment = upcomingAppointments[0];
-
-  // --------------------------------
-  // Recent visits
-  // --------------------------------
-  const recentVisits = [...visits]
-    .sort((a, b) => {
-      const dateA = new Date(a.visit_date || a.created_at || 0);
-      const dateB = new Date(b.visit_date || b.created_at || 0);
-
-      return dateB - dateA;
-    })
-    .slice(0, 5);
-
-  // --------------------------------
-  // Latest diagnoses
-  // --------------------------------
-  const recentDiagnoses = [...diagnoses]
-    .sort((a, b) => {
-      const dateA = new Date(a.diagnosis_date || a.created_at || 0);
-
-      const dateB = new Date(b.diagnosis_date || b.created_at || 0);
-
-      return dateB - dateA;
-    })
-    .slice(0, 5);
-
-  // --------------------------------
-  // Notifications
-  // --------------------------------
-  const recentNotifications = [...notifications]
-    .sort((a, b) => {
-      const dateA = new Date(a.created_at || 0);
-      const dateB = new Date(b.created_at || 0);
-
-      return dateB - dateA;
-    })
-    .slice(0, 5);
-
-  // --------------------------------
-  // Medication notifications
-  // --------------------------------
-  const medicationNotifications = notifications.filter((notification) => {
-    const text = `
-        ${notification.title || ""}
-        ${notification.message || ""}
-        ${notification.notification_type || ""}
-        ${notification.type || ""}
-      `.toLowerCase();
-
-    return (
-      text.includes("medication") ||
-      text.includes("medicine") ||
-      text.includes("dose") ||
-      text.includes("pill")
-    );
-  });
-
-  if (loading) {
-    return (
-      <div className="container-fluid py-4">
-        <div className="text-center py-5">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-
-          <p className="mt-3">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger">{error}</div>
-      </div>
-    );
-  }
+  const latestMessage = {
+    sender: "Dr. John Kamau",
+    message: "You have a new message from your doctor.",
+  };
 
   return (
     <div className="container-fluid py-4">
-      {/* Header */}
+
+      {/* =========================
+          WELCOME SECTION
+      ========================== */}
       <div className="mb-4">
-        <h2 className="fw-bold">Patient Dashboard</h2>
+        <h2 className="fw-bold mb-1">
+          Good morning, {patient.name} 👋
+        </h2>
 
         <p className="text-muted mb-0">
-          Here's an overview of your healthcare journey.
+          Here's your health summary for today.
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="row g-4 mb-4">
-        {/* Appointments */}
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-1">Upcoming Appointments</p>
 
-                  <h3 className="fw-bold mb-0">
-                    {upcomingAppointments.length}
-                  </h3>
+      {/* =========================
+          MAIN DASHBOARD CARDS
+      ========================== */}
+      <div className="row g-4">
+
+
+        {/* =========================
+            NEXT APPOINTMENT
+        ========================== */}
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-body p-4">
+
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <FaCalendarAlt className="text-primary" />
+                    <h5 className="fw-bold mb-0">
+                      Next Appointment
+                    </h5>
+                  </div>
+
+                  <p className="text-muted mb-0">
+                    Your upcoming appointment
+                  </p>
                 </div>
 
-                <FaCalendarCheck size={30} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Visits */}
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-1">Visits</p>
-
-                  <h3 className="fw-bold mb-0">{visits.length}</h3>
-                </div>
-
-                <FaStethoscope size={30} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Diagnoses */}
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-1">Diagnoses</p>
-
-                  <h3 className="fw-bold mb-0">{diagnoses.length}</h3>
-                </div>
-
-                <FaNotesMedical size={30} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Medications */}
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="text-muted mb-1">Medications</p>
-
-                  <h3 className="fw-bold mb-0">{medications.length}</h3>
-                </div>
-
-                <FaPills size={30} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Upcoming Appointment */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <h5 className="fw-bold mb-3">
-            <FaCalendarCheck className="me-2" />
-            Upcoming Appointment
-          </h5>
-
-          {!nextAppointment ? (
-            <p className="text-muted mb-0">
-              You don't have any upcoming appointments.
-            </p>
-          ) : (
-            <div className="row">
-              <div className="col-md-4">
-                <p className="text-muted mb-1">Doctor</p>
-
-                <h6>
-                  {nextAppointment.doctor_name ||
-                    nextAppointment.doctor?.name ||
-                    "Doctor"}
-                </h6>
-              </div>
-
-              <div className="col-md-4">
-                <p className="text-muted mb-1">Date</p>
-
-                <h6>
-                  {nextAppointment.appointment_date
-                    ? new Date(
-                        nextAppointment.appointment_date,
-                      ).toLocaleString()
-                    : "Date unavailable"}
-                </h6>
-              </div>
-
-              <div className="col-md-4">
-                <p className="text-muted mb-1">Status</p>
-
-                <span className="badge bg-primary">
-                  {nextAppointment.status || "Scheduled"}
+                <span className="badge bg-primary-subtle text-primary">
+                  Upcoming
                 </span>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div className="row g-4">
-        {/* Recent Visits */}
-        <div className="col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h5 className="fw-bold mb-3">
-                <FaStethoscope className="me-2" />
-                Recent Visits
-              </h5>
 
-              {recentVisits.length === 0 ? (
-                <p className="text-muted">No recent visits.</p>
-              ) : (
-                recentVisits.map((visit) => (
-                  <div key={visit.id} className="border-bottom py-2">
-                    <strong>
-                      {visit.doctor_name || visit.doctor?.name || "Doctor"}
-                    </strong>
+              <div className="mt-4">
 
-                    <div className="small text-muted">
-                      {visit.visit_date ||
-                        visit.created_at ||
-                        "Date unavailable"}
+                <div className="d-flex align-items-center mb-3">
+                  <FaUserMd className="text-muted me-3" />
+
+                  <div>
+                    <small className="text-muted">
+                      Doctor
+                    </small>
+
+                    <div className="fw-semibold">
+                      {nextAppointment.doctor}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+                </div>
 
-        {/* Latest Diagnoses */}
-        <div className="col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h5 className="fw-bold mb-3">
-                <FaNotesMedical className="me-2" />
-                Latest Diagnoses
-              </h5>
 
-              {recentDiagnoses.length === 0 ? (
-                <p className="text-muted">No diagnoses available.</p>
-              ) : (
-                recentDiagnoses.map((diagnosis) => (
-                  <div key={diagnosis.id} className="border-bottom py-2">
-                    <strong>
-                      {diagnosis.condition || diagnosis.name || "Diagnosis"}
-                    </strong>
+                <div className="d-flex align-items-center mb-3">
+                  <FaCalendarAlt className="text-muted me-3" />
 
-                    <div className="small text-muted">
-                      {diagnosis.severity
-                        ? `Severity: ${diagnosis.severity}`
-                        : "Diagnosis recorded"}
+                  <div>
+                    <small className="text-muted">
+                      Date
+                    </small>
+
+                    <div className="fw-semibold">
+                      {nextAppointment.date}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+                </div>
 
-        {/* Current Medications */}
-        <div className="col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h5 className="fw-bold mb-3">
-                <FaPills className="me-2" />
-                Current Medications
-              </h5>
 
-              {medications.length === 0 ? (
-                <p className="text-muted">No medications available.</p>
-              ) : (
-                medications.slice(0, 5).map((medication) => (
-                  <div key={medication.id} className="border-bottom py-2">
-                    <strong>
-                      {medication.name ||
-                        medication.medication_name ||
-                        "Medication"}
-                    </strong>
+                <div className="d-flex align-items-center mb-3">
+                  <FaClock className="text-muted me-3" />
 
-                    <div className="small text-muted">
-                      {medication.description ||
-                        medication.dosage ||
-                        "Medication prescribed"}
+                  <div>
+                    <small className="text-muted">
+                      Time
+                    </small>
+
+                    <div className="fw-semibold">
+                      {nextAppointment.time}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+                </div>
 
-        {/* Medication Reminders */}
-        <div className="col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h5 className="fw-bold mb-3">
-                <FaBell className="me-2" />
-                Medication Reminders
-              </h5>
 
-              {medicationNotifications.length === 0 ? (
-                <p className="text-muted">No medication reminders.</p>
-              ) : (
-                medicationNotifications.slice(0, 5).map((notification) => (
-                  <div key={notification.id} className="border-bottom py-2">
-                    <strong>
-                      {notification.title || "Medication Reminder"}
-                    </strong>
+                <div className="text-muted small mb-3">
+                  🏥 {nextAppointment.hospital}
+                </div>
 
-                    <div className="small text-muted">
-                      {notification.message || ""}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Recovery Progress */}
-        <div className="col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h5 className="fw-bold mb-3">
-                <FaHeartbeat className="me-2" />
-                Recovery Progress
-              </h5>
-
-              <div className="text-center py-3">
-                <FaHeartbeat size={40} className="mb-3" />
-
-                <p className="text-muted mb-0">
-                  Recovery tracking will appear here once recovery progress has
-                  been recorded.
-                </p>
               </div>
+
+
+              <button className="btn btn-outline-primary w-100">
+                View Appointment
+                <FaArrowRight className="ms-2" size={12} />
+              </button>
+
             </div>
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="col-lg-6">
+
+
+        {/* =========================
+            TODAY'S MEDICATIONS
+        ========================== */}
+        <div className="col-12 col-lg-6">
           <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h5 className="fw-bold mb-3">
-                <FaBell className="me-2" />
-                Recent Notifications
-              </h5>
+            <div className="card-body p-4">
 
-              {recentNotifications.length === 0 ? (
-                <p className="text-muted">No notifications.</p>
-              ) : (
-                recentNotifications.map((notification) => (
-                  <div key={notification.id} className="border-bottom py-2">
-                    <strong>{notification.title || "Notification"}</strong>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaPills className="text-success" />
 
-                    <div className="small text-muted">
-                      {notification.message || ""}
+                <h5 className="fw-bold mb-0">
+                  Today's Medications
+                </h5>
+              </div>
+
+              <p className="text-muted mb-3">
+                Your medication schedule for today
+              </p>
+
+
+              {medications.map((medication, index) => (
+                <div
+                  key={index}
+                  className="d-flex justify-content-between align-items-center border-bottom py-3"
+                >
+
+                  <div>
+                    <div className="fw-semibold">
+                      {medication.name}
                     </div>
+
+                    <small className="text-muted">
+                      {medication.time}
+                    </small>
+                  </div>
+
+
+                  {medication.status === "Taken" ? (
+                    <span className="badge bg-success-subtle text-success">
+                      <FaCheckCircle className="me-1" />
+                      Taken
+                    </span>
+                  ) : (
+                    <span className="badge bg-warning-subtle text-warning">
+                      <FaClock className="me-1" />
+                      Upcoming
+                    </span>
+                  )}
+
+                </div>
+              ))}
+
+
+              <button className="btn btn-outline-success w-100 mt-3">
+                View Medications
+                <FaArrowRight className="ms-2" size={12} />
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+
+
+        {/* =========================
+            REMINDERS
+        ========================== */}
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-body p-4">
+
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaBell className="text-warning" />
+
+                <h5 className="fw-bold mb-0">
+                  Reminders
+                </h5>
+              </div>
+
+              <p className="text-muted mb-3">
+                Things you may need to take care of
+              </p>
+
+
+              {reminders.length > 0 ? (
+                reminders.map((reminder, index) => (
+                  <div
+                    key={index}
+                    className="d-flex align-items-start gap-3 p-3 bg-light rounded mb-2"
+                  >
+                    <FaBell
+                      className="text-warning mt-1"
+                      size={14}
+                    />
+
+                    <span>
+                      {reminder}
+                    </span>
                   </div>
                 ))
+              ) : (
+                <div className="text-center py-4 text-muted">
+                  <FaCheckCircle className="text-success mb-2" size={25} />
+
+                  <p className="mb-0">
+                    You have no reminders.
+                  </p>
+                </div>
               )}
+
+
+              <button className="btn btn-outline-warning w-100 mt-2">
+                View Notifications
+                <FaArrowRight className="ms-2" size={12} />
+              </button>
+
             </div>
           </div>
         </div>
+
+
+
+        {/* =========================
+            RECOVERY PROGRESS
+        ========================== */}
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-body p-4">
+
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaChartLine className="text-info" />
+
+                <h5 className="fw-bold mb-0">
+                  Your Recovery
+                </h5>
+              </div>
+
+              <p className="text-muted mb-4">
+                A simple view of your treatment progress
+              </p>
+
+
+              <div className="mb-3">
+                <div className="d-flex justify-content-between mb-2">
+
+                  <span className="fw-semibold">
+                    Treatment Progress
+                  </span>
+
+                  <span className="fw-bold">
+                    {recovery.progress}%
+                  </span>
+
+                </div>
+
+
+                <div
+                  className="progress"
+                  style={{ height: "10px" }}
+                >
+                  <div
+                    className="progress-bar"
+                    role="progressbar"
+                    style={{
+                      width: `${recovery.progress}%`,
+                    }}
+                    aria-valuenow={recovery.progress}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  />
+                </div>
+              </div>
+
+
+              <div className="d-flex justify-content-between align-items-center mt-4">
+
+                <div>
+                  <small className="text-muted">
+                    Feeling better
+                  </small>
+
+                  <div className="fw-semibold">
+                    {recovery.feelingBetter ? "Yes" : "Not yet"}
+                  </div>
+                </div>
+
+
+                <div>
+                  <small className="text-muted">
+                    Last updated
+                  </small>
+
+                  <div className="fw-semibold">
+                    {recovery.lastUpdated}
+                  </div>
+                </div>
+
+              </div>
+
+
+              <button className="btn btn-outline-info w-100 mt-4">
+                View Recovery
+                <FaArrowRight className="ms-2" size={12} />
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+
+
+        
+
+        {/* =========================
+            MESSAGES
+        ========================== */}
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-body p-4">
+
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaComments className="text-secondary" />
+
+                <h5 className="fw-bold mb-0">
+                  Messages
+                </h5>
+              </div>
+
+              <p className="text-muted mb-4">
+                Messages from your healthcare team
+              </p>
+
+
+              <div className="d-flex align-items-start gap-3 p-3 bg-light rounded">
+
+                <div className="rounded-circle bg-secondary-subtle p-3">
+                  <FaUserMd className="text-secondary" />
+                </div>
+
+
+                <div>
+                  <div className="fw-semibold">
+                    {latestMessage.sender}
+                  </div>
+
+                  <p className="text-muted small mb-0 mt-1">
+                    {latestMessage.message}
+                  </p>
+                </div>
+
+              </div>
+
+
+              <button className="btn btn-outline-secondary w-100 mt-3">
+                View Messages
+                <FaArrowRight className="ms-2" size={12} />
+              </button>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
