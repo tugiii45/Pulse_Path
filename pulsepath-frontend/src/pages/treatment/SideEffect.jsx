@@ -5,48 +5,39 @@ import {
   updateSideEffect,
   deleteSideEffect,
 } from "../../services/sideEffectService";
+import { getMedicationSchedules } from "../../services/medicationScheduleService";
 import { useAuth } from "../../contexts/AuthContext";
 
 function SideEffect() {
   const { profile } = useAuth();
 
-  // Store side effect reports returned by the API.
   const [sideEffects, setSideEffects] = useState([]);
+  const [schedules, setSchedules] = useState([]);
 
-  // Store form data when creating or editing a report.
   const [formData, setFormData] = useState({
-    patient: "",
     prescription: "",
-    medication: "",
     severity: "Mild",
     description: "",
     is_reviewed: false,
     doctor_response: "",
   });
 
-  // Keep track of whether we are editing an existing report.
   const [editingId, setEditingId] = useState(null);
 
-  // Loading and error states.
   const [loading, setLoading] = useState(true);
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [error, setError] = useState("");
 
-  // Control form visibility.
   const [showForm, setShowForm] = useState(false);
 
-  // Determine the user's role.
   const role = profile?.role?.toUpperCase();
 
-  // Doctors and admins can manage reports.
   const canManage = role === "ADMIN" || role === "DOCTOR";
-
-  // Patients can submit reports.
   const canReport = role === "PATIENT" || canManage;
 
-  // Load side effect reports when the page opens.
-  useEffect(() => {
-    loadSideEffects();
-  }, []);
+  // --------------------------------------------------
+  // LOAD SIDE EFFECT REPORTS
+  // --------------------------------------------------
 
   const loadSideEffects = async () => {
     try {
@@ -60,13 +51,64 @@ function SideEffect() {
       setSideEffects(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Unable to load side effects:", error);
+
       setError("Unable to load side effect reports.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Update form fields.
+  // --------------------------------------------------
+  // LOAD PATIENT'S ACTIVE MEDICATION SCHEDULES
+  // --------------------------------------------------
+
+  const loadSchedules = async () => {
+    if (role !== "PATIENT") return;
+
+    try {
+      setLoadingSchedules(true);
+
+      const data = await getMedicationSchedules();
+
+      console.log("SIDE EFFECT MEDICATION SCHEDULES:", data);
+
+      const activeSchedules = Array.isArray(data)
+        ? data.filter((schedule) => schedule.is_active)
+        : [];
+
+      setSchedules(activeSchedules);
+    } catch (error) {
+      console.error(
+        "Unable to load medication schedules:",
+        error
+      );
+
+      setError(
+        "Unable to load your active medications."
+      );
+    } finally {
+      setLoadingSchedules(false);
+    }
+  };
+
+  // --------------------------------------------------
+  // INITIAL LOAD
+  // --------------------------------------------------
+
+  useEffect(() => {
+    if (!role) return;
+
+    loadSideEffects();
+
+    if (role === "PATIENT") {
+      loadSchedules();
+    }
+  }, [role]);
+
+  // --------------------------------------------------
+  // HANDLE FORM CHANGES
+  // --------------------------------------------------
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -76,12 +118,13 @@ function SideEffect() {
     }));
   };
 
-  // Clear the form.
+  // --------------------------------------------------
+  // RESET FORM
+  // --------------------------------------------------
+
   const resetForm = () => {
     setFormData({
-      patient: "",
       prescription: "",
-      medication: "",
       severity: "Mild",
       description: "",
       is_reviewed: false,
@@ -92,22 +135,40 @@ function SideEffect() {
     setShowForm(false);
   };
 
-  // Create or update a side effect report.
+  // --------------------------------------------------
+  // CREATE / UPDATE REPORT
+  // --------------------------------------------------
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setError("");
 
+      /*
+       * Patients only submit:
+       * - prescription
+       * - severity
+       * - description
+       *
+       * The backend determines:
+       * - patient
+       * - medication
+       */
       const payload = {
-        patient: Number(formData.patient),
         prescription: Number(formData.prescription),
-        medication: Number(formData.medication),
         severity: formData.severity,
-        description: formData.description,
-        is_reviewed: formData.is_reviewed,
-        doctor_response: formData.doctor_response,
+        description: formData.description.trim(),
       };
+
+      /*
+       * Only doctors/admins can update review information.
+       */
+      if (canManage && editingId) {
+        payload.is_reviewed = formData.is_reviewed;
+        payload.doctor_response =
+          formData.doctor_response.trim();
+      }
 
       if (editingId) {
         await updateSideEffect(editingId, payload);
@@ -116,32 +177,66 @@ function SideEffect() {
       }
 
       await loadSideEffects();
+
       resetForm();
     } catch (error) {
-      console.error("Unable to save side effect:", error);
-      setError("Unable to save side effect report.");
+      console.error(
+        "Unable to save side effect:",
+        error.response?.data || error
+      );
+
+      const apiError = error.response?.data;
+
+      if (apiError?.detail) {
+        setError(apiError.detail);
+      } else if (apiError?.prescription) {
+        setError(
+          Array.isArray(apiError.prescription)
+            ? apiError.prescription.join(" ")
+            : apiError.prescription
+        );
+      } else if (apiError?.description) {
+        setError(
+          Array.isArray(apiError.description)
+            ? apiError.description.join(" ")
+            : apiError.description
+        );
+      } else {
+        setError(
+          "Unable to save side effect report."
+        );
+      }
     }
   };
 
-  // Prepare a report for editing.
+  // --------------------------------------------------
+  // PREPARE REPORT FOR EDITING
+  // --------------------------------------------------
+
   const handleEdit = (sideEffect) => {
+    if (!canManage) return;
+
     setEditingId(sideEffect.id);
 
     setFormData({
-      patient: sideEffect.patient || "",
       prescription: sideEffect.prescription || "",
-      medication: sideEffect.medication || "",
       severity: sideEffect.severity || "Mild",
       description: sideEffect.description || "",
       is_reviewed: sideEffect.is_reviewed ?? false,
-      doctor_response: sideEffect.doctor_response || "",
+      doctor_response:
+        sideEffect.doctor_response || "",
     });
 
     setShowForm(true);
   };
 
-  // Delete a side effect report.
+  // --------------------------------------------------
+  // DELETE REPORT
+  // --------------------------------------------------
+
   const handleDelete = async (id) => {
+    if (!canManage) return;
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this side effect report?"
     );
@@ -155,12 +250,21 @@ function SideEffect() {
 
       await loadSideEffects();
     } catch (error) {
-      console.error("Unable to delete side effect:", error);
-      setError("Unable to delete side effect report.");
+      console.error(
+        "Unable to delete side effect:",
+        error
+      );
+
+      setError(
+        "Unable to delete side effect report."
+      );
     }
   };
 
-  // Severity badge.
+  // --------------------------------------------------
+  // SEVERITY BADGE
+  // --------------------------------------------------
+
   const getSeverityBadge = (severity) => {
     switch (severity) {
       case "Mild":
@@ -193,10 +297,40 @@ function SideEffect() {
     }
   };
 
+  // --------------------------------------------------
+  // GET MEDICATION DISPLAY NAME
+  // --------------------------------------------------
+
+  const getMedicationName = (sideEffect) => {
+    if (sideEffect.medication_name) {
+      return sideEffect.medication_name;
+    }
+
+    const schedule = schedules.find(
+      (item) =>
+        Number(item.prescription) ===
+        Number(sideEffect.prescription)
+    );
+
+    if (schedule?.prescription_details) {
+      return schedule.prescription_details;
+    }
+
+    if (sideEffect.medication) {
+      return `Medication #${sideEffect.medication}`;
+    }
+
+    return "-";
+  };
+
+  // --------------------------------------------------
+  // PAGE
+  // --------------------------------------------------
+
   return (
     <div className="container-fluid py-4">
 
-      {/* Page heading */}
+      {/* PAGE HEADING */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="fw-bold mb-1">
@@ -208,7 +342,6 @@ function SideEffect() {
           </p>
         </div>
 
-        {/* Patients, doctors and admins can report */}
         {canReport && (
           <button
             className="btn btn-primary"
@@ -223,83 +356,118 @@ function SideEffect() {
         )}
       </div>
 
-      {/* API errors */}
+      {/* API ERROR */}
       {error && (
-        <div className="alert alert-danger">
+        <div
+          className="alert alert-danger"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
-      {/* Side effect form */}
+      {/* --------------------------------------------- */}
+      {/* SIDE EFFECT FORM */}
+      {/* --------------------------------------------- */}
+
       {showForm && canReport && (
         <div className="card shadow-sm mb-4">
           <div className="card-body">
 
-            <h5 className="card-title mb-4">
-              {editingId
-                ? "Edit Side Effect Report"
-                : "Report Side Effect"}
-            </h5>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <h5 className="card-title mb-1">
+                  {editingId
+                    ? "Edit Side Effect Report"
+                    : "Report Side Effect"}
+                </h5>
+
+                {role === "PATIENT" && (
+                  <small className="text-muted">
+                    Tell us about any unusual reaction or
+                    side effect you experienced.
+                  </small>
+                )}
+              </div>
+            </div>
 
             <form onSubmit={handleSubmit}>
 
               <div className="row">
 
-                {/* Patient */}
-                <div className="col-md-4 mb-3">
-                  <label className="form-label">
-                    Patient ID
-                  </label>
+                {/* ----------------------------------- */}
+                {/* PATIENT MEDICATION */}
+                {/* ----------------------------------- */}
 
-                  <input
-                    type="number"
-                    name="patient"
-                    className="form-control"
-                    placeholder="Enter patient ID"
-                    value={formData.patient}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                  />
-                </div>
+                {role === "PATIENT" ? (
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">
+                      Medication
+                    </label>
 
-                {/* Prescription */}
-                <div className="col-md-4 mb-3">
-                  <label className="form-label">
-                    Prescription ID
-                  </label>
+                    <select
+                      name="prescription"
+                      className="form-select"
+                      value={formData.prescription}
+                      onChange={handleChange}
+                      required
+                      disabled={
+                        loadingSchedules ||
+                        Boolean(editingId)
+                      }
+                    >
+                      <option value="">
+                        {loadingSchedules
+                          ? "Loading medications..."
+                          : "Select medication"}
+                      </option>
 
-                  <input
-                    type="number"
-                    name="prescription"
-                    className="form-control"
-                    placeholder="Enter prescription ID"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                  />
-                </div>
+                      {schedules.map((schedule) => (
+                        <option
+                          key={schedule.id}
+                          value={schedule.prescription}
+                        >
+                          {schedule.prescription_details ||
+                            `Prescription #${schedule.prescription}`}
+                        </option>
+                      ))}
+                    </select>
 
-                {/* Medication */}
-                <div className="col-md-4 mb-3">
-                  <label className="form-label">
-                    Medication ID
-                  </label>
+                    {!loadingSchedules &&
+                      schedules.length === 0 && (
+                        <small className="text-muted">
+                          No active medications are
+                          currently available for reporting.
+                        </small>
+                      )}
+                  </div>
+                ) : (
+                  /* --------------------------------- */
+                  /* DOCTOR / ADMIN PRESCRIPTION */
+                  /* --------------------------------- */
 
-                  <input
-                    type="number"
-                    name="medication"
-                    className="form-control"
-                    placeholder="Enter medication ID"
-                    value={formData.medication}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                  />
-                </div>
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">
+                      Prescription ID
+                    </label>
 
-                {/* Severity */}
+                    <input
+                      type="number"
+                      name="prescription"
+                      className="form-control"
+                      placeholder="Enter prescription ID"
+                      value={formData.prescription}
+                      onChange={handleChange}
+                      required
+                      min="1"
+                    />
+                  </div>
+                )}
+
+                {/* ----------------------------------- */}
+                {/* SEVERITY */}
+                {/* ----------------------------------- */}
+
                 <div className="col-md-4 mb-3">
                   <label className="form-label">
                     Severity
@@ -326,74 +494,102 @@ function SideEffect() {
                   </select>
                 </div>
 
-                {/* Description */}
+                {/* ----------------------------------- */}
+                {/* DESCRIPTION */}
+                {/* ----------------------------------- */}
+
                 <div className="col-12 mb-3">
                   <label className="form-label">
-                    Description
+                    Describe the Side Effect
                   </label>
 
                   <textarea
                     name="description"
                     className="form-control"
                     rows="4"
-                    placeholder="Describe the side effect..."
+                    placeholder="Describe any side effect or unusual reaction you experienced..."
                     value={formData.description}
                     onChange={handleChange}
                     required
                   />
+
+                  {role === "PATIENT" && (
+                    <small className="text-muted">
+                      Please provide any relevant details
+                      about what you experienced.
+                    </small>
+                  )}
                 </div>
 
-                {/* Doctor response */}
-                <div className="col-12 mb-3">
-                  <label className="form-label">
-                    Doctor Response
-                  </label>
+                {/* ----------------------------------- */}
+                {/* DOCTOR RESPONSE */}
+                {/* ----------------------------------- */}
 
-                  <textarea
-                    name="doctor_response"
-                    className="form-control"
-                    rows="3"
-                    placeholder="Doctor's response or recommendation..."
-                    value={formData.doctor_response}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                {/* Reviewed */}
-                <div className="col-12 mb-3">
-                  <div className="form-check">
-
-                    <input
-                      type="checkbox"
-                      name="is_reviewed"
-                      className="form-check-input"
-                      id="isReviewed"
-                      checked={formData.is_reviewed}
-                      onChange={handleChange}
-                    />
-
-                    <label
-                      className="form-check-label"
-                      htmlFor="isReviewed"
-                    >
-                      Reviewed by Doctor
+                {canManage && (
+                  <div className="col-12 mb-3">
+                    <label className="form-label">
+                      Doctor Response
                     </label>
 
+                    <textarea
+                      name="doctor_response"
+                      className="form-control"
+                      rows="3"
+                      placeholder="Doctor's response or recommendation..."
+                      value={formData.doctor_response}
+                      onChange={handleChange}
+                    />
                   </div>
-                </div>
+                )}
+
+                {/* ----------------------------------- */}
+                {/* REVIEWED */}
+                {/* ----------------------------------- */}
+
+                {canManage && (
+                  <div className="col-12 mb-3">
+                    <div className="form-check">
+
+                      <input
+                        type="checkbox"
+                        name="is_reviewed"
+                        className="form-check-input"
+                        id="isReviewed"
+                        checked={
+                          formData.is_reviewed
+                        }
+                        onChange={handleChange}
+                      />
+
+                      <label
+                        className="form-check-label"
+                        htmlFor="isReviewed"
+                      >
+                        Reviewed by Doctor
+                      </label>
+
+                    </div>
+                  </div>
+                )}
 
               </div>
 
-              {/* Form buttons */}
+              {/* FORM BUTTONS */}
+
               <div className="d-flex gap-2">
 
                 <button
                   type="submit"
                   className="btn btn-primary"
+                  disabled={
+                    role === "PATIENT" &&
+                    (loadingSchedules ||
+                      schedules.length === 0)
+                  }
                 >
                   {editingId
                     ? "Update Report"
-                    : "Save Report"}
+                    : "Submit Report"}
                 </button>
 
                 <button
@@ -411,21 +607,46 @@ function SideEffect() {
         </div>
       )}
 
-      {/* Side effect table */}
+      {/* --------------------------------------------- */}
+      {/* REPORT TABLE */}
+      {/* --------------------------------------------- */}
+
       <div className="card shadow-sm">
         <div className="card-body">
 
-          <h5 className="card-title mb-3">
-            Side Effect Reports
-          </h5>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 className="card-title mb-1">
+                {role === "PATIENT"
+                  ? "My Side-Effect Reports"
+                  : "Side Effect Reports"}
+              </h5>
+
+              {role === "PATIENT" && (
+                <small className="text-muted">
+                  View the side effects you have reported
+                  and their review status.
+                </small>
+              )}
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-4">
-              <div className="spinner-border"></div>
+              <div
+                className="spinner-border"
+                role="status"
+              >
+                <span className="visually-hidden">
+                  Loading...
+                </span>
+              </div>
             </div>
           ) : sideEffects.length === 0 ? (
             <div className="text-center text-muted py-4">
-              No side effect reports found.
+              {role === "PATIENT"
+                ? "You have not reported any side effects yet."
+                : "No side effect reports found."}
             </div>
           ) : (
             <div className="table-responsive">
@@ -434,8 +655,11 @@ function SideEffect() {
 
                 <thead>
                   <tr>
-                    <th>Patient</th>
-                    <th>Prescription</th>
+
+                    {role !== "PATIENT" && (
+                      <th>Patient</th>
+                    )}
+
                     <th>Medication</th>
                     <th>Severity</th>
                     <th>Description</th>
@@ -443,38 +667,54 @@ function SideEffect() {
                     <th>Doctor Response</th>
                     <th>Reported At</th>
 
-                    {canManage && <th>Actions</th>}
+                    {canManage && (
+                      <th>Actions</th>
+                    )}
+
                   </tr>
                 </thead>
 
                 <tbody>
+
                   {sideEffects.map((sideEffect) => (
                     <tr key={sideEffect.id}>
 
+                      {/* PATIENT - DOCTORS/ADMINS ONLY */}
+                      {role !== "PATIENT" && (
+                        <td>
+                          <span className="fw-semibold">
+                            Patient #{sideEffect.patient}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* MEDICATION */}
                       <td>
-                        <span className="fw-semibold">
-                          Patient #{sideEffect.patient}
-                        </span>
+                        {getMedicationName(sideEffect)}
                       </td>
 
-                      <td>
-                        Prescription #{sideEffect.prescription}
-                      </td>
-
-                      <td>
-                        Medication #{sideEffect.medication}
-                      </td>
-
+                      {/* SEVERITY */}
                       <td>
                         {getSeverityBadge(
                           sideEffect.severity
                         )}
                       </td>
 
+                      {/* DESCRIPTION */}
                       <td>
-                        {sideEffect.description || "-"}
+                        <div
+                          style={{
+                            minWidth: "220px",
+                            maxWidth: "350px",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {sideEffect.description ||
+                            "-"}
+                        </div>
                       </td>
 
+                      {/* REVIEW STATUS */}
                       <td>
                         {sideEffect.is_reviewed ? (
                           <span className="badge bg-success">
@@ -487,10 +727,21 @@ function SideEffect() {
                         )}
                       </td>
 
+                      {/* DOCTOR RESPONSE */}
                       <td>
-                        {sideEffect.doctor_response || "-"}
+                        <div
+                          style={{
+                            minWidth: "200px",
+                            maxWidth: "300px",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {sideEffect.doctor_response ||
+                            "-"}
+                        </div>
                       </td>
 
+                      {/* REPORTED AT */}
                       <td>
                         {sideEffect.reported_at
                           ? new Date(
@@ -499,20 +750,25 @@ function SideEffect() {
                           : "-"}
                       </td>
 
+                      {/* ACTIONS */}
                       {canManage && (
                         <td>
                           <div className="d-flex gap-2">
 
                             <button
+                              type="button"
                               className="btn btn-sm btn-outline-primary"
                               onClick={() =>
-                                handleEdit(sideEffect)
+                                handleEdit(
+                                  sideEffect
+                                )
                               }
                             >
                               Edit
                             </button>
 
                             <button
+                              type="button"
                               className="btn btn-sm btn-outline-danger"
                               onClick={() =>
                                 handleDelete(
@@ -529,6 +785,7 @@ function SideEffect() {
 
                     </tr>
                   ))}
+
                 </tbody>
 
               </table>
