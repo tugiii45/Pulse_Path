@@ -5,11 +5,13 @@ from django.conf import settings
 
 class Notification(models.Model):
     class NotificationType(models.TextChoices):
-        MEDICATION = "MEDICATION", "Medication Reminder"
-        APPOINTMENT = "APPOINTMENT", "Appointment Reminder"
-        FOLLOW_UP = "FOLLOW_UP", "Follow-up Reminder"
-        MISSED_DOSE = "MISSED_DOSE", "Missed Dose Alert"
-        GENERAL = "GENERAL", "General Notification"
+      MEDICATION = "MEDICATION", "Medication Reminder"
+      APPOINTMENT = "APPOINTMENT", "Appointment Reminder"
+      FOLLOW_UP = "FOLLOW_UP", "Follow-up Reminder"
+      MISSED_DOSE = "MISSED_DOSE", "Missed Dose Alert"
+      SIDE_EFFECT = "SIDE_EFFECT", "Side Effect Update"
+      RECOVERY = "RECOVERY", "Recovery Update"
+      GENERAL = "GENERAL", "General Notification"
 
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_notifications') 
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_notifications') 

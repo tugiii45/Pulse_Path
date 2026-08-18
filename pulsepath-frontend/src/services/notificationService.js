@@ -1,36 +1,43 @@
 import api from "./api";
 
-/**
- * Fetches notifications available to the authenticated user.
- */
+const normalizeListResponse = (response) => {
+  const payload = response?.data?.data ?? response?.data;
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (payload && typeof payload === "object") {
+    if (Array.isArray(payload.results)) {
+      return payload.results;
+    }
+
+    if (Array.isArray(payload.data)) {
+      return payload.data;
+    }
+  }
+
+  return [];
+};
+
+
 export const getNotifications = async () => {
   const response = await api.get("notifications/");
 
-  return response.data;
+  return normalizeListResponse(response);
 };
 
-/**
- * Creates a new notification.
- *
- * @param {Object} notificationData - Notification information.
- */
+
 export const createNotification = async (notificationData) => {
   const response = await api.post(
     "notifications/",
     notificationData
   );
 
-  return response.data;
+  return response?.data?.data ?? response?.data;
 };
 
-/**
- * Marks a notification as read.
- *
- * Sends a PATCH request to update only the
- * `is_read` field of the notification.
- *
- * @param {string|number} notificationId - Notification ID.
- */
+
 export const markNotificationAsRead = async (notificationId) => {
   const response = await api.patch(
     `notifications/${notificationId}/`,
@@ -39,18 +46,14 @@ export const markNotificationAsRead = async (notificationId) => {
     }
   );
 
-  return response.data;
+  return response?.data?.data ?? response?.data;
 };
 
-/**
- * Deletes a notification by its ID.
- *
- * @param {string|number} notificationId - Notification ID.
- */
+
 export const deleteNotification = async (notificationId) => {
   const response = await api.delete(
     `notifications/${notificationId}/`
   );
 
-  return response.data;
+  return response?.data?.data ?? response?.data;
 };

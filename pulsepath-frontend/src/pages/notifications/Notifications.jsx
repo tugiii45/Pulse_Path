@@ -35,7 +35,7 @@ function Notifications() {
 
       console.log("NOTIFICATIONS API RESPONSE:", data);
 
-      setNotifications(data.results || []);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load notifications:", err);
       setError("Failed to load notifications.");
