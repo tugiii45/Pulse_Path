@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./api";
 
 // Normalize the different response formats returned by the backend.
 const normalizeListResponse = (response) => {
@@ -26,9 +26,9 @@ const normalizeListResponse = (response) => {
 };
 
 
-// Get all medication schedules.
-export const getMedicationSchedules = async (params = {}) => {
-  const response = await api.get("treatment/medication_schedule/", {
+// Get all medication logs.
+export const getMedicationLogs = async (params = {}) => {
+  const response = await api.get("treatment/medication_log/", {
     params,
   });
 
@@ -36,20 +36,20 @@ export const getMedicationSchedules = async (params = {}) => {
 };
 
 
-// Get one medication schedule by ID.
-export const getMedicationSchedule = async (id) => {
+// Get one medication log by ID.
+export const getMedicationLog = async (id) => {
   const response = await api.get(
-    `treatment/medication_schedule/${id}/`
+    `treatment/medication_log/${id}/`
   );
 
   return response?.data?.data ?? response?.data;
 };
 
 
-// Create a new medication schedule.
-export const createMedicationSchedule = async (data) => {
+// Create a new medication log.
+export const createMedicationLog = async (data) => {
   const response = await api.post(
-    "treatment/medication_schedule/",
+    "treatment/medication_log/",
     data
   );
 
@@ -57,10 +57,10 @@ export const createMedicationSchedule = async (data) => {
 };
 
 
-// Update an existing medication schedule.
-export const updateMedicationSchedule = async (id, data) => {
+// Update an existing medication log.
+export const updateMedicationLog = async (id, data) => {
   const response = await api.patch(
-    `treatment/medication_schedule/${id}/`,
+    `treatment/medication_log/${id}/`,
     data
   );
 
@@ -68,9 +68,9 @@ export const updateMedicationSchedule = async (id, data) => {
 };
 
 
-// Delete a medication schedule.
-export const deleteMedicationSchedule = async (id) => {
+// Delete a medication log.
+export const deleteMedicationLog = async (id) => {
   await api.delete(
-    `treatment/medication_schedule/${id}/`
+    `treatment/medication_log/${id}/`
   );
 };

@@ -14,9 +14,9 @@ import {
 import { getProfile } from "../../services/profileService";
 import { getAppointments } from "../../services/appointmentService";
 
-import { getMedicationSchedules } from "../../services/Treatment/medicationScheduleService";
+import { getMedicationSchedules } from "../../services/medicationScheduleService";
 
-import { getMedicationLogs } from "../../services/Treatment/medicationLogService";
+import { getMedicationLogs } from "../../services/medicationLogService";
 
 import { getNotifications } from "../../services/notificationService";
 import { getRecoveryProgress } from "../../services/recoveryProgressService";

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -22,6 +21,11 @@ function Register() {
     email: "",
     phone_number: "",
     role: "",
+    date_of_birth: "",
+    gender: "",
+    blood_group: "",
+    emergency_contact: "",
+    address: "",
     password: "",
     confirm_password: "",
   });
@@ -59,11 +63,15 @@ function Register() {
         email: formData.email,
         phone_number: formData.phone_number,
         role: formData.role,
+        date_of_birth: formData.date_of_birth,
+        gender: formData.gender,
+        blood_group: formData.blood_group,
+        emergency_contact: formData.emergency_contact,
+        address: formData.address,
         password: formData.password,
       });
 
       navigate("/login");
-
     } catch (err) {
       console.error(err);
 
@@ -73,7 +81,6 @@ function Register() {
         "Registration failed. Please check your information and try again.";
 
       setError(backendError);
-
     } finally {
       setLoading(false);
     }
@@ -87,46 +94,34 @@ function Register() {
           "linear-gradient(135deg, #f3f8ff 0%, #ffffff 55%, #eefaf6 100%)",
       }}
     >
-
       <div className="container">
-
         <div className="row justify-content-center">
-
           <div className="col-12 col-lg-9 col-xl-8">
-
             <div className="card border-0 shadow-lg rounded-4 overflow-hidden">
-
               <div className="row g-0">
-
                 {/* Left branding section */}
                 <div
                   className="col-lg-5 text-white p-5 d-flex flex-column justify-content-center"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #0d6efd, #087f8c)",
+                    background: "linear-gradient(135deg, #0d6efd, #087f8c)",
                   }}
                 >
-
                   <div className="mb-4">
                     <FaHeartbeat size={42} />
                   </div>
 
-                  <h2 className="fw-bold mb-3">
-                    Join PulsePath
-                  </h2>
+                  <h2 className="fw-bold mb-3">Join PulsePath</h2>
 
                   <p className="mb-4 opacity-75">
-                    Create your account and take the next step toward
-                    connected, continuous healthcare.
+                    Create your account and take the next step toward connected,
+                    continuous healthcare.
                   </p>
 
                   <div className="d-flex align-items-start mb-3">
                     <FaHeartbeat className="me-3 mt-1" />
 
                     <div>
-                      <div className="fw-semibold">
-                        Connected Care
-                      </div>
+                      <div className="fw-semibold">Connected Care</div>
 
                       <small className="opacity-75">
                         Stay connected with your healthcare team.
@@ -138,9 +133,7 @@ function Register() {
                     <FaUserTag className="me-3 mt-1" />
 
                     <div>
-                      <div className="fw-semibold">
-                        Personalized Access
-                      </div>
+                      <div className="fw-semibold">Personalized Access</div>
 
                       <small className="opacity-75">
                         Get an experience suited to your role.
@@ -152,58 +145,40 @@ function Register() {
                     <FaLock className="me-3 mt-1" />
 
                     <div>
-                      <div className="fw-semibold">
-                        Secure Account
-                      </div>
+                      <div className="fw-semibold">Secure Account</div>
 
                       <small className="opacity-75">
                         Your account credentials stay protected.
                       </small>
                     </div>
                   </div>
-
                 </div>
-
 
                 {/* Form section */}
                 <div className="col-lg-7 bg-white p-4 p-md-5">
-
                   <div className="mb-4">
-
-                    <h3 className="fw-bold mb-1">
-                      Create your account
-                    </h3>
+                    <h3 className="fw-bold mb-1">Create your account</h3>
 
                     <p className="text-muted mb-0">
                       Enter your details to get started.
                     </p>
-
                   </div>
 
-
                   {error && (
-                    <div
-                      className="alert alert-danger"
-                      role="alert"
-                    >
+                    <div className="alert alert-danger" role="alert">
                       {error}
                     </div>
                   )}
 
-
                   <form onSubmit={handleSubmit}>
-
                     {/* Name */}
                     <div className="row">
-
                       <div className="col-md-6 mb-3">
-
                         <label className="form-label fw-semibold">
                           First Name
                         </label>
 
                         <div className="input-group">
-
                           <span className="input-group-text bg-light">
                             <FaUser />
                           </span>
@@ -217,20 +192,15 @@ function Register() {
                             onChange={handleChange}
                             required
                           />
-
                         </div>
-
                       </div>
 
-
                       <div className="col-md-6 mb-3">
-
                         <label className="form-label fw-semibold">
                           Last Name
                         </label>
 
                         <div className="input-group">
-
                           <span className="input-group-text bg-light">
                             <FaUser />
                           </span>
@@ -244,23 +214,17 @@ function Register() {
                             onChange={handleChange}
                             required
                           />
-
                         </div>
-
                       </div>
-
                     </div>
-
 
                     {/* Email */}
                     <div className="mb-3">
-
                       <label className="form-label fw-semibold">
                         Email Address
                       </label>
 
                       <div className="input-group">
-
                         <span className="input-group-text bg-light">
                           <FaEnvelope />
                         </span>
@@ -274,21 +238,16 @@ function Register() {
                           onChange={handleChange}
                           required
                         />
-
                       </div>
-
                     </div>
-
 
                     {/* Phone */}
                     <div className="mb-3">
-
                       <label className="form-label fw-semibold">
                         Phone Number
                       </label>
 
                       <div className="input-group">
-
                         <span className="input-group-text bg-light">
                           <FaPhone />
                         </span>
@@ -302,21 +261,118 @@ function Register() {
                           onChange={handleChange}
                           required
                         />
-
                       </div>
-
                     </div>
+                    {/* Patient Information */}
+                    {formData.role === "PATIENT" && (
+                      <>
+                        {/* Date of Birth */}
+                        <div className="mb-3">
+                          <label className="form-label fw-semibold">
+                            Date of Birth
+                          </label>
 
+                          <input
+                            type="date"
+                            name="date_of_birth"
+                            className="form-control"
+                            value={formData.date_of_birth}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+
+                        {/* Gender */}
+                        <div className="mb-3">
+                          <label className="form-label fw-semibold">
+                            Gender
+                          </label>
+
+                          <select
+                            name="gender"
+                            className="form-select"
+                            value={formData.gender}
+                            onChange={handleChange}
+                            required
+                          >
+                            <option value="">Select gender</option>
+
+                            <option value="MALE">Male</option>
+
+                            <option value="FEMALE">Female</option>
+
+                            <option value="OTHER">Other</option>
+                          </select>
+                        </div>
+
+                        {/* Blood Group */}
+                        <div className="mb-3">
+                          <label className="form-label fw-semibold">
+                            Blood Group
+                          </label>
+
+                          <select
+                            name="blood_group"
+                            className="form-select"
+                            value={formData.blood_group}
+                            onChange={handleChange}
+                          >
+                            <option value="">Select blood group</option>
+
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                          </select>
+                        </div>
+
+                        {/* Emergency Contact */}
+                        <div className="mb-3">
+                          <label className="form-label fw-semibold">
+                            Emergency Contact
+                          </label>
+
+                          <input
+                            type="tel"
+                            name="emergency_contact"
+                            className="form-control"
+                            placeholder="e.g. 0712345678"
+                            value={formData.emergency_contact}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+
+                        {/* Address */}
+                        <div className="mb-3">
+                          <label className="form-label fw-semibold">
+                            Address
+                          </label>
+
+                          <input
+                            type="text"
+                            name="address"
+                            className="form-control"
+                            placeholder="Enter your address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
 
                     {/* Role */}
                     <div className="mb-3">
-
                       <label className="form-label fw-semibold">
                         Account Role
                       </label>
 
                       <div className="input-group">
-
                         <span className="input-group-text bg-light">
                           <FaUserTag />
                         </span>
@@ -328,42 +384,26 @@ function Register() {
                           onChange={handleChange}
                           required
                         >
-                          <option value="">
-                            Select your role
-                          </option>
+                          <option value="">Select your role</option>
 
-                          <option value="PATIENT">
-                            Patient
-                          </option>
+                          <option value="PATIENT">Patient</option>
 
-                          <option value="DOCTOR">
-                            Doctor
-                          </option>
+                          <option value="DOCTOR">Doctor</option>
 
-                          <option value="ADMIN">
-                            Administrator
-                          </option>
-
+                          <option value="ADMIN">Administrator</option>
                         </select>
-
                       </div>
 
                       <small className="text-muted">
                         Select the role assigned to your PulsePath account.
                       </small>
-
                     </div>
-
 
                     {/* Password */}
                     <div className="mb-3">
-
-                      <label className="form-label fw-semibold">
-                        Password
-                      </label>
+                      <label className="form-label fw-semibold">Password</label>
 
                       <div className="input-group">
-
                         <span className="input-group-text bg-light">
                           <FaLock />
                         </span>
@@ -382,45 +422,30 @@ function Register() {
                         <button
                           type="button"
                           className="btn btn-outline-secondary"
-                          onClick={() =>
-                            setShowPassword(!showPassword)
-                          }
+                          onClick={() => setShowPassword(!showPassword)}
                         >
-                          {showPassword ? (
-                            <FaEyeSlash />
-                          ) : (
-                            <FaEye />
-                          )}
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
                         </button>
-
                       </div>
 
                       <small className="text-muted">
                         Use at least 8 characters.
                       </small>
-
                     </div>
-
 
                     {/* Confirm Password */}
                     <div className="mb-4">
-
                       <label className="form-label fw-semibold">
                         Confirm Password
                       </label>
 
                       <div className="input-group">
-
                         <span className="input-group-text bg-light">
                           <FaLock />
                         </span>
 
                         <input
-                          type={
-                            showConfirmPassword
-                              ? "text"
-                              : "password"
-                          }
+                          type={showConfirmPassword ? "text" : "password"}
                           name="confirm_password"
                           className="form-control"
                           placeholder="Confirm your password"
@@ -433,22 +458,13 @@ function Register() {
                           type="button"
                           className="btn btn-outline-secondary"
                           onClick={() =>
-                            setShowConfirmPassword(
-                              !showConfirmPassword
-                            )
+                            setShowConfirmPassword(!showConfirmPassword)
                           }
                         >
-                          {showConfirmPassword ? (
-                            <FaEyeSlash />
-                          ) : (
-                            <FaEye />
-                          )}
+                          {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                         </button>
-
                       </div>
-
                     </div>
-
 
                     {/* Submit */}
                     <button
@@ -462,48 +478,32 @@ function Register() {
                             className="spinner-border spinner-border-sm me-2"
                             role="status"
                           ></span>
-
                           Creating Account...
                         </>
                       ) : (
                         "Create Account"
                       )}
                     </button>
-
                   </form>
-
 
                   {/* Login link */}
                   <div className="text-center mt-4">
-
-                    <span className="text-muted">
-                      Already have an account?
-                    </span>{" "}
-
+                    <span className="text-muted">Already have an account?</span>{" "}
                     <Link
                       to="/login"
                       className="text-primary fw-semibold text-decoration-none"
                     >
                       Sign in
                     </Link>
-
                   </div>
-
                 </div>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
 
 export default Register;
-

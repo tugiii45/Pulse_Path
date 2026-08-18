@@ -6,7 +6,7 @@ hashing, hospital selection filtering, and profile display.
 """
 
 from rest_framework import serializers
-from ..models import CustomUser, Hospital
+from ..models import CustomUser, Hospital, Patient
 
 
 class ActiveHospitalField(serializers.PrimaryKeyRelatedField):
@@ -32,32 +32,63 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True)
     hospital = ActiveHospitalField(required=False, allow_null=True)
+    date_of_birth = serializers.DateField(required=False)
+    gender = serializers.ChoiceField(
+      choices=Patient.GENDER_CHOICES,
+      required=False
+)
+    blood_group = serializers.CharField(
+      required=False,
+      allow_blank=True,
+      allow_null=True
+)
+    emergency_contact = serializers.CharField(required=False)
+    address = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
-        model = CustomUser
-        fields = (
-            "id",
-            "email",
-            "password",
-            "first_name",
-            "last_name",
-            "phone_number",
-            "role",
-            "hospital",
+     model = CustomUser
+
+     fields = (
+        "id",
+        "email",
+        "password",
+        "first_name",
+        "last_name",
+        "phone_number",
+        "role",
+        "hospital",
+
+        # Patient information
+        "date_of_birth",
+        "gender",
+        "blood_group",
+        "emergency_contact",
+        "address",
+    )
+    def create(self, validated_data):
+     password = validated_data.pop("password")
+
+     date_of_birth = validated_data.pop("date_of_birth", None)
+     gender = validated_data.pop("gender", None)
+     blood_group = validated_data.pop("blood_group", "")
+     emergency_contact = validated_data.pop("emergency_contact", "")
+     address = validated_data.pop("address", "")
+
+     user = CustomUser(**validated_data)
+     user.set_password(password)
+     user.save()
+
+     if user.role == "PATIENT":
+        Patient.objects.create(
+            user=user,
+            date_of_birth=date_of_birth,
+            gender=gender,
+            blood_group=blood_group,
+            emergency_contact=emergency_contact,
+            address=address,
         )
 
-    def create(self, validated_data):
-        """
-        Create a new user with properly hashed password.
-
-        Pops the password from validated data to hash it separately
-        via set_password(), ensuring it is never stored in plaintext.
-        """
-        password = validated_data.pop("password")
-        user = CustomUser(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
+     return user
 
 
 class ProfileSerializer(serializers.ModelSerializer):

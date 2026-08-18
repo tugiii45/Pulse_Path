@@ -2,13 +2,10 @@ import { NavLink } from "react-router-dom";
 import {
   FaHome,
   FaCalendarAlt,
-  
   FaUserInjured,
   FaUserMd,
   FaHospital,
   FaBuilding,
-  FaFileMedical,
-  FaPills,
   FaBell,
   FaUser,
   FaClock,
@@ -26,13 +23,25 @@ function Sidebar() {
       isActive ? "bg-primary text-white fw-semibold" : "text-dark"
     }`;
 
+  const subLinkClass = ({ isActive }) =>
+    `nav-link d-flex align-items-center py-2 px-3 rounded mb-1 ms-3 ${
+      isActive
+        ? "text-primary fw-semibold bg-light"
+        : "text-secondary"
+    }`;
+
   if (loading) {
     return (
       <div
         className="bg-white border-end shadow-sm p-3"
-        style={{ width: "260px", minHeight: "calc(100vh - 70px)" }}
+        style={{
+          width: "260px",
+          minHeight: "calc(100vh - 70px)",
+        }}
       >
-        <div className="text-center py-4 text-muted">Loading menu...</div>
+        <div className="text-center py-4 text-muted">
+          Loading menu...
+        </div>
       </div>
     );
   }
@@ -57,6 +66,7 @@ function Sidebar() {
     },
   ];
 
+  // Admin and Doctor navigation.
   if (role === "ADMIN" || role === "DOCTOR") {
     menuItems.push({
       to: "/dashboard/patients",
@@ -65,6 +75,7 @@ function Sidebar() {
     });
   }
 
+  // Admin-only navigation.
   if (role === "ADMIN") {
     menuItems.push({
       to: "/dashboard/doctors",
@@ -85,72 +96,15 @@ function Sidebar() {
     });
   }
 
-  if (role == "PATIENT") {
-    menuItems.push({
-      to: "/dashboard/clinical",
-      label: "Clinical",
-      icon: <FaFileMedical className="me-3" />,
-    });
-
-    menuItems.push({
-      to: "/dashboard/treatment",
-      label: "Treatment",
-      icon: <FaPills className="me-3" />,
-    });
-
-    menuItems.push({
-      to: "/dashboard/treatment/medication",
-      label: "Medications",
-      icon: <FaPills className="me-3" />,
-    });
-    menuItems.push({
-      to: "/dashboard/treatment/recovery-progress",
-      label: "Recovery Progress",
-      icon: <FaHeartbeat className="me-3" />,
-    });
-
-    menuItems.push({
-      to: "/dashboard/treatment/medication-schedule",
-      label: "Medication Schedule",
-      icon: <FaClock className="me-3" />,
-    });
-
-    menuItems.push({
-      to: "/dashboard/treatment/medication-log",
-      label: "Medication Log",
-      icon: <FaClipboardCheck className="me-3" />,
-    });
-
-    menuItems.push({
-      to: "/dashboard/treatment/side-effects",
-      label: "Side Effects",
-      icon: <FaExclamationTriangle className="me-3" />,
-    });
-
-    menuItems.push({
-      to: "/dashboard/treatment/prescriptions",
-      label: "Prescriptions",
-      icon: <FaFileMedical className="me-3" />,
-    });
-  }
-
-  menuItems.push({
-    to: "/dashboard/notifications",
-    label: "Notifications",
-    icon: <FaBell className="me-3" />,
-  });
-
-  menuItems.push({
-    to: "/dashboard/profile",
-    label: "Profile",
-    icon: <FaUser className="me-3" />,
-  });
-
   return (
     <div
       className="bg-white border-end shadow-sm p-3"
-      style={{ width: "260px", minHeight: "calc(100vh - 70px)" }}
+      style={{
+        width: "260px",
+        minHeight: "calc(100vh - 70px)",
+      }}
     >
+      {/* Main navigation */}
       {menuItems.map((item) => (
         <NavLink
           key={item.to}
@@ -162,6 +116,66 @@ function Sidebar() {
           {item.label}
         </NavLink>
       ))}
+
+      {/* Patient recovery navigation */}
+      {role === "PATIENT" && (
+        <div className="mb-2">
+          <div className="nav-link d-flex align-items-center py-3 px-3 rounded mb-2 text-dark fw-semibold">
+            <FaHeartbeat className="me-3" />
+            My Recovery
+          </div>
+
+          <NavLink
+            to="/dashboard/treatment/medication-schedule"
+            className={subLinkClass}
+          >
+            <FaClock className="me-3" />
+            Medication Schedule
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/medication-log"
+            className={subLinkClass}
+          >
+            <FaClipboardCheck className="me-3" />
+            Medication Log
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/side-effects"
+            className={subLinkClass}
+          >
+            <FaExclamationTriangle className="me-3" />
+            Side Effect Reporting
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/recovery-progress"
+            className={subLinkClass}
+          >
+            <FaHeartbeat className="me-3" />
+            Recovery Progress
+          </NavLink>
+        </div>
+      )}
+
+      {/* Notifications */}
+      <NavLink
+        to="/dashboard/notifications"
+        className={linkClass}
+      >
+        <FaBell className="me-3" />
+        Notifications
+      </NavLink>
+
+      {/* Profile */}
+      <NavLink
+        to="/dashboard/profile"
+        className={linkClass}
+      >
+        <FaUser className="me-3" />
+        Profile
+      </NavLink>
     </div>
   );
 }

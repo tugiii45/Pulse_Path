@@ -5,10 +5,24 @@ from ..models import RecoveryProgress
 # Recovery progress is validated so pain and improvement values remain consistent.
 class RecoveryProgressSerializer(serializers.ModelSerializer):
     class Meta:
-        model = RecoveryProgress
-        fields = ['id', 'patient', 'visit', 'pain_level', 'body_temperature', 'feeling_better', 'notes', 'improvement_percentage', 'recorded_at']
+     model = RecoveryProgress
+     fields = [
+        'id',
+        'patient',
+        'visit',
+        'pain_level',
+        'body_temperature',
+        'feeling_better',
+        'notes',
+        'improvement_percentage',
+        'recorded_at'
+    ]
 
-        read_only_fields = ['id', 'recorded_at']
+     read_only_fields = [
+        'id',
+        'patient',
+        'recorded_at'
+    ]
 
     def validate_pain_level(self, value):
         if value is None:

@@ -13,7 +13,7 @@ function RecoveryProgress() {
   const [progressEntries, setProgressEntries] = useState([]);
 
   const [formData, setFormData] = useState({
-    patient: "",
+    
     visit: "",
     pain_level: "",
     body_temperature: "",
@@ -39,23 +39,13 @@ function RecoveryProgress() {
 
       const data = await getRecoveryProgress();
 
-      console.log(
-        "RECOVERY PROGRESS API RESPONSE:",
-        data
-      );
+      console.log("RECOVERY PROGRESS API RESPONSE:", data);
 
-      setProgressEntries(
-        Array.isArray(data) ? data : []
-      );
+      setProgressEntries(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(
-        "Unable to load recovery progress:",
-        error
-      );
+      console.error("Unable to load recovery progress:", error);
 
-      setError(
-        "Unable to load recovery progress."
-      );
+      setError("Unable to load recovery progress.");
     } finally {
       setLoading(false);
     }
@@ -66,14 +56,12 @@ function RecoveryProgress() {
 
     setFormData((previous) => ({
       ...previous,
-      [name]:
-        type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const resetForm = () => {
     setFormData({
-      patient: "",
       visit: "",
       pain_level: "",
       body_temperature: "",
@@ -93,22 +81,16 @@ function RecoveryProgress() {
       setError("");
 
       const data = {
-        patient: Number(formData.patient),
-        visit: Number(formData.visit),
+        visit: formData.visit ? Number(formData.visit) : null,
         pain_level: Number(formData.pain_level),
-        body_temperature: formData.body_temperature,
+        body_temperature: formData.body_temperature || null,
         feeling_better: formData.feeling_better,
         notes: formData.notes,
-        improvement_percentage: Number(
-          formData.improvement_percentage
-        ),
+        improvement_percentage: Number(formData.improvement_percentage),
       };
 
       if (editingId) {
-        await updateRecoveryProgress(
-          editingId,
-          data
-        );
+        await updateRecoveryProgress(editingId, data);
       } else {
         await createRecoveryProgress(data);
       }
@@ -117,14 +99,9 @@ function RecoveryProgress() {
 
       resetForm();
     } catch (error) {
-      console.error(
-        "Unable to save recovery progress:",
-        error
-      );
+      console.error("Unable to save recovery progress:", error);
 
-      setError(
-        "Unable to save recovery progress."
-      );
+      setError("Unable to save recovery progress.");
     }
   };
 
@@ -132,16 +109,13 @@ function RecoveryProgress() {
     setEditingId(entry.id);
 
     setFormData({
-      patient: entry.patient || "",
+      
       visit: entry.visit || "",
       pain_level: entry.pain_level ?? "",
-      body_temperature:
-        entry.body_temperature || "",
-      feeling_better:
-        entry.feeling_better || false,
+      body_temperature: entry.body_temperature || "",
+      feeling_better: entry.feeling_better || false,
       notes: entry.notes || "",
-      improvement_percentage:
-        entry.improvement_percentage ?? "",
+      improvement_percentage: entry.improvement_percentage ?? "",
     });
 
     setShowForm(true);
@@ -149,7 +123,7 @@ function RecoveryProgress() {
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this recovery progress entry?"
+      "Are you sure you want to delete this recovery progress entry?",
     );
 
     if (!confirmed) return;
@@ -159,38 +133,32 @@ function RecoveryProgress() {
 
       await loadRecoveryProgress();
     } catch (error) {
-      console.error(
-        "Unable to delete recovery progress:",
-        error
-      );
+      console.error("Unable to delete recovery progress:", error);
 
-      setError(
-        "Unable to delete recovery progress."
-      );
+      setError("Unable to delete recovery progress.");
     }
   };
 
   const role = profile?.role?.toUpperCase();
 
-  const canManage =
-    role === "ADMIN" || role === "DOCTOR";
+  const canManage = role === "ADMIN" || role === "DOCTOR";
+
+  const canAddProgress =
+    role === "ADMIN" || role === "DOCTOR" || role === "PATIENT";
 
   return (
     <div className="container-fluid py-4">
-
       {/* Page heading */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="fw-bold mb-1">
-            Recovery Progress
-          </h2>
+          <h2 className="fw-bold mb-1">Recovery Progress</h2>
 
           <p className="text-muted mb-0">
             Monitor patient recovery and treatment progress.
           </p>
         </div>
 
-        {canManage && (
+        {canAddProgress && (
           <button
             className="btn btn-primary"
             onClick={() => {
@@ -205,48 +173,22 @@ function RecoveryProgress() {
       </div>
 
       {/* Error */}
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {/* Form */}
-      {showForm && canManage && (
+      {showForm && canAddProgress && (
         <div className="card shadow-sm mb-4">
           <div className="card-body">
-
             <h5 className="card-title mb-4">
-              {editingId
-                ? "Edit Recovery Progress"
-                : "Add Recovery Progress"}
+              {editingId ? "Edit Recovery Progress" : "Add Recovery Progress"}
             </h5>
 
             <form onSubmit={handleSubmit}>
-
               <div className="row">
-
-                {/* Patient */}
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Patient ID
-                  </label>
-
-                  <input
-                    type="number"
-                    name="patient"
-                    className="form-control"
-                    value={formData.patient}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
+                
                 {/* Visit */}
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Visit ID
-                  </label>
+                  <label className="form-label">Visit ID</label>
 
                   <input
                     type="number"
@@ -254,15 +196,11 @@ function RecoveryProgress() {
                     className="form-control"
                     value={formData.visit}
                     onChange={handleChange}
-                    required
                   />
                 </div>
-
                 {/* Pain */}
                 <div className="col-md-4 mb-3">
-                  <label className="form-label">
-                    Pain Level
-                  </label>
+                  <label className="form-label">Pain Level</label>
 
                   <input
                     type="number"
@@ -276,9 +214,7 @@ function RecoveryProgress() {
 
                 {/* Temperature */}
                 <div className="col-md-4 mb-3">
-                  <label className="form-label">
-                    Body Temperature
-                  </label>
+                  <label className="form-label">Body Temperature</label>
 
                   <input
                     type="text"
@@ -292,9 +228,7 @@ function RecoveryProgress() {
 
                 {/* Improvement */}
                 <div className="col-md-4 mb-3">
-                  <label className="form-label">
-                    Improvement %
-                  </label>
+                  <label className="form-label">Improvement %</label>
 
                   <input
                     type="number"
@@ -302,9 +236,7 @@ function RecoveryProgress() {
                     className="form-control"
                     min="0"
                     max="100"
-                    value={
-                      formData.improvement_percentage
-                    }
+                    value={formData.improvement_percentage}
                     onChange={handleChange}
                     required
                   />
@@ -313,33 +245,24 @@ function RecoveryProgress() {
                 {/* Feeling better */}
                 <div className="col-12 mb-3">
                   <div className="form-check">
-
                     <input
                       type="checkbox"
                       name="feeling_better"
                       className="form-check-input"
-                      checked={
-                        formData.feeling_better
-                      }
+                      checked={formData.feeling_better}
                       onChange={handleChange}
                       id="feelingBetter"
                     />
 
-                    <label
-                      className="form-check-label"
-                      htmlFor="feelingBetter"
-                    >
-                      Patient is feeling better
+                    <label className="form-check-label" htmlFor="feelingBetter">
+                      Feeling better?
                     </label>
-
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div className="col-12 mb-3">
-                  <label className="form-label">
-                    Notes
-                  </label>
+                  <label className="form-label">Notes</label>
 
                   <textarea
                     name="notes"
@@ -349,18 +272,11 @@ function RecoveryProgress() {
                     onChange={handleChange}
                   />
                 </div>
-
               </div>
 
               <div className="d-flex gap-2">
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  {editingId
-                    ? "Update Progress"
-                    : "Save Progress"}
+                <button type="submit" className="btn btn-primary">
+                  {editingId ? "Update Progress" : "Save Progress"}
                 </button>
 
                 <button
@@ -370,9 +286,7 @@ function RecoveryProgress() {
                 >
                   Cancel
                 </button>
-
               </div>
-
             </form>
           </div>
         </div>
@@ -381,10 +295,7 @@ function RecoveryProgress() {
       {/* Progress table */}
       <div className="card shadow-sm">
         <div className="card-body">
-
-          <h5 className="card-title mb-3">
-            Recovery Progress Records
-          </h5>
+          <h5 className="card-title mb-3">Recovery Progress Records</h5>
 
           {loading ? (
             <div className="text-center py-4">
@@ -396,9 +307,7 @@ function RecoveryProgress() {
             </div>
           ) : (
             <div className="table-responsive">
-
               <table className="table table-hover align-middle">
-
                 <thead>
                   <tr>
                     <th>Patient</th>
@@ -409,93 +318,64 @@ function RecoveryProgress() {
                     <th>Improvement</th>
                     <th>Recorded At</th>
 
-                    {canManage && (
-                      <th>Actions</th>
-                    )}
+                    {canManage && <th>Actions</th>}
                   </tr>
                 </thead>
 
                 <tbody>
                   {progressEntries.map((entry) => (
                     <tr key={entry.id}>
+                      <td>{entry.patient}</td>
 
-                      <td>
-                        {entry.patient}
-                      </td>
+                      <td>{entry.visit}</td>
 
-                      <td>
-                        {entry.visit}
-                      </td>
+                      <td>{entry.pain_level}</td>
 
-                      <td>
-                        {entry.pain_level}
-                      </td>
-
-                      <td>
-                        {entry.body_temperature || "-"}
-                      </td>
+                      <td>{entry.body_temperature || "-"}</td>
 
                       <td>
                         {entry.feeling_better ? (
-                          <span className="badge bg-success">
-                            Yes
-                          </span>
+                          <span className="badge bg-success">Yes</span>
                         ) : (
-                          <span className="badge bg-secondary">
-                            No
-                          </span>
+                          <span className="badge bg-secondary">No</span>
                         )}
                       </td>
 
-                      <td>
-                        {entry.improvement_percentage}%
-                      </td>
+                      <td>{entry.improvement_percentage}%</td>
 
                       <td>
                         {entry.recorded_at
-                          ? new Date(
-                              entry.recorded_at
-                            ).toLocaleString()
+                          ? new Date(entry.recorded_at).toLocaleString()
                           : "-"}
                       </td>
 
                       {canManage && (
                         <td>
                           <div className="d-flex gap-2">
-
                             <button
                               className="btn btn-sm btn-outline-primary"
-                              onClick={() =>
-                                handleEdit(entry)
-                              }
+                              onClick={() => handleEdit(entry)}
                             >
                               Edit
                             </button>
 
                             <button
                               className="btn btn-sm btn-outline-danger"
-                              onClick={() =>
-                                handleDelete(entry.id)
-                              }
+                              onClick={() => handleDelete(entry.id)}
                             >
                               Delete
                             </button>
-
                           </div>
                         </td>
                       )}
-
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             </div>
           )}
-
         </div>
       </div>
-
     </div>
   );
 }

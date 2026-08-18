@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./api";
 
 // Normalize the different response formats returned by the backend.
 const normalizeListResponse = (response) => {
@@ -26,41 +26,33 @@ const normalizeListResponse = (response) => {
 };
 
 
-// Get all medication logs.
-export const getMedicationLogs = async (params = {}) => {
-  const response = await api.get("treatment/medication_log/", {
-    params,
-  });
-
+// Get all medications available to the current user's hospital.
+export const getMedications = async () => {
+  const response = await api.get("treatment/medication/");
   return normalizeListResponse(response);
 };
 
 
-// Get one medication log by ID.
-export const getMedicationLog = async (id) => {
-  const response = await api.get(
-    `treatment/medication_log/${id}/`
-  );
+// Get one medication by ID.
+export const getMedication = async (id) => {
+  const response = await api.get(`treatment/medication/${id}/`);
 
   return response?.data?.data ?? response?.data;
 };
 
 
-// Create a new medication log.
-export const createMedicationLog = async (data) => {
-  const response = await api.post(
-    "treatment/medication_log/",
-    data
-  );
+// Create a new medication.
+export const createMedication = async (data) => {
+  const response = await api.post("treatment/medication/", data);
 
   return response?.data?.data ?? response?.data;
 };
 
 
-// Update an existing medication log.
-export const updateMedicationLog = async (id, data) => {
+// Update an existing medication.
+export const updateMedication = async (id, data) => {
   const response = await api.patch(
-    `treatment/medication_log/${id}/`,
+    `treatment/medication/${id}/`,
     data
   );
 
@@ -68,9 +60,7 @@ export const updateMedicationLog = async (id, data) => {
 };
 
 
-// Delete a medication log.
-export const deleteMedicationLog = async (id) => {
-  await api.delete(
-    `treatment/medication_log/${id}/`
-  );
+// Delete a medication.
+export const deleteMedication = async (id) => {
+  await api.delete(`treatment/medication/${id}/`);
 };
