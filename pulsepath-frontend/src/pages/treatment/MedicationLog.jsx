@@ -5,6 +5,7 @@ import {
   updateMedicationLog,
   deleteMedicationLog,
 } from "../../services/medicationLogService";
+import { getMedicationSchedules } from "../../services/medicationScheduleService";
 import { useAuth } from "../../contexts/AuthContext";
 
 function MedicationLog() {
@@ -12,6 +13,7 @@ function MedicationLog() {
 
   // Store medication logs returned by the API.
   const [logs, setLogs] = useState([]);
+  const [schedules, setSchedules] = useState([]);
 
   // Store form data when creating or editing a log.
   const [formData, setFormData] = useState({
@@ -33,6 +35,7 @@ function MedicationLog() {
   // Load medication logs when the page opens.
   useEffect(() => {
     loadLogs();
+    loadSchedules();
   }, []);
 
   const loadLogs = async () => {
@@ -50,6 +53,18 @@ function MedicationLog() {
       setError("Unable to load medication logs.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSchedules = async () => {
+    try {
+      const data = await getMedicationSchedules();
+
+      console.log("MEDICATION SCHEDULES API RESPONSE:", data);
+
+      setSchedules(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Unable to load medication schedules:", error);
     }
   };
 
@@ -83,9 +98,7 @@ function MedicationLog() {
       setError("");
 
       const payload = {
-        medication_schedule: Number(
-          formData.medication_schedule
-        ),
+        medication_schedule: Number(formData.medication_schedule),
         status: formData.status,
         notes: formData.notes,
       };
@@ -125,7 +138,7 @@ function MedicationLog() {
   // Delete a medication log.
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this medication log?"
+      "Are you sure you want to delete this medication log?",
     );
 
     if (!confirmed) return;
@@ -148,49 +161,34 @@ function MedicationLog() {
 
   // Patients should only view medication logs.
   const canManage = role === "ADMIN" || role === "DOCTOR";
+  const canRecordMedication =
+    role === "PATIENT" || role === "ADMIN" || role === "DOCTOR";
 
   // Display a Bootstrap badge based on the medication status.
   const getStatusBadge = (status) => {
     switch (status) {
       case "TAKEN":
-        return (
-          <span className="badge bg-success">
-            Taken
-          </span>
-        );
+        return <span className="badge bg-success">Taken</span>;
 
       case "MISSED":
-        return (
-          <span className="badge bg-danger">
-            Missed
-          </span>
-        );
+        return <span className="badge bg-danger">Missed</span>;
 
       case "SKIPPED":
-        return (
-          <span className="badge bg-warning text-dark">
-            Skipped
-          </span>
-        );
+        return <span className="badge bg-warning text-dark">Skipped</span>;
 
       default:
         return (
-          <span className="badge bg-secondary">
-            {status || "Unknown"}
-          </span>
+          <span className="badge bg-secondary">{status || "Unknown"}</span>
         );
     }
   };
 
   return (
     <div className="container-fluid py-4">
-
       {/* Page heading */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="fw-bold mb-1">
-            Medication Log
-          </h2>
+          <h2 className="fw-bold mb-1">Medication Log</h2>
 
           <p className="text-muted mb-0">
             View and manage medication intake records.
@@ -198,7 +196,7 @@ function MedicationLog() {
         </div>
 
         {/* Only doctors/admins should see the Add button. */}
-        {canManage && (
+        {canRecordMedication && (
           <button
             className="btn btn-primary"
             onClick={() => {
@@ -213,54 +211,49 @@ function MedicationLog() {
       </div>
 
       {/* Display API errors */}
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {/* Medication log form */}
-      {showForm && canManage && (
+      {showForm && canRecordMedication && (
         <div className="card shadow-sm mb-4">
           <div className="card-body">
-
             <h5 className="card-title mb-4">
-              {editingId
-                ? "Edit Medication Log"
-                : "Record Medication"}
+              {editingId ? "Edit Medication Log" : "Record Medication"}
             </h5>
 
             <form onSubmit={handleSubmit}>
-
               <div className="row">
-
                 {/* Medication Schedule */}
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Medication Schedule ID
-                  </label>
+                  <label className="form-label">Medication</label>
 
-                  <input
-                    type="number"
+                  <select
                     name="medication_schedule"
-                    className="form-control"
-                    placeholder="Enter medication schedule ID"
+                    className="form-select"
                     value={formData.medication_schedule}
                     onChange={handleChange}
                     required
-                    min="1"
-                  />
+                  >
+                    <option value="">Select medication</option>
 
-                  <small className="text-muted">
-                    Enter the ID of the medication schedule.
-                  </small>
+                    {schedules.map((schedule) => (
+                      <option key={schedule.id} value={schedule.id}>
+                        {schedule.prescription_details} —{" "}
+                        {new Date(schedule.scheduled_time).toLocaleTimeString(
+                          [],
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Status */}
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Status
-                  </label>
+                  <label className="form-label">Status</label>
 
                   <select
                     name="status"
@@ -269,25 +262,17 @@ function MedicationLog() {
                     onChange={handleChange}
                     required
                   >
-                    <option value="TAKEN">
-                      Taken
-                    </option>
+                    <option value="TAKEN">Taken</option>
 
-                    <option value="MISSED">
-                      Missed
-                    </option>
+                    <option value="MISSED">Missed</option>
 
-                    <option value="SKIPPED">
-                      Skipped
-                    </option>
+                    <option value="SKIPPED">Skipped</option>
                   </select>
                 </div>
 
                 {/* Notes */}
                 <div className="col-12 mb-3">
-                  <label className="form-label">
-                    Notes
-                  </label>
+                  <label className="form-label">Notes</label>
 
                   <textarea
                     name="notes"
@@ -298,19 +283,12 @@ function MedicationLog() {
                     onChange={handleChange}
                   />
                 </div>
-
               </div>
 
               {/* Form buttons */}
               <div className="d-flex gap-2">
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  {editingId
-                    ? "Update Log"
-                    : "Save Log"}
+                <button type="submit" className="btn btn-primary">
+                  {editingId ? "Update Log" : "Save Log"}
                 </button>
 
                 <button
@@ -320,9 +298,7 @@ function MedicationLog() {
                 >
                   Cancel
                 </button>
-
               </div>
-
             </form>
           </div>
         </div>
@@ -331,10 +307,7 @@ function MedicationLog() {
       {/* Medication log table */}
       <div className="card shadow-sm">
         <div className="card-body">
-
-          <h5 className="card-title mb-3">
-            Medication Log List
-          </h5>
+          <h5 className="card-title mb-3">Medication Log List</h5>
 
           {loading ? (
             <div className="text-center py-4">
@@ -346,9 +319,7 @@ function MedicationLog() {
             </div>
           ) : (
             <div className="table-responsive">
-
               <table className="table table-hover align-middle">
-
                 <thead>
                   <tr>
                     <th>Schedule</th>
@@ -363,7 +334,6 @@ function MedicationLog() {
                 <tbody>
                   {logs.map((log) => (
                     <tr key={log.id}>
-
                       <td>
                         <span className="fw-semibold">
                           Schedule #{log.medication_schedule}
@@ -372,58 +342,41 @@ function MedicationLog() {
 
                       <td>
                         {log.taken_at
-                          ? new Date(
-                              log.taken_at
-                            ).toLocaleString()
+                          ? new Date(log.taken_at).toLocaleString()
                           : "-"}
                       </td>
 
-                      <td>
-                        {getStatusBadge(log.status)}
-                      </td>
+                      <td>{getStatusBadge(log.status)}</td>
 
-                      <td>
-                        {log.notes || "-"}
-                      </td>
+                      <td>{log.notes || "-"}</td>
 
                       {canManage && (
                         <td>
                           <div className="d-flex gap-2">
-
                             <button
                               className="btn btn-sm btn-outline-primary"
-                              onClick={() =>
-                                handleEdit(log)
-                              }
+                              onClick={() => handleEdit(log)}
                             >
                               Edit
                             </button>
 
                             <button
                               className="btn btn-sm btn-outline-danger"
-                              onClick={() =>
-                                handleDelete(log.id)
-                              }
+                              onClick={() => handleDelete(log.id)}
                             >
                               Delete
                             </button>
-
                           </div>
                         </td>
                       )}
-
                     </tr>
                   ))}
                 </tbody>
-
               </table>
-
             </div>
           )}
-
         </div>
       </div>
-
     </div>
   );
 }

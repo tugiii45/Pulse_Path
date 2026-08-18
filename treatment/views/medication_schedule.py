@@ -20,10 +20,24 @@ class MedicationScheduleListCreateView(HospitalQuerySetMixin, generics.ListCreat
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
 
     def get_queryset(self):
-        queryset = MedicationSchedule.objects.all()
-        if self.request.query_params.get("is_active") is None and not self.request.query_params.get("all"):
-            queryset = queryset.filter(is_active=True)
-        return queryset
+      queryset = MedicationSchedule.objects.all()
+
+      user = self.request.user
+
+    # Patients can only see their own medication schedules.
+      if user.role == "PATIENT":
+        queryset = queryset.filter(
+            prescription__diagnosis__visit__patient__user=user
+        )
+
+    # By default, only return active schedules.
+      if (
+        self.request.query_params.get("is_active") is None
+        and not self.request.query_params.get("all")
+    ):
+        queryset = queryset.filter(is_active=True)
+
+      return queryset
 
 
 class MedicationScheduleDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
