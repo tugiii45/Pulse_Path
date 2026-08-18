@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   FaHome,
   FaCalendarAlt,
+  
   FaUserInjured,
   FaUserMd,
   FaHospital,
@@ -84,7 +85,7 @@ function Sidebar() {
     });
   }
 
-  if (role !== "PATIENT") {
+  if (role == "PATIENT") {
     menuItems.push({
       to: "/dashboard/clinical",
       label: "Clinical",

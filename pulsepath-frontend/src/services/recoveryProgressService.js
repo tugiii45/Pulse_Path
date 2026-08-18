@@ -1,28 +1,44 @@
 import api from "./api";
 
-// Normalize different response formats returned by the backend.
+/**
+ * Normalizes different API response formats into a consistent array.
+ *
+ * Supports:
+ * - Direct array responses
+ * - Responses wrapped in `data`
+ * - Paginated responses using `results`
+ */
 const normalizeListResponse = (response) => {
   const payload = response?.data?.data ?? response?.data;
 
+  // Handle a direct array response.
   if (Array.isArray(payload)) {
     return payload;
   }
 
+  // Handle object-based API responses.
   if (payload && typeof payload === "object") {
+    // Handle paginated responses such as { results: [...] }.
     if (Array.isArray(payload.results)) {
       return payload.results;
     }
 
+    // Handle responses containing an array in `data`.
     if (Array.isArray(payload.data)) {
       return payload.data;
     }
   }
 
+  // Return an empty array when no valid list is found.
   return [];
 };
 
-
-// Get recovery progress entries.
+/**
+ * Fetches recovery progress entries.
+ *
+ * @param {Object} params - Optional query parameters
+ * used to filter or retrieve specific recovery records.
+ */
 export const getRecoveryProgress = async (params = {}) => {
   const response = await api.get(
     "treatment/recovery_progress/",
@@ -32,8 +48,11 @@ export const getRecoveryProgress = async (params = {}) => {
   return normalizeListResponse(response);
 };
 
-
-// Get one recovery progress entry.
+/**
+ * Fetches a single recovery progress entry by its ID.
+ *
+ * @param {string|number} id - Recovery progress ID.
+ */
 export const getRecoveryProgressEntry = async (id) => {
   const response = await api.get(
     `treatment/recovery_progress/${id}/`
@@ -42,8 +61,11 @@ export const getRecoveryProgressEntry = async (id) => {
   return response?.data?.data ?? response?.data;
 };
 
-
-// Create recovery progress.
+/**
+ * Creates a new recovery progress entry.
+ *
+ * @param {Object} data - Recovery progress information.
+ */
 export const createRecoveryProgress = async (data) => {
   const response = await api.post(
     "treatment/recovery_progress/",
@@ -53,8 +75,14 @@ export const createRecoveryProgress = async (data) => {
   return response?.data?.data ?? response?.data;
 };
 
-
-// Update recovery progress.
+/**
+ * Updates an existing recovery progress entry.
+ *
+ * PATCH updates only the fields supplied in the request.
+ *
+ * @param {string|number} id - Recovery progress ID.
+ * @param {Object} data - Fields to update.
+ */
 export const updateRecoveryProgress = async (id, data) => {
   const response = await api.patch(
     `treatment/recovery_progress/${id}/`,
@@ -64,8 +92,11 @@ export const updateRecoveryProgress = async (id, data) => {
   return response?.data?.data ?? response?.data;
 };
 
-
-// Delete recovery progress.
+/**
+ * Deletes a recovery progress entry by its ID.
+ *
+ * @param {string|number} id - Recovery progress ID.
+ */
 export const deleteRecoveryProgress = async (id) => {
   await api.delete(
     `treatment/recovery_progress/${id}/`
