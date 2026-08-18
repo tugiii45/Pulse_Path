@@ -110,6 +110,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         auto_now_add=True,
     )
 
+    address = models.CharField(
+      max_length=255,
+      blank=True,
+)
+
+    profile_picture = models.ImageField(
+      upload_to="profile_pictures/",
+      blank=True,
+      null=True,
+)
+
     # Use the custom manager that supports email-based user creation
     # instead of Django's default username-based manager.
     objects = CustomUserManager()

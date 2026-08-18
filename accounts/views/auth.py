@@ -45,21 +45,27 @@ class RegisterView(APIView):
 
 
 class ProfileView(APIView):
-    """
-    Authenticated endpoint for retrieving the current user's profile.
-
-    Returns the profile of the currently authenticated user, including
-    their email, name, role, hospital, and other profile fields.
-    """
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """
-        Handle GET requests for the user profile.
-
-        Serializes the authenticated user's data using ProfileSerializer
-        and returns it in the response.
-        """
         serializer = ProfileSerializer(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        serializer = ProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )

@@ -22,6 +22,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
+from django.conf import settings
+from django.conf.urls.static import static
 
 # Main API routes for authentication, accounts, visits, treatment, notifications, and clinical modules.
 urlpatterns = [
@@ -39,3 +41,9 @@ urlpatterns = [
     path("api/clinical/", include("clinical.urls")),
     path("api/dashboard/", include("dashboard.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT
+    )

@@ -93,26 +93,47 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     """
-    Returns the authenticated user's profile information.
+    Serializer for the authenticated user's profile.
 
-    Includes the hospital name as a computed field for convenient
-    display on the frontend without requiring an extra API call.
+    Users can view their complete profile and update their own
+    personal information. Sensitive account-level fields such as
+    email, role, and hospital remain read-only.
     """
 
-    hospital_name = serializers.CharField(source="hospital.name", read_only=True)
+    hospital_name = serializers.CharField(
+        source="hospital.name",
+        read_only=True
+    )
+
+    profile_picture = serializers.ImageField(
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = CustomUser
+
         fields = (
             "id",
             "email",
             "first_name",
             "last_name",
             "phone_number",
+            "address",
+            "profile_picture",
             "role",
             "hospital",
             "hospital_name",
             "is_active",
             "date_joined",
         )
-        read_only_fields = fields
+
+        read_only_fields = (
+            "id",
+            "email",
+            "role",
+            "hospital",
+            "hospital_name",
+            "is_active",
+            "date_joined",
+        )
