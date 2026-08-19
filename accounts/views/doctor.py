@@ -7,13 +7,13 @@ and experience. Hospital-scoped via the HospitalQuerySetMixin.
 """
 
 from rest_framework import generics, filters
-
+from rest_framework.permissions import IsAuthenticated
 from accounts.models import Doctor, Department
 from accounts.serializers import DoctorSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins import HospitalQuerySetMixin
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import (extend_schema,extend_schema_view,OpenApiParameter,OpenApiTypes,)
 
 
 @extend_schema_view(
@@ -54,7 +54,7 @@ class DoctorListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     ordering = ["-created_at"]
 
     use_user_field = False
-    hospital_field = "user__hospital"
+    hospital_field = "department__hospital"
 
     def get_permissions(self):
         """
@@ -81,4 +81,44 @@ class DoctorDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIV
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     permission_classes = [IsDoctorOrAdmin]
-    hospital_field = "user__hospital"
+    hospital_field = "department__hospital"
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="hospital",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description="ID of the hospital used to filter doctors.",
+        ),
+    ],
+    description=(
+        "Returns doctors belonging to the selected hospital. "
+        "Doctors are identified through their department's hospital relationship."
+    ),
+)
+class HospitalDoctorsView(generics.ListAPIView):
+    """
+    Returns doctors belonging to a selected hospital.
+
+    Used by patients when booking appointments.
+    """
+
+    serializer_class = DoctorSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        hospital_id = self.request.query_params.get("hospital")
+
+        if not hospital_id:
+            return Doctor.objects.none()
+
+        return Doctor.objects.filter(
+            department__hospital_id=hospital_id,
+            department__hospital__is_active=True,
+        ).select_related(
+            "user",
+            "department",
+            "department__hospital",
+        )

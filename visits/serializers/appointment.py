@@ -13,8 +13,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from ..models import Appointment
-from accounts.models import Patient, Doctor
-
+from accounts.models import Patient, Doctor, Hospital
 
 class AppointmentSerializer(serializers.ModelSerializer):
     """
@@ -34,25 +33,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize and filter patient/doctor querysets to the
-        current user's hospital.
-        """
-        super().__init__(*args, **kwargs)
-        request = self.context.get("request")
-        if (
-            request
-            and request.user.is_authenticated
-            and request.user.hospital_id
-        ):
-            hospital = request.user.hospital
-            self.fields["patient"].queryset = Patient.objects.filter(
-                user__hospital=hospital
-            )
-            self.fields["doctor"].queryset = Doctor.objects.filter(
-                user__hospital=hospital
-            )
+    hospital_name = serializers.CharField(
+       source="hospital.name",
+       read_only=True,
+)
+
 
     def validate_appointment_date(self, value):
         """
@@ -85,6 +70,30 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "doctor",
             self.instance.doctor if self.instance else None,
         )
+
+        hospital = attrs.get(
+            "hospital",
+            self.instance.hospital if self.instance else None,
+        )
+
+        if hospital and not hospital.is_active:
+           raise serializers.ValidationError({
+             "hospital": "This hospital is not currently available for appointments."
+    })
+
+        if doctor and hospital:
+           if not doctor.department:
+             raise serializers.ValidationError({
+               "doctor": "This doctor is not assigned to a department."
+        })
+
+           if doctor.department.hospital_id != hospital.id:
+             raise serializers.ValidationError({
+              "doctor": (
+                "The selected doctor does not belong to "
+                "the selected hospital."
+            )
+        })
 
         appointment_date = attrs.get(
             "appointment_date",
@@ -160,6 +169,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "id",
             "patient",
             "patient_name",
+            "hospital",
+            "hospital_name",
             "doctor",
             "doctor_name",
             "appointment_date",
@@ -171,4 +182,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "updated_at",
+            "patient_name",
+            "hospital_name",
+            "doctor_name",   
         ]

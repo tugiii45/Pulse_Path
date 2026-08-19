@@ -31,12 +31,13 @@ class AppointmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVie
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
-    filterset_fields = ["patient", "doctor", "status"]
+    filterset_fields = ["patient", "doctor", "hospital",  "status"]
     search_fields = [
         "patient__user__first_name",
         "patient__user__last_name",
         "doctor__user__first_name",
         "doctor__user__last_name",
+        "hospital__name",
     ]
     ordering_fields = ["appointment_date", "created_at"]
     ordering = ["-appointment_date"]

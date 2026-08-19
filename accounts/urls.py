@@ -9,7 +9,7 @@ from django.urls import path
 from .views import RegisterView, ProfileView
 from .views.patient import PatientProfileView, PatientListCreateView
 from .views.department import DepartmentListCreateView, DepartmentDetailView
-from .views.doctor import DoctorListCreateView, DoctorDetailView
+from .views.doctor import DoctorListCreateView, DoctorDetailView, HospitalDoctorsView
 from .views.hospital import HospitalListCreateView, HospitalDetailView
 
 urlpatterns = [
@@ -24,6 +24,8 @@ urlpatterns = [
     path("departments/<int:pk>/", DepartmentDetailView.as_view(), name="department-detail"),
     # Doctor management
     path("doctors/", DoctorListCreateView.as_view(), name="doctor-list-create"),
+    path("doctors/by-hospital/",HospitalDoctorsView.as_view(),name="doctors-by-hospital",
+),
     path("doctors/<int:pk>/", DoctorDetailView.as_view(), name="doctor-detail"),
     # Hospital management (superadmin only)
     path("hospitals/", HospitalListCreateView.as_view(), name="hospital-list-create"),
