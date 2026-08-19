@@ -6,7 +6,7 @@ doctor profiles. Supports filtering by department, specialization,
 and experience. Hospital-scoped via the HospitalQuerySetMixin.
 """
 
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import Doctor, Department
 from accounts.serializers import (DoctorSerializer, AdminCreateDoctorSerializer)
@@ -14,6 +14,7 @@ from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins import HospitalQuerySetMixin
 from drf_spectacular.utils import (extend_schema,extend_schema_view,OpenApiParameter,OpenApiTypes,)
+from rest_framework.response import Response
 
 class DoctorListView(HospitalQuerySetMixin, generics.ListAPIView):
     """
@@ -113,4 +114,24 @@ class AdminCreateDoctorView(generics.CreateAPIView):
     """
 
     serializer_class = AdminCreateDoctorSerializer
-    permission_classes = [IsAdmin]    
+    permission_classes = [IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create the doctor using the admin serializer and return the
+        resulting Doctor profile using the standard DoctorSerializer.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        doctor = serializer.save()
+
+        response_serializer = DoctorSerializer(
+            doctor,
+            context={"request": request},
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )

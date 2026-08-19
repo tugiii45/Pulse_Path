@@ -29,6 +29,7 @@ import Patients from "../pages/patients/Patients";
 import Doctors from "../pages/doctors/Doctors";
 import Hospitals from "../pages/hospitals/Hospitals";
 import Departments from "../pages/departments/Departments";
+import SetPassword from "../pages/auth/SetPassword";
 
 // ================================
 // Clinical
@@ -75,6 +76,7 @@ function AppRoutes() {
           path="/register"
           element={<Register />}
         />
+        <Route path="/set-password/" element={<SetPassword />} />
 
         {/* Redirect old clinical diagnosis URL */}
         <Route

@@ -13,7 +13,8 @@ from ..serializers import RegisterSerializer, ProfileSerializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
-
+from rest_framework import generics
+from accounts.serializers import SetDoctorPasswordSerializer
 
 class RegisterView(APIView):
     """
@@ -68,4 +69,16 @@ class ProfileView(APIView):
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
+
         )
+
+class SetDoctorPasswordView(generics.CreateAPIView):
+    """
+    Allows an invited doctor to set their password.
+
+    This endpoint is public because the doctor is not authenticated yet.
+    Access is secured through the invitation token.
+    """
+
+    serializer_class = SetDoctorPasswordSerializer
+    permission_classes = [AllowAny]

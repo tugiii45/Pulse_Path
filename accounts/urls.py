@@ -11,11 +11,13 @@ from .views.patient import PatientProfileView, PatientListView
 from .views.department import DepartmentListCreateView, DepartmentDetailView
 from .views.doctor import (DoctorListView,AdminCreateDoctorView,DoctorDetailView, HospitalDoctorsView,)
 from .views.hospital import HospitalListCreateView, HospitalDetailView
+from .views.auth import SetDoctorPasswordView
 
 urlpatterns = [
     # Authentication
     path("register/", RegisterView.as_view(), name="register"),
     path("profile/", ProfileView.as_view(), name="profile"),
+    path("set-password/",SetDoctorPasswordView.as_view(),name="set-doctor-password",),
     # Patient management
     path("patient_profile/", PatientProfileView.as_view(), name="patient_profile"),
     path("patients/", PatientListView.as_view(), name="patients"),
