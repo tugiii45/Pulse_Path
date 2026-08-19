@@ -49,6 +49,23 @@ export const getDoctors = async (url = "doctors/") => {
 };
 
 /**
+ * Fetches doctors belonging to a specific hospital.
+ *
+ * @param {number|string} hospitalId - Hospital primary key.
+ */
+export const getDoctorsByHospital = async (hospitalId) => {
+  if (!hospitalId) {
+    return [];
+  }
+
+  const response = await api.get(
+    `doctors/by-hospital/?hospital=${hospitalId}`,
+  );
+
+  return normalizeListResponse(response);
+};
+
+/**
  * Creates a new doctor.
  *
  * @param {Object} data - Doctor information.

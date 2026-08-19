@@ -48,6 +48,17 @@ export const getPatients = async (url = "patients/") => {
 };
 
 /**
+ * Fetches the authenticated patient's own profile.
+ *
+ * Returns the Patient record linked to the current user.
+ */
+export const getMyPatientProfile = async () => {
+  const response = await api.get("patient_profile/");
+
+  return response.data?.data ?? response.data;
+};
+
+/**
  * Creates a new patient.
  *
  * @param {Object} data - Patient information.

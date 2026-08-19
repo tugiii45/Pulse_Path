@@ -30,26 +30,50 @@ class HospitalSerializer(serializers.ModelSerializer):
 
 class HospitalListCreateView(generics.ListCreateAPIView):
     """
-    Superadmin-only endpoint for listing and creating hospitals.
+    Lists active hospitals for authenticated users.
 
-    The list only returns hospitals that are still active. Creation
-    requires superuser privileges to prevent unauthorized hospital
-    registrations.
+    Hospital creation remains restricted to superadmins.
     """
 
-    queryset = Hospital.objects.all()
+    queryset = Hospital.objects.filter(is_active=True)
     serializer_class = HospitalSerializer
-    permission_classes = [IsAuthenticated, IsSuperAdmin]
+
+    def get_permissions(self):
+        """
+        Allow authenticated users to view hospitals.
+
+        Only superadmins can create hospitals.
+        """
+        if self.request.method == "POST":
+            return [
+                IsAuthenticated(),
+                IsSuperAdmin(),
+            ]
+
+        return [IsAuthenticated()]
 
 
 class HospitalDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    Superadmin-only endpoint for retrieving, updating, and deactivating
-    a hospital. This allows platform administrators to manage hospital
-    records safely.
+    Allows authenticated users to view hospital details.
+
+    Only superadmins can modify or delete hospitals.
     """
 
     queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
-    permission_classes = [IsAuthenticated, IsSuperAdmin]
+
+    def get_permissions(self):
+        """
+        Allow authenticated users to retrieve a hospital.
+
+        PUT, PATCH, and DELETE remain restricted to superadmins.
+        """
+        if self.request.method in ["PUT", "PATCH", "DELETE"]:
+            return [
+                IsAuthenticated(),
+                IsSuperAdmin(),
+            ]
+
+        return [IsAuthenticated()]
 

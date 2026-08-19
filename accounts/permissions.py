@@ -76,16 +76,15 @@ class IsDoctorOrAdminOrPatientOwner(BasePermission):
         # Patients can only perform read operations.
         return request.method in ["GET", "HEAD", "OPTIONS"]
 
-    def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
-            return False
+    def has_permission(self, request, view):
+       if not request.user.is_authenticated:
+        return False
 
-        # Doctors and admins can access any object.
-        if request.user.role in ["ADMIN", "DOCTOR"]:
-            return True
+       if request.user.role in ["ADMIN", "DOCTOR"]:
+        return True
 
-        # For patients, check if they own the object.
-        return self._is_patient_owner(request.user, obj)
+    # Patients can read, and create their own appointments.
+       return request.method in ["GET", "HEAD", "OPTIONS", "POST"]
 
     def _is_patient_owner(self, user, obj):
         """

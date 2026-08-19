@@ -15,14 +15,24 @@ from django_filters.rest_framework import DjangoFilterBackend
 from accounts.views.mixins import HospitalQuerySetMixin
 
 
-class AppointmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+class AppointmentListCreateView(generics.ListCreateAPIView):
     """
     List all appointments or create a new one.
 
     Supports filtering by patient, doctor, and status.
     Search by patient or doctor name.
     Order by appointment date or creation date.
-    Hospital-scoped via the mixin.
+
+    NOTE: This view intentionally does NOT use HospitalQuerySetMixin.
+    That mixin returns an empty queryset whenever request.user.hospital_id
+    is None -- but PATIENT-role users are not tied to a single hospital
+    (they pick a hospital per booking), so their hospital_id is always
+    None. Using the mixin here silently hid every appointment from every
+    patient. Scoping is instead handled explicitly below, per role.
+
+    Patient-role users may create (self-book) appointments; the
+    serializer resolves and locks "patient" to request.user.patient
+    server-side, so no perform_create override is needed here.
     """
 
     queryset = Appointment.objects.all()
@@ -43,18 +53,29 @@ class AppointmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVie
     ordering = ["-appointment_date"]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Appointment.objects.all()
+        user = self.request.user
 
-        if not self.request.user.is_authenticated:
+        if not user.is_authenticated:
             return queryset.none()
 
-        if self.request.user.is_superuser:
+        if user.is_superuser:
             return queryset
 
-        if hasattr(self.request.user, "patient"):
-            return queryset.filter(patient=self.request.user.patient)
+        # Patients see only their own appointments, regardless of
+        # which hospital(s) those appointments were booked at.
+        if hasattr(user, "patient"):
+            return queryset.filter(patient=user.patient)
 
-        return queryset
+        # Doctors see only their own appointments.
+        if hasattr(user, "doctor"):
+            return queryset.filter(doctor=user.doctor)
+
+        # Hospital-scoped admins/staff see appointments at their hospital.
+        if getattr(user, "hospital_id", None):
+            return queryset.filter(hospital=user.hospital)
+
+        return queryset.none()
 
 
 class AppointmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):

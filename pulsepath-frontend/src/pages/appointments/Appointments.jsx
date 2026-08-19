@@ -5,8 +5,9 @@ import {
   getAppointments,
   updateAppointment,
 } from "../../services/AppointmentService";
-import { getPatients } from "../../services/PatientService";
-import { getDoctors } from "../../services/DoctorService";
+import {getPatients,getMyPatientProfile,} from "../../services/PatientService";
+import { getDoctors, getDoctorsByHospital } from "../../services/DoctorService";
+import { getHospitals } from "../../services/HospitalService";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Default form values.
@@ -14,6 +15,7 @@ import { useAuth } from "../../contexts/AuthContext";
 // select themselves when booking an appointment.
 const initialFormState = {
   patient: "",
+  hospital: "",
   doctor: "",
   appointment_date: "",
   status: "PENDING",
@@ -38,6 +40,7 @@ function Appointments() {
 
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -74,13 +77,31 @@ function Appointments() {
       setAppointments(Array.isArray(appointmentData) ? appointmentData : []);
 
       // -----------------------------------------------------
+      // HOSPITALS
+      // -----------------------------------------------------
+
+      if (isPatient || isAdmin) {
+        try {
+          const hospitalData = await getHospitals();
+
+          console.log("HOSPITALS API RESPONSE:", hospitalData);
+
+          setHospitals(Array.isArray(hospitalData) ? hospitalData : []);
+        } catch (hospitalError) {
+          console.error("HOSPITALS LOAD ERROR:", hospitalError);
+        }
+      }
+
+      // -----------------------------------------------------
       // DOCTORS
       // -----------------------------------------------------
       //
-      // Patients need doctors when booking.
-      // Admins also need doctors when creating/editing.
+      // Admins still load the general doctor list.
+      // Patients will load doctors only after selecting
+      // a hospital.
       //
-      if (isPatient || isAdmin) {
+
+      if (isAdmin) {
         try {
           const doctorData = await getDoctors();
 
@@ -91,7 +112,6 @@ function Appointments() {
           console.error("DOCTORS LOAD ERROR:", doctorError);
         }
       }
-
       // -----------------------------------------------------
       // PATIENTS
       // -----------------------------------------------------
@@ -136,14 +156,23 @@ function Appointments() {
     }
 
     const currentPatient = patients.find((patient) => {
-      const patientUserId = patient?.user?.id ?? patient?.user_id ?? patient?.user;
+      const patientUserId =
+        patient?.user?.id ?? patient?.user_id ?? patient?.user;
       const patientEmail = patient?.user?.email ?? patient?.email;
-      const normalizedPatientEmail = patientEmail ? String(patientEmail).toLowerCase() : "";
-      const normalizedProfileEmail = profile?.email ? String(profile.email).toLowerCase() : "";
+      const normalizedPatientEmail = patientEmail
+        ? String(patientEmail).toLowerCase()
+        : "";
+      const normalizedProfileEmail = profile?.email
+        ? String(profile.email).toLowerCase()
+        : "";
 
       return (
-        (patientUserId && profile?.id && String(patientUserId) === String(profile.id)) ||
-        (normalizedPatientEmail && normalizedProfileEmail && normalizedPatientEmail === normalizedProfileEmail)
+        (patientUserId &&
+          profile?.id &&
+          String(patientUserId) === String(profile.id)) ||
+        (normalizedPatientEmail &&
+          normalizedProfileEmail &&
+          normalizedPatientEmail === normalizedProfileEmail)
       );
     });
 
@@ -154,36 +183,25 @@ function Appointments() {
     return null;
   };
 
-  const resolveCurrentPatientId = async () => {
-    const patientIdFromList = getCurrentPatientId();
+ const resolveCurrentPatientId = async () => {
+  try {
+    const patient = await getMyPatientProfile();
 
-    if (patientIdFromList) {
-      return patientIdFromList;
-    }
+    console.log(
+      "CURRENT PATIENT PROFILE:",
+      patient,
+    );
 
-    try {
-      const patientData = await getPatients();
-      const fallbackPatients = Array.isArray(patientData) ? patientData : [];
-      const currentPatient = fallbackPatients.find((patient) => {
-        const patientUserId = patient?.user?.id ?? patient?.user_id ?? patient?.user;
-        const patientEmail = patient?.user?.email ?? patient?.email;
-        const normalizedPatientEmail = patientEmail ? String(patientEmail).toLowerCase() : "";
-        const normalizedProfileEmail = profile?.email ? String(profile.email).toLowerCase() : "";
+    return patient?.id ? Number(patient.id) : null;
+  } catch (error) {
+    console.error(
+      "CURRENT PATIENT PROFILE ERROR:",
+      error,
+    );
 
-        return (
-          (patientUserId && profile?.id && String(patientUserId) === String(profile.id)) ||
-          (normalizedPatientEmail && normalizedProfileEmail && normalizedPatientEmail === normalizedProfileEmail)
-        );
-      });
-
-      return currentPatient?.id ? Number(currentPatient.id) : null;
-    } catch (error) {
-      console.error("PATIENT LOOKUP ERROR:", error);
-      return null;
-    }
-  };
-
-
+    return null;
+  }
+};
   // ---------------------------------------------------------
   // DATE FORMATTER
   // ---------------------------------------------------------
@@ -230,13 +248,49 @@ function Appointments() {
   // FORM INPUT HANDLER
   // ---------------------------------------------------------
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target;
 
     setFormData((previous) => ({
       ...previous,
       [name]: value,
     }));
+
+    // -------------------------------------------------------
+    // PATIENT: HOSPITAL → DOCTORS
+    // -------------------------------------------------------
+
+    if (name === "hospital" && isPatient) {
+      // Clear the previously selected doctor whenever
+      // the hospital changes.
+      setFormData((previous) => ({
+        ...previous,
+        hospital: value,
+        doctor: "",
+      }));
+
+      // No hospital selected.
+      if (!value) {
+        setDoctors([]);
+        return;
+      }
+
+      try {
+        setError("");
+
+        const doctorData = await getDoctorsByHospital(value);
+
+        console.log("DOCTORS FOR SELECTED HOSPITAL:", doctorData);
+
+        setDoctors(Array.isArray(doctorData) ? doctorData : []);
+      } catch (doctorError) {
+        console.error("DOCTORS BY HOSPITAL ERROR:", doctorError);
+
+        setDoctors([]);
+
+        setError("Failed to load doctors for the selected hospital.");
+      }
+    }
   };
 
   // ---------------------------------------------------------
@@ -586,10 +640,35 @@ function Appointments() {
                     </select>
                   </div>
                 )}
+                {/* ------------------------------------------------
+    HOSPITAL SELECTION
+    ------------------------------------------------ */}
+
+                {isPatient && (
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Hospital</label>
+
+                    <select
+                      className="form-select"
+                      name="hospital"
+                      value={formData.hospital}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select a hospital</option>
+
+                      {hospitals.map((hospital) => (
+                        <option key={hospital.id} value={hospital.id}>
+                          {hospital.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* ------------------------------------------------
-                    DOCTOR SELECTION
-                    ------------------------------------------------ */}
+    DOCTOR SELECTION
+    ------------------------------------------------ */}
 
                 <div className="col-md-6">
                   <label className="form-label fw-semibold">Doctor</label>
@@ -600,27 +679,34 @@ function Appointments() {
                     value={formData.doctor}
                     onChange={handleChange}
                     required
+                    disabled={isPatient && !formData.hospital}
                   >
-                    <option value="">Select a doctor</option>
+                    <option value="">
+                      {isPatient && !formData.hospital
+                        ? "Select a hospital first"
+                        : "Select a doctor"}
+                    </option>
 
                     {doctors.map((doctor) => {
                       const doctorName =
+                        doctor.full_name ||
                         doctor.user?.full_name ||
                         doctor.user?.first_name ||
                         doctor.user?.email ||
-                        doctor.full_name ||
                         doctor.name ||
                         `Doctor ${doctor.id}`;
 
                       return (
                         <option key={doctor.id} value={doctor.id}>
                           {doctorName}
+                          {doctor.specialization
+                            ? ` — ${doctor.specialization}`
+                            : ""}
                         </option>
                       );
                     })}
                   </select>
                 </div>
-
                 {/* ------------------------------------------------
                     APPOINTMENT DATE
                     ------------------------------------------------ */}
