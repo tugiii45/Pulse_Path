@@ -194,3 +194,17 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "accounts.CustomUser"
+
+# Email (SMTP via Gmail app password) — used for doctor account
+# invite emails and any future password-reset flows.
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
+
+# Base URL of the frontend app, used to build links in emails
+# (e.g. the doctor "set your password" invite link).
+FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:5173")

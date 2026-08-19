@@ -7,9 +7,9 @@ doctors, and hospitals. Each route maps to a dedicated view class.
 
 from django.urls import path
 from .views import RegisterView, ProfileView
-from .views.patient import PatientProfileView, PatientListCreateView
+from .views.patient import PatientProfileView, PatientListView
 from .views.department import DepartmentListCreateView, DepartmentDetailView
-from .views.doctor import DoctorListCreateView, DoctorDetailView, HospitalDoctorsView
+from .views.doctor import (DoctorListView,AdminCreateDoctorView,DoctorDetailView, HospitalDoctorsView,)
 from .views.hospital import HospitalListCreateView, HospitalDetailView
 
 urlpatterns = [
@@ -18,12 +18,13 @@ urlpatterns = [
     path("profile/", ProfileView.as_view(), name="profile"),
     # Patient management
     path("patient_profile/", PatientProfileView.as_view(), name="patient_profile"),
-    path("patients/", PatientListCreateView.as_view(), name="patients"),
+    path("patients/", PatientListView.as_view(), name="patients"),
     # Department management
     path("departments/", DepartmentListCreateView.as_view(), name="department-list-create"),
     path("departments/<int:pk>/", DepartmentDetailView.as_view(), name="department-detail"),
     # Doctor management
-    path("doctors/", DoctorListCreateView.as_view(), name="doctor-list-create"),
+    path("doctors/", DoctorListView.as_view(), name="doctor-list"),
+    path("doctors/admin/create/",AdminCreateDoctorView.as_view(),name="admin-create-doctor",),
     path("doctors/by-hospital/",HospitalDoctorsView.as_view(),name="doctors-by-hospital",
 ),
     path("doctors/<int:pk>/", DoctorDetailView.as_view(), name="doctor-detail"),

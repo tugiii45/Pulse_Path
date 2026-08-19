@@ -57,19 +57,30 @@ function Register() {
     setLoading(true);
 
     try {
-      await registerUser({
+      const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
         phone_number: formData.phone_number,
         role: formData.role,
-        date_of_birth: formData.date_of_birth,
-        gender: formData.gender,
-        blood_group: formData.blood_group,
-        emergency_contact: formData.emergency_contact,
-        address: formData.address,
         password: formData.password,
-      });
+      };
+
+      // Patient-only fields. These are only shown on the form when
+      // role === "PATIENT", so they must only be sent then too --
+      // otherwise DOCTOR/ADMIN registrations submit empty strings for
+      // date_of_birth, gender, etc., which fail backend validation
+      // (empty string is not a valid date/choice, even for fields
+      // marked optional).
+      if (formData.role === "PATIENT") {
+        payload.date_of_birth = formData.date_of_birth;
+        payload.gender = formData.gender;
+        payload.blood_group = formData.blood_group;
+        payload.emergency_contact = formData.emergency_contact;
+        payload.address = formData.address;
+      }
+
+      await registerUser(payload);
 
       navigate("/login");
     } catch (err) {
