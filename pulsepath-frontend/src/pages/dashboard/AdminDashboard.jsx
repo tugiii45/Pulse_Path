@@ -32,15 +32,25 @@ function AdminDashboard() {
     }
   };
 
+  // ---------------------------------------------------------
+  // LOADING STATE
+  // ---------------------------------------------------------
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">
+            Loading...
+          </span>
         </div>
       </div>
     );
   }
+
+  // ---------------------------------------------------------
+  // ERROR STATE
+  // ---------------------------------------------------------
 
   if (!dashboardData) {
     return (
@@ -50,51 +60,66 @@ function AdminDashboard() {
     );
   }
 
-  const patients = dashboardData.patients.results || [];
-  const doctors = dashboardData.doctors.results || [];
+  // ---------------------------------------------------------
+  // NORMALIZED DATA
+  // ---------------------------------------------------------
+
+  const patients = dashboardData.patients?.results || [];
+  const doctors = dashboardData.doctors?.results || [];
   const appointments =
-    dashboardData.appointments.results || [];
-  const hospitals = dashboardData.hospitals.results || [];
+    dashboardData.appointments?.results || [];
+  const hospitals = dashboardData.hospitals?.results || [];
   const departments =
-    dashboardData.departments.results || [];
+    dashboardData.departments?.results || [];
+
+  // ---------------------------------------------------------
+  // DASHBOARD STATISTICS
+  // ---------------------------------------------------------
 
   const stats = [
     {
       title: "Patients",
-      value: dashboardData.patients.count,
+      value: dashboardData.patients?.count || 0,
       icon: <FaUsers size={24} />,
       link: "/dashboard/patients",
     },
     {
       title: "Doctors",
-      value: dashboardData.doctors.count,
+      value: dashboardData.doctors?.count || 0,
       icon: <FaUserMd size={24} />,
       link: "/dashboard/doctors",
     },
     {
       title: "Appointments",
-      value: dashboardData.appointments.count,
+      value: dashboardData.appointments?.count || 0,
       icon: <FaCalendarCheck size={24} />,
       link: "/dashboard/appointments",
     },
     {
       title: "Hospitals",
-      value: dashboardData.hospitals.count,
+      value: dashboardData.hospitals?.count || 0,
       icon: <FaHospital size={24} />,
       link: "/dashboard/hospitals",
     },
     {
       title: "Departments",
-      value: dashboardData.departments.count,
+      value: dashboardData.departments?.count || 0,
       icon: <FaBuilding size={24} />,
       link: "/dashboard/departments",
     },
   ];
 
-  return (
-    <div className="container-fluid">
+  // ---------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------
 
-      {/* Header */}
+  return (
+    <div className="container-fluid py-3">
+
+      {/* =====================================================
+          HEADER
+      ====================================================== */}
+
       <div className="mb-4">
         <h2 className="fw-bold mb-1">
           Admin Dashboard
@@ -106,7 +131,10 @@ function AdminDashboard() {
         </p>
       </div>
 
-      {/* Statistics */}
+      {/* =====================================================
+          STATISTICS
+      ====================================================== */}
+
       <div className="row g-4 mb-4">
 
         {stats.map((stat) => (
@@ -142,12 +170,19 @@ function AdminDashboard() {
 
       </div>
 
-      {/* Recent Appointments */}
+      {/* =====================================================
+          RECENT APPOINTMENTS + SYSTEM OVERVIEW
+      ====================================================== */}
+
       <div className="row g-4">
+
+        {/* ===================================================
+            RECENT APPOINTMENTS
+        ==================================================== */}
 
         <div className="col-lg-8">
 
-          <div className="card border-0 shadow-sm">
+          <div className="card border-0 shadow-sm h-100">
 
             <div className="card-body">
 
@@ -174,13 +209,13 @@ function AdminDashboard() {
               </div>
 
               {appointments.length === 0 ? (
-                <p className="text-muted">
+                <p className="text-muted mb-0">
                   No appointments found.
                 </p>
               ) : (
                 <div className="table-responsive">
 
-                  <table className="table align-middle">
+                  <table className="table align-middle mb-0">
 
                     <thead>
                       <tr>
@@ -198,7 +233,7 @@ function AdminDashboard() {
                         .map((appointment) => (
                           <tr key={appointment.id}>
 
-                            <td>
+                            <td className="fw-semibold">
                               {appointment.patient_name ||
                                 "—"}
                             </td>
@@ -219,7 +254,7 @@ function AdminDashboard() {
                             <td>
                               <span className="badge bg-light text-dark">
                                 {appointment.status ||
-                                  "—"}
+                                  "PENDING"}
                               </span>
                             </td>
 
@@ -234,11 +269,15 @@ function AdminDashboard() {
               )}
 
             </div>
+
           </div>
 
         </div>
 
-        {/* System Overview */}
+        {/* ===================================================
+            SYSTEM OVERVIEW
+        ==================================================== */}
+
         <div className="col-lg-4">
 
           <div className="card border-0 shadow-sm h-100">
@@ -249,14 +288,20 @@ function AdminDashboard() {
                 System Overview
               </h5>
 
+              {/* PATIENTS */}
+
               <div className="mb-4">
+
                 <div className="d-flex justify-content-between mb-2">
+
                   <span className="text-muted">
                     Patients
                   </span>
+
                   <strong>
-                    {patients.length}
+                    {dashboardData.patients?.count || 0}
                   </strong>
+
                 </div>
 
                 <div className="progress">
@@ -264,22 +309,29 @@ function AdminDashboard() {
                     className="progress-bar"
                     style={{
                       width: `${Math.min(
-                        patients.length * 10,
+                        (dashboardData.patients?.count || 0) * 10,
                         100
                       )}%`,
                     }}
                   />
                 </div>
+
               </div>
 
+              {/* DOCTORS */}
+
               <div className="mb-4">
+
                 <div className="d-flex justify-content-between mb-2">
+
                   <span className="text-muted">
                     Doctors
                   </span>
+
                   <strong>
-                    {doctors.length}
+                    {dashboardData.doctors?.count || 0}
                   </strong>
+
                 </div>
 
                 <div className="progress">
@@ -287,22 +339,29 @@ function AdminDashboard() {
                     className="progress-bar"
                     style={{
                       width: `${Math.min(
-                        doctors.length * 10,
+                        (dashboardData.doctors?.count || 0) * 10,
                         100
                       )}%`,
                     }}
                   />
                 </div>
+
               </div>
 
+              {/* HOSPITALS */}
+
               <div className="mb-4">
+
                 <div className="d-flex justify-content-between mb-2">
+
                   <span className="text-muted">
                     Hospitals
                   </span>
+
                   <strong>
-                    {hospitals.length}
+                    {dashboardData.hospitals?.count || 0}
                   </strong>
+
                 </div>
 
                 <div className="progress">
@@ -310,22 +369,29 @@ function AdminDashboard() {
                     className="progress-bar"
                     style={{
                       width: `${Math.min(
-                        hospitals.length * 20,
+                        (dashboardData.hospitals?.count || 0) * 20,
                         100
                       )}%`,
                     }}
                   />
                 </div>
+
               </div>
 
+              {/* DEPARTMENTS */}
+
               <div>
+
                 <div className="d-flex justify-content-between mb-2">
+
                   <span className="text-muted">
                     Departments
                   </span>
+
                   <strong>
-                    {departments.length}
+                    {dashboardData.departments?.count || 0}
                   </strong>
+
                 </div>
 
                 <div className="progress">
@@ -333,15 +399,17 @@ function AdminDashboard() {
                     className="progress-bar"
                     style={{
                       width: `${Math.min(
-                        departments.length * 10,
+                        (dashboardData.departments?.count || 0) * 10,
                         100
                       )}%`,
                     }}
                   />
                 </div>
+
               </div>
 
             </div>
+
           </div>
 
         </div>

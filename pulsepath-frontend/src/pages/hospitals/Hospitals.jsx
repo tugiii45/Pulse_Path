@@ -20,6 +20,12 @@ import {
 function Hospitals() {
   const [hospitals, setHospitals] = useState([]);
 
+  const [nextPage, setNextPage] = useState(null);
+  const [previousPage, setPreviousPage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalHospitals, setTotalHospitals] = useState(0);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -38,16 +44,26 @@ function Hospitals() {
     loadHospitals();
   }, []);
 
-  const loadHospitals = async () => {
+  const loadHospitals = async (
+    url = "hospitals/",
+    page = 1
+  ) => {
     try {
       setLoading(true);
       setError("");
 
-      const data = await getHospitals();
+      const data = await getHospitals(url);
 
       console.log("HOSPITALS API RESPONSE:", data);
 
-      setHospitals(data.results || []);
+      setHospitals(data?.results || []);
+      setNextPage(data?.next || null);
+      setPreviousPage(data?.previous || null);
+      setCurrentPage(page);
+      setTotalHospitals(data?.count || 0);
+      setTotalPages(
+        Math.ceil((data?.count || 0) / 10)
+      );
     } catch (err) {
       console.error("Failed to load hospitals:", err);
       setError("Failed to load hospitals.");
@@ -61,7 +77,10 @@ function Hospitals() {
 
     setFormData((previous) => ({
       ...previous,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
   };
 
@@ -85,7 +104,10 @@ function Hospitals() {
       setError("");
 
       if (editingHospital) {
-        await updateHospital(editingHospital.id, formData);
+        await updateHospital(
+          editingHospital.id,
+          formData
+        );
       } else {
         await createHospital(formData);
       }
@@ -93,7 +115,10 @@ function Hospitals() {
       resetForm();
       await loadHospitals();
     } catch (err) {
-      console.error("Failed to save hospital:", err);
+      console.error(
+        "Failed to save hospital:",
+        err
+      );
 
       console.error(
         "Backend error:",
@@ -102,7 +127,7 @@ function Hospitals() {
 
       setError(
         err.response?.data?.detail ||
-        "Failed to save hospital."
+          "Failed to save hospital."
       );
     } finally {
       setSaving(false);
@@ -134,14 +159,19 @@ function Hospitals() {
         is_active: !hospital.is_active,
       });
 
-      await loadHospitals();
+      await loadHospitals(
+        `hospitals/?page=${currentPage}`,
+        currentPage
+      );
     } catch (err) {
       console.error(
         "Failed to update hospital status:",
         err
       );
 
-      setError("Failed to update hospital status.");
+      setError(
+        "Failed to update hospital status."
+      );
     }
   };
 
@@ -159,10 +189,9 @@ function Hospitals() {
 
       await deleteHospital(hospital.id);
 
-      setHospitals((previous) =>
-        previous.filter(
-          (item) => item.id !== hospital.id
-        )
+      await loadHospitals(
+        `hospitals/?page=${currentPage}`,
+        currentPage
       );
     } catch (err) {
       console.error(
@@ -170,7 +199,9 @@ function Hospitals() {
         err
       );
 
-      setError("Failed to delete hospital.");
+      setError(
+        "Failed to delete hospital."
+      );
     }
   };
 
@@ -211,13 +242,19 @@ function Hospitals() {
           </div>
 
           <p className="text-muted mb-0">
-            Manage hospitals registered in PulsePath.
+            Manage hospitals registered in
+            PulsePath.
           </p>
         </div>
 
         <button
           className="btn btn-outline-secondary mt-3 mt-md-0"
-          onClick={loadHospitals}
+          onClick={() =>
+            loadHospitals(
+              `hospitals/?page=${currentPage}`,
+              currentPage
+            )
+          }
         >
           <FaRedo className="me-2" />
           Refresh
@@ -381,10 +418,16 @@ function Hospitals() {
       {/* Hospital List */}
       <div className="card border-0 shadow-sm">
 
-        <div className="card-header bg-white py-3">
+        <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+
           <h5 className="fw-bold mb-0">
             Hospital List
           </h5>
+
+          <span className="badge bg-primary">
+            {totalHospitals} Hospitals
+          </span>
+
         </div>
 
         <div className="card-body p-0">
@@ -463,9 +506,11 @@ function Hospitals() {
                       </td>
 
                       <td>
-                        {new Date(
-                          hospital.created_at
-                        ).toLocaleDateString()}
+                        {hospital.created_at
+                          ? new Date(
+                              hospital.created_at
+                            ).toLocaleDateString()
+                          : "—"}
                       </td>
 
                       <td>
@@ -551,6 +596,98 @@ function Hospitals() {
           </div>
 
         </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="d-flex justify-content-center align-items-center mt-4">
+        <nav>
+          <ul className="pagination mb-0">
+
+            {/* Previous */}
+            <li
+              className={`page-item ${
+                !previousPage
+                  ? "disabled"
+                  : ""
+              }`}
+            >
+              <button
+                className="page-link"
+                disabled={!previousPage}
+                onClick={() =>
+                  loadHospitals(
+                    previousPage,
+                    currentPage - 1
+                  )
+                }
+              >
+                Previous
+              </button>
+            </li>
+
+            {/* Page Numbers */}
+            {Array.from(
+              { length: totalPages },
+              (_, index) => {
+                const pageNumber = index + 1;
+
+                return (
+                  <li
+                    key={pageNumber}
+                    className={`page-item ${
+                      currentPage ===
+                      pageNumber
+                        ? "active"
+                        : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => {
+                        if (
+                          pageNumber ===
+                          currentPage
+                        ) {
+                          return;
+                        }
+
+                        loadHospitals(
+                          `hospitals/?page=${pageNumber}`,
+                          pageNumber
+                        );
+                      }}
+                    >
+                      {pageNumber}
+                    </button>
+                  </li>
+                );
+              }
+            )}
+
+            {/* Next */}
+            <li
+              className={`page-item ${
+                !nextPage
+                  ? "disabled"
+                  : ""
+              }`}
+            >
+              <button
+                className="page-link"
+                disabled={!nextPage}
+                onClick={() =>
+                  loadHospitals(
+                    nextPage,
+                    currentPage + 1
+                  )
+                }
+              >
+                Next
+              </button>
+            </li>
+
+          </ul>
+        </nav>
       </div>
 
     </div>

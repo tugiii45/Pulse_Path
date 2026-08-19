@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { createPatient, getPatients } from "../../services/PatientService";
+import {
+  createPatient,
+  getPatients,
+} from "../../services/PatientService";
 
 const initialFormState = {
   first_name: "",
@@ -20,23 +23,49 @@ function Patients() {
   const [previousPage, setPreviousPage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalPatients, setTotalPatients] = useState(0);
+
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [formData, setFormData] = useState(initialFormState);
 
-  const loadPatients = async (url = "patients/", page = 1) => {
+  const [formData, setFormData] =
+    useState(initialFormState);
+
+  const loadPatients = async (
+    url = "patients/",
+    page = 1
+  ) => {
     try {
       const response = await getPatients(url);
 
-      setPatients(response.data.results);
-      setNextPage(response.data.next);
-      setPreviousPage(response.data.previous);
+      const results = response?.results || [];
+      const count = response?.count || 0;
+
+      setPatients(results);
+      setNextPage(response?.next || null);
+      setPreviousPage(response?.previous || null);
+
       setCurrentPage(page);
-      setTotalPages(Math.ceil(response.data.count / 10));
+
+      setTotalPatients(count);
+
+      setTotalPages(
+        Math.max(1, Math.ceil(count / 10))
+      );
     } catch (error) {
-      console.error("Error fetching patients:", error);
+      console.error(
+        "Error fetching patients:",
+        error
+      );
+
+      setPatients([]);
+      setNextPage(null);
+      setPreviousPage(null);
+      setTotalPatients(0);
+      setTotalPages(1);
     }
   };
 
@@ -46,14 +75,27 @@ function Patients() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.first_name || !formData.last_name || !formData.email || !formData.password || !formData.date_of_birth || !formData.emergency_contact) {
-      setError("Please fill out the required patient fields.");
+    if (
+      !formData.first_name ||
+      !formData.last_name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.date_of_birth ||
+      !formData.emergency_contact
+    ) {
+      setError(
+        "Please fill out the required patient fields."
+      );
       return;
     }
 
@@ -72,19 +114,36 @@ function Patients() {
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
         blood_group: formData.blood_group,
-        emergency_contact: formData.emergency_contact,
+        emergency_contact:
+          formData.emergency_contact,
         address: formData.address,
       };
 
       await createPatient(payload);
-      setSuccess("Patient added successfully.");
+
+      setSuccess(
+        "Patient added successfully."
+      );
+
       setFormData(initialFormState);
       setShowForm(false);
+
       await loadPatients();
     } catch (err) {
-      console.error("Create patient error:", err);
-      const backendMessage = err?.response?.data?.errors || err?.response?.data?.message;
-      setError(typeof backendMessage === "string" ? backendMessage : "Failed to create patient.");
+      console.error(
+        "Create patient error:",
+        err
+      );
+
+      const backendMessage =
+        err?.response?.data?.errors ||
+        err?.response?.data?.message;
+
+      setError(
+        typeof backendMessage === "string"
+          ? backendMessage
+          : "Failed to create patient."
+      );
     } finally {
       setSaving(false);
     }
@@ -92,197 +151,535 @@ function Patients() {
 
   return (
     <div className="container-fluid py-4">
+
       {/* Page Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
+
         <div>
-          <h2 className="fw-bold mb-1">Patients</h2>
+          <h2 className="fw-bold mb-1">
+            Patients
+          </h2>
+
           <p className="text-muted mb-0">
             Manage and view registered patients.
           </p>
         </div>
 
         <div className="d-flex gap-2 align-items-center">
-          <button className="btn btn-primary" onClick={() => setShowForm((prev) => !prev)}>
-            {showForm ? "Close" : "+ Add Patient"}
+
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              setShowForm((prev) => !prev)
+            }
+          >
+            {showForm
+              ? "Close"
+              : "+ Add Patient"}
           </button>
+
           <div className="badge bg-primary fs-6 px-3 py-2">
-            {patients.length} Patients
+            {totalPatients} Patients
           </div>
+
         </div>
       </div>
 
-      {error && <div className="alert alert-warning">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {/* Alerts */}
+
+      {error && (
+        <div className="alert alert-warning">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="alert alert-success">
+          {success}
+        </div>
+      )}
+
+      {/* Add Patient Form */}
 
       {showForm && (
         <div className="card border-0 shadow-sm mb-4">
+
           <div className="card-body">
-            <h5 className="fw-bold mb-3">Add Patient</h5>
-            <form onSubmit={handleSubmit} className="row g-3">
+
+            <h5 className="fw-bold mb-3">
+              Add Patient
+            </h5>
+
+            <form
+              onSubmit={handleSubmit}
+              className="row g-3"
+            >
+
+              {/* First Name */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">First Name</label>
-                <input className="form-control" name="first_name" value={formData.first_name} onChange={handleChange} required />
+
+                <label className="form-label fw-semibold">
+                  First Name
+                </label>
+
+                <input
+                  className="form-control"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  required
+                />
+
               </div>
+
+              {/* Last Name */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Last Name</label>
-                <input className="form-control" name="last_name" value={formData.last_name} onChange={handleChange} required />
+
+                <label className="form-label fw-semibold">
+                  Last Name
+                </label>
+
+                <input
+                  className="form-control"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  required
+                />
+
               </div>
+
+              {/* Email */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Email</label>
-                <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required />
+
+                <label className="form-label fw-semibold">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  className="form-control"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+
               </div>
+
+              {/* Password */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Password</label>
-                <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required />
+
+                <label className="form-label fw-semibold">
+                  Password
+                </label>
+
+                <input
+                  type="password"
+                  className="form-control"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+
               </div>
+
+              {/* Phone */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Phone Number</label>
-                <input className="form-control" name="phone_number" value={formData.phone_number} onChange={handleChange} />
+
+                <label className="form-label fw-semibold">
+                  Phone Number
+                </label>
+
+                <input
+                  className="form-control"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                />
+
               </div>
+
+              {/* Date of Birth */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Date of Birth</label>
-                <input type="date" className="form-control" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} required />
+
+                <label className="form-label fw-semibold">
+                  Date of Birth
+                </label>
+
+                <input
+                  type="date"
+                  className="form-control"
+                  name="date_of_birth"
+                  value={formData.date_of_birth}
+                  onChange={handleChange}
+                  required
+                />
+
               </div>
+
+              {/* Gender */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Gender</label>
-                <select className="form-select" name="gender" value={formData.gender} onChange={handleChange}>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="OTHER">Other</option>
+
+                <label className="form-label fw-semibold">
+                  Gender
+                </label>
+
+                <select
+                  className="form-select"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                >
+                  <option value="MALE">
+                    Male
+                  </option>
+
+                  <option value="FEMALE">
+                    Female
+                  </option>
+
+                  <option value="OTHER">
+                    Other
+                  </option>
                 </select>
+
               </div>
+
+              {/* Blood Group */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Blood Group</label>
-                <input className="form-control" name="blood_group" value={formData.blood_group} onChange={handleChange} />
+
+                <label className="form-label fw-semibold">
+                  Blood Group
+                </label>
+
+                <input
+                  className="form-control"
+                  name="blood_group"
+                  value={formData.blood_group}
+                  onChange={handleChange}
+                />
+
               </div>
+
+              {/* Emergency Contact */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Emergency Contact</label>
-                <input className="form-control" name="emergency_contact" value={formData.emergency_contact} onChange={handleChange} required />
+
+                <label className="form-label fw-semibold">
+                  Emergency Contact
+                </label>
+
+                <input
+                  className="form-control"
+                  name="emergency_contact"
+                  value={
+                    formData.emergency_contact
+                  }
+                  onChange={handleChange}
+                  required
+                />
+
               </div>
+
+              {/* Address */}
+
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Address</label>
-                <input className="form-control" name="address" value={formData.address} onChange={handleChange} />
+
+                <label className="form-label fw-semibold">
+                  Address
+                </label>
+
+                <input
+                  className="form-control"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                />
+
               </div>
+
+              {/* Form Buttons */}
+
               <div className="col-12 d-flex justify-content-end gap-2">
-                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowForm(false)}>
+
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() =>
+                    setShowForm(false)
+                  }
+                >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : "Create Patient"}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={saving}
+                >
+                  {saving
+                    ? "Saving..."
+                    : "Create Patient"}
                 </button>
+
               </div>
+
             </form>
+
           </div>
         </div>
       )}
 
-      {/* Patients Card */}
+      {/* Patients Table */}
+
       <div className="card border-0 shadow-sm">
+
         <div className="card-body p-0">
+
           <div className="table-responsive">
+
             <table className="table table-hover align-middle mb-0">
+
               <thead className="table-light">
+
                 <tr>
-                  <th className="px-4">Patient</th>
-                  <th>Email</th>
-                  <th>Date of Birth</th>
-                  <th>Gender</th>
-                  <th>Blood Group</th>
-                  <th>Emergency Contact</th>
-                  <th className="text-center">Action</th>
+
+                  <th className="px-4">
+                    Patient
+                  </th>
+
+                  <th>
+                    Email
+                  </th>
+
+                  <th>
+                    Date of Birth
+                  </th>
+
+                  <th>
+                    Gender
+                  </th>
+
+                  <th>
+                    Blood Group
+                  </th>
+
+                  <th>
+                    Emergency Contact
+                  </th>
+
+                  <th className="text-center">
+                    Action
+                  </th>
+
                 </tr>
+
               </thead>
 
               <tbody>
-                {patients.map((patient) => (
-                  <tr key={patient.id}>
-                    <td className="px-4">
-                      <div className="fw-semibold">{patient.full_name}</div>
+
+                {patients.length > 0 ? (
+
+                  patients.map((patient) => (
+
+                    <tr key={patient.id}>
+
+                      <td className="px-4">
+
+                        <div className="fw-semibold">
+                          {patient.full_name}
+                        </div>
+
+                      </td>
+
+                      <td>
+                        {patient.email}
+                      </td>
+
+                      <td>
+                        {patient.date_of_birth}
+                      </td>
+
+                      <td>
+
+                        <span className="badge bg-light text-dark">
+                          {patient.gender}
+                        </span>
+
+                      </td>
+
+                      <td>
+
+                        <span className="badge bg-danger">
+                          {patient.blood_group}
+                        </span>
+
+                      </td>
+
+                      <td>
+                        {patient.emergency_contact}
+                      </td>
+
+                      <td className="text-center">
+
+                        <button className="btn btn-sm btn-outline-primary">
+                          View
+                        </button>
+
+                      </td>
+
+                    </tr>
+
+                  ))
+
+                ) : (
+
+                  <tr>
+
+                    <td
+                      colSpan="7"
+                      className="text-center py-5"
+                    >
+                      <div className="text-muted">
+                        No patients found.
+                      </div>
                     </td>
 
-                    <td>{patient.email}</td>
-
-                    <td>{patient.date_of_birth}</td>
-
-                    <td>
-                      <span className="badge bg-light text-dark">
-                        {patient.gender}
-                      </span>
-                    </td>
-
-                    <td>
-                      <span className="badge bg-danger">
-                        {patient.blood_group}
-                      </span>
-                    </td>
-
-                    <td>{patient.emergency_contact}</td>
-
-                    <td className="text-center">
-                      <button className="btn btn-sm btn-outline-primary">
-                        View
-                      </button>
-                    </td>
                   </tr>
-                ))}
+
+                )}
+
               </tbody>
+
             </table>
+
           </div>
+
         </div>
+
       </div>
 
+      {/* Pagination */}
+
       <div className="d-flex justify-content-center align-items-center mt-4">
+
         <nav>
+
           <ul className="pagination mb-0">
+
             {/* Previous */}
-            <li className={`page-item ${!previousPage ? "disabled" : ""}`}>
+
+            <li
+              className={`page-item ${
+                !previousPage
+                  ? "disabled"
+                  : ""
+              }`}
+            >
+
               <button
                 className="page-link"
-                onClick={() => loadPatients(previousPage, currentPage - 1)}
+                onClick={() =>
+                  loadPatients(
+                    previousPage,
+                    currentPage - 1
+                  )
+                }
                 disabled={!previousPage}
               >
                 Previous
               </button>
+
             </li>
 
             {/* Page Numbers */}
-            {Array.from({ length: totalPages }, (_, index) => {
-              const pageNumber = index + 1;
 
-              return (
-                <li
-                  key={pageNumber}
-                  className={`page-item ${
-                    currentPage === pageNumber ? "active" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => {
-                      if (pageNumber === currentPage) return;
+            {Array.from(
+              { length: totalPages },
+              (_, index) => {
 
-                      loadPatients(`patients/?page=${pageNumber}`, pageNumber);
-                    }}
+                const pageNumber =
+                  index + 1;
+
+                return (
+                  <li
+                    key={pageNumber}
+                    className={`page-item ${
+                      currentPage ===
+                      pageNumber
+                        ? "active"
+                        : ""
+                    }`}
                   >
-                    {pageNumber}
-                  </button>
-                </li>
-              );
-            })}
+
+                    <button
+                      className="page-link"
+                      onClick={() => {
+
+                        if (
+                          pageNumber ===
+                          currentPage
+                        ) {
+                          return;
+                        }
+
+                        loadPatients(
+                          `patients/?page=${pageNumber}`,
+                          pageNumber
+                        );
+
+                      }}
+                    >
+                      {pageNumber}
+                    </button>
+
+                  </li>
+                );
+
+              }
+            )}
 
             {/* Next */}
-            <li className={`page-item ${!nextPage ? "disabled" : ""}`}>
+
+            <li
+              className={`page-item ${
+                !nextPage
+                  ? "disabled"
+                  : ""
+              }`}
+            >
+
               <button
                 className="page-link"
-                onClick={() => loadPatients(nextPage, currentPage + 1)}
+                onClick={() =>
+                  loadPatients(
+                    nextPage,
+                    currentPage + 1
+                  )
+                }
                 disabled={!nextPage}
               >
                 Next
               </button>
+
             </li>
+
           </ul>
+
         </nav>
+
       </div>
+
     </div>
   );
 }

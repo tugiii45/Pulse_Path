@@ -1,48 +1,38 @@
 import api from "./api";
 
 /**
- * Fetches all hospitals available from the backend.
+ * Fetches hospitals from the backend.
+ *
+ * Returns the complete API payload so that
+ * pagination information such as results,
+ * count, next, and previous is preserved.
  */
-export const getHospitals = async () => {
-  const response = await api.get("hospitals/");
+export const getHospitals = async (
+  url = "hospitals/"
+) => {
+  const response = await api.get(url);
 
-  const payload = response?.data?.data ?? response?.data;
-
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (payload && typeof payload === "object") {
-    if (Array.isArray(payload.results)) {
-      return payload.results;
-    }
-
-    if (Array.isArray(payload.data)) {
-      return payload.data;
-    }
-  }
-
-  return [];
+  return response.data?.data ?? response.data;
 };
+
 /**
  * Creates a new hospital.
  *
  * @param {Object} hospitalData - Information for the new hospital.
  */
-export const createHospital = async (hospitalData) => {
+export const createHospital = async (
+  hospitalData
+) => {
   const response = await api.post(
     "hospitals/",
     hospitalData
   );
 
-  return response.data;
+  return response.data?.data ?? response.data;
 };
 
 /**
  * Fully updates an existing hospital.
- *
- * PUT replaces the existing hospital resource
- * with the supplied data.
  *
  * @param {string|number} hospitalId - Hospital ID.
  * @param {Object} hospitalData - Complete hospital information.
@@ -56,13 +46,11 @@ export const updateHospital = async (
     hospitalData
   );
 
-  return response.data;
+  return response.data?.data ?? response.data;
 };
 
 /**
  * Partially updates an existing hospital.
- *
- * PATCH only changes the fields provided.
  *
  * @param {string|number} hospitalId - Hospital ID.
  * @param {Object} hospitalData - Fields to update.
@@ -76,7 +64,7 @@ export const patchHospital = async (
     hospitalData
   );
 
-  return response.data;
+  return response.data?.data ?? response.data;
 };
 
 /**
@@ -84,10 +72,12 @@ export const patchHospital = async (
  *
  * @param {string|number} hospitalId - Hospital ID.
  */
-export const deleteHospital = async (hospitalId) => {
+export const deleteHospital = async (
+  hospitalId
+) => {
   const response = await api.delete(
     `hospitals/${hospitalId}/`
   );
 
-  return response.data;
+  return response.data?.data ?? response.data;
 };
