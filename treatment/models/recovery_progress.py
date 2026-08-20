@@ -13,6 +13,7 @@ class RecoveryProgress(models.Model):
     notes = models.TextField(blank=True, null=True)
     improvement_percentage = models.PositiveIntegerField(null=True, blank=True, help_text="Recovery improvement percentage(0-100)")
     recorded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
         super().clean()

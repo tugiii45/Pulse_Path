@@ -4,6 +4,8 @@ from accounts.permissions import *
 from treatment.serializers import RecoveryProgressSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from accounts.views.mixins import HospitalQuerySetMixin
+from notifications.services import create_notification
+from notifications.models import Notification
 
 
 class RecoveryProgressListCreateView(
@@ -63,11 +65,29 @@ class RecoveryProgressListCreateView(
 
         return [permission() for permission in permission_classes]
 
+    
     def perform_create(self, serializer):
-        user = self.request.user
-
-        if user.role == "PATIENT":
-            serializer.save(patient=user.patient)
+                user = self.request.user
+    
+                if user.role == "PATIENT":
+                    recovery = serializer.save(patient=user.patient)
+    
+                    if recovery.visit and recovery.visit.doctor:
+                        doctor_user = recovery.visit.doctor.user
+    
+                        create_notification(
+                           recipient=doctor_user,
+                           created_by=user,
+                           title="New Recovery Update",
+                           message=(
+                                f"{user.get_full_name()} has submitted a new "
+                                f"recovery update with "
+                                f"{recovery.improvement_percentage}% improvement."
+                            ),
+                            notification_type=Notification.NotificationType.RECOVERY,
+                            notification_key=f"recovery-created-{recovery.id}",
+                )
+    
     
 
 
@@ -92,4 +112,27 @@ class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateD
 
             return RecoveryProgress.objects.filter(patient__user=user)
 
+        def perform_update(self, serializer):
+           recovery = serializer.save()
+
+           patient_user = recovery.patient.user
+
+           create_notification(
+              recipient=patient_user,
+              created_by=self.request.user,
+              title="Recovery Update",
+              message=(
+                f"Your recovery progress has been updated. "
+                f"Current improvement: "
+                f"{recovery.improvement_percentage}%."
+        ),
+              notification_type=Notification.NotificationType.RECOVERY,
+              notification_key=(
+                f"recovery-updated-{recovery.id}-"
+                f"{recovery.updated_at.timestamp()}"
+        ),
+    )
+
+
+        
         
