@@ -49,12 +49,18 @@ export const getDoctorsByHospital = async (hospitalId) => {
 };
 
 /**
- * Creates a new doctor.
+ * Creates a new doctor account (ADMIN only).
  *
- * @param {Object} data - Doctor information.
+ * Unlike the old self-service /doctors/ POST (now read-only), this
+ * creates both the underlying user account and the Doctor profile,
+ * then emails the doctor an invite link to set their password and
+ * activate their account. See accounts/views/doctor_provisioning.py.
+ *
+ * @param {Object} data - { email, first_name, last_name, phone_number,
+ *   department, specialization, license_number, years_of_experience }
  */
-export const createDoctor = async (data) => {
-  const response = await api.post("doctors/", data);
+export const createDoctorByAdmin = async (data) => {
+  const response = await api.post("doctors/create/", data);
 
   return response.data?.data ?? response.data;
 };

@@ -9,8 +9,15 @@ const setAuthMessage = (message) => {
   sessionStorage.removeItem("auth_message");
 };
 
+// Falls back to 127.0.0.1 for local-only development. Set
+// VITE_API_BASE_URL in your .env (e.g. http://192.168.1.66:8000/api/)
+// when you need the backend reachable from another device, like a
+// phone on the same network.
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
+
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use((config) => {
@@ -36,7 +43,7 @@ api.interceptors.response.use(
       if (refresh) {
         try {
           // Use plain axios to avoid interceptor loops
-          const res = await axios.post("http://127.0.0.1:8000/api/token/refresh/", {
+          const res = await axios.post(`${API_BASE_URL}token/refresh/`, {
             refresh,
           });
 

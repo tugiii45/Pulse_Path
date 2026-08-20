@@ -4,7 +4,7 @@ import api from "./api";
  * Extracts the authentication payload from the API response.
  *
  * The backend may return authentication data directly
- * or wrap it inside a `data` property.
+ * or wrapped inside a `data` property.
  *
  * This keeps the rest of the application independent
  * of the exact response structure.
@@ -38,6 +38,26 @@ export const loginUser = async (email, password) => {
  */
 export const registerUser = async (userData) => {
   const response = await api.post("register/", userData);
+
+  return getAuthPayload(response);
+};
+
+/**
+ * Sets the password for a newly invited account (e.g. a doctor
+ * account created by an admin) using the uidb64/token pair from
+ * the invite email link, activating the account for login.
+ *
+ * @param {Object} params
+ * @param {string} params.uidb64 - Base64-encoded user id from the invite link.
+ * @param {string} params.token - Invite/activation token from the invite link.
+ * @param {string} params.password - The new password to set.
+ */
+export const setPassword = async ({ uidb64, token, password }) => {
+  const response = await api.post("set-password/", {
+    uidb64,
+    token,
+    password,
+  });
 
   return getAuthPayload(response);
 };

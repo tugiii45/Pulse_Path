@@ -1,44 +1,45 @@
 """
 Doctor API views for PulsePath.
 
-Provides list, create, retrieve, update, and delete endpoints for
-doctor profiles. Supports filtering by department, specialization,
-and experience. Hospital-scoped via the HospitalQuerySetMixin.
+Provides list, retrieve, update, and delete endpoints for doctor
+profiles. Supports filtering by department, specialization, and
+experience. Hospital-scoped via the HospitalQuerySetMixin.
+
+NOTE: Doctor account creation now happens exclusively through
+AdminCreateDoctorView (accounts/views/doctor_provisioning.py), which
+creates the CustomUser + Doctor profile together and emails an
+account-activation link. Doctors never self-register or self-create
+a Doctor profile, so POST is disabled on this view.
 """
 
-from rest_framework import generics, filters, status
+from rest_framework import generics, filters
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import Doctor, Department
-from accounts.serializers import (DoctorSerializer, AdminCreateDoctorSerializer)
+from accounts.serializers import DoctorSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins import HospitalQuerySetMixin
-from drf_spectacular.utils import (extend_schema,extend_schema_view,OpenApiParameter,OpenApiTypes,)
-from rest_framework.response import Response
+from drf_spectacular.utils import (extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes,)
 
-class DoctorListView(HospitalQuerySetMixin, generics.ListAPIView):
+
+class DoctorListCreateView(HospitalQuerySetMixin, generics.ListAPIView):
     """
-    List doctors within the authenticated user's hospital.
+    List all doctors (with filtering). Read-only -- see module
+    docstring for why creation was moved to AdminCreateDoctorView.
 
-    Doctor accounts are not created through this endpoint.
-    Doctor creation is handled exclusively through the admin-only
-    doctor provisioning endpoint.
+    Filtering:
+    - By department, specialization, and years of experience.
+    - Search by specialization, name, and license number.
+    - Order by creation date or experience.
     """
 
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
+    permission_classes = [IsAuthenticated]
 
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-    ]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
-    filterset_fields = [
-        "department",
-        "specialization",
-        "years_of_experience",
-    ]
+    filterset_fields = ["department", "specialization", "years_of_experience"]
 
     search_fields = [
         "specialization",
@@ -47,34 +48,43 @@ class DoctorListView(HospitalQuerySetMixin, generics.ListAPIView):
         "license_number",
     ]
 
-    ordering_fields = [
-        "created_at",
-        "years_of_experience",
-    ]
+    ordering_fields = ["created_at", "years_of_experience"]
 
     ordering = ["-created_at"]
-
-    permission_classes = [IsAuthenticated]
 
     use_user_field = False
     hospital_field = "department__hospital"
 
-class DoctorDetailView(
-    HospitalQuerySetMixin,
-    generics.RetrieveUpdateDestroyAPIView,
-):
-    """
-    Retrieve, update, or delete a doctor profile.
 
-    Access is restricted to administrators and doctors within the
-    appropriate hospital scope.
+class DoctorDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update, or delete a specific doctor profile.
+
+    Requires DOCTOR or ADMIN role. Hospital-scoped to prevent
+    accessing doctors from other hospitals.
     """
 
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     permission_classes = [IsDoctorOrAdmin]
-    hospital_field = "department__hospital"    
+    hospital_field = "department__hospital"
 
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="hospital",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description="ID of the hospital used to filter doctors.",
+        ),
+    ],
+    description=(
+        "Returns doctors belonging to the selected hospital. "
+        "Doctors are identified through their department's hospital relationship."
+    ),
+)
 class HospitalDoctorsView(generics.ListAPIView):
     """
     Returns doctors belonging to a selected hospital.
@@ -98,40 +108,4 @@ class HospitalDoctorsView(generics.ListAPIView):
             "user",
             "department",
             "department__hospital",
-        )
-
-class AdminCreateDoctorView(generics.CreateAPIView):
-    """
-    Allows administrators to provision doctor accounts.
-
-    The doctor is created with:
-    - a CustomUser account with DOCTOR role
-    - hospital derived from the selected department
-    - a Doctor profile
-
-    The doctor does not receive a password from the administrator.
-    An invitation email will be sent so the doctor can set their password.
-    """
-
-    serializer_class = AdminCreateDoctorSerializer
-    permission_classes = [IsAdmin]
-
-    def create(self, request, *args, **kwargs):
-        """
-        Create the doctor using the admin serializer and return the
-        resulting Doctor profile using the standard DoctorSerializer.
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        doctor = serializer.save()
-
-        response_serializer = DoctorSerializer(
-            doctor,
-            context={"request": request},
-        )
-
-        return Response(
-            response_serializer.data,
-            status=status.HTTP_201_CREATED,
         )

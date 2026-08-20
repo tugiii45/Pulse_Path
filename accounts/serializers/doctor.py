@@ -10,9 +10,6 @@ the user's hospital.
 from rest_framework import serializers
 from ..models import Doctor, Department
 from rest_framework.exceptions import ValidationError
-from django.db import transaction
-from django.contrib.auth import get_user_model
-from ..utils.doctor_invite import send_doctor_invitation
 
 
 class DoctorSerializer(serializers.ModelSerializer):
@@ -80,8 +77,13 @@ class DoctorSerializer(serializers.ModelSerializer):
         """
         Auto-assign the authenticated user as the doctor's user.
 
-        The user is extracted from the request context instead of
-        requiring the client to provide a user ID in the POST body.
+        NOTE: This method is no longer called by any active view.
+        DoctorListCreateView is now list-only (see accounts/views/doctor.py),
+        and doctor creation happens exclusively through
+        AdminCreateDoctorSerializer (accounts/serializers/doctor_provisioning.py).
+        Kept here only in case this serializer is reused for a future
+        self-service "complete your profile" flow -- if that flow is
+        never built, this method can be deleted.
         """
         validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
@@ -104,100 +106,3 @@ class DoctorSerializer(serializers.ModelSerializer):
                     "The selected department does not belong to your hospital."
                 )
         return value
-
-class AdminCreateDoctorSerializer(serializers.Serializer):
-    """
-    Serializer used exclusively by administrators to create doctor accounts.
-
-    Creates both the CustomUser account and the associated Doctor profile
-    in a single database transaction.
-    """
-
-    email = serializers.EmailField()
-    first_name = serializers.CharField(max_length=50)
-    last_name = serializers.CharField(max_length=50)
-    phone_number = serializers.CharField(
-        max_length=10,
-        required=False,
-        allow_blank=True,
-    )
-    department = serializers.PrimaryKeyRelatedField(
-        queryset=Department.objects.all(),
-    )
-    specialization = serializers.CharField(max_length=100)
-    license_number = serializers.CharField(max_length=100)
-    years_of_experience = serializers.IntegerField(
-        min_value=0,
-    )
-
-    def validate_email(self, value):
-        """Prevent creation of duplicate user accounts."""
-        User = get_user_model()
-
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(
-                "A user with this email address already exists."
-            )
-
-        return value
-
-    def validate_license_number(self, value):
-        """Prevent duplicate doctor license numbers."""
-        if Doctor.objects.filter(license_number=value).exists():
-            raise serializers.ValidationError(
-                "A doctor with this license number already exists."
-            )
-
-        return value
-
-    def validate_department(self, value):
-        """
-        Ensure the selected department belongs to a hospital.
-
-        Doctors must always be assigned to both a department and hospital.
-        """
-        if value.hospital_id is None:
-            raise serializers.ValidationError(
-                "The selected department is not assigned to a hospital."
-            )
-
-        return value
-
-    @transaction.atomic
-    def create(self, validated_data):
-        """
-        Create the doctor user and Doctor profile atomically.
-
-        The password is intentionally not set here. The doctor will receive
-        an email invitation and set their own password through the invitation
-        flow.
-        """
-        User = get_user_model()
-
-        department = validated_data.pop("department")
-        hospital = department.hospital
-
-        user = User(
-            email=validated_data["email"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
-            phone_number=validated_data.get("phone_number", ""),
-            role=User.Role.DOCTOR,
-            hospital=hospital,
-            is_active=True,
-        )
-
-        user.set_unusable_password()
-        user.save()
-
-        doctor = Doctor.objects.create(
-            user=user,
-            department=department,
-            specialization=validated_data["specialization"],
-            license_number=validated_data["license_number"],
-            years_of_experience=validated_data["years_of_experience"],
-        )
-
-        send_doctor_invitation(user)
-
-        return doctor

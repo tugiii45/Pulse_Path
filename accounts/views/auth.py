@@ -5,6 +5,13 @@ Handles user registration (open to everyone) and profile retrieval
 (restricted to authenticated users). Registration uses the custom
 RegisterSerializer which hashes passwords, and profile retrieval
 uses the ProfileSerializer to expose user details.
+
+NOTE: The "set password" flow for admin-invited doctor accounts
+lives in accounts/views/doctor_provisioning.py (SetPasswordView),
+wired to the /set-password/ route in accounts/urls.py. A duplicate,
+broken SetDoctorPasswordView (referencing a SetDoctorPasswordSerializer
+that no longer exists) was removed from this file -- it was dead code
+left over from an earlier, abandoned attempt at the same feature.
 """
 
 from rest_framework.response import Response
@@ -13,8 +20,7 @@ from ..serializers import RegisterSerializer, ProfileSerializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics
-from accounts.serializers import SetDoctorPasswordSerializer
+
 
 class RegisterView(APIView):
     """
@@ -69,16 +75,4 @@ class ProfileView(APIView):
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
-
         )
-
-class SetDoctorPasswordView(generics.CreateAPIView):
-    """
-    Allows an invited doctor to set their password.
-
-    This endpoint is public because the doctor is not authenticated yet.
-    Access is secured through the invitation token.
-    """
-
-    serializer_class = SetDoctorPasswordSerializer
-    permission_classes = [AllowAny]

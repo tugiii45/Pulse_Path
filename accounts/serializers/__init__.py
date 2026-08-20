@@ -8,5 +8,5 @@ management, patient info, departments, and doctors.
 from .auth import RegisterSerializer, ProfileSerializer
 from .patient import PatientSerializer
 from .department import DepartmentSerializer
-from .doctor import DoctorSerializer, AdminCreateDoctorSerializer
-from .set_password import SetDoctorPasswordSerializer
+from .doctor import DoctorSerializer
+from .doctor_provisioning import AdminCreateDoctorSerializer, SetPasswordSerializer
