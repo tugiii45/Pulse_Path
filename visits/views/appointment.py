@@ -13,6 +13,8 @@ from ..serializers import AppointmentSerializer
 from accounts.permissions import *
 from django_filters.rest_framework import DjangoFilterBackend
 from accounts.views.mixins import HospitalQuerySetMixin
+from notifications.services import create_notification
+from notifications.models import Notification
 
 
 class AppointmentListCreateView(generics.ListCreateAPIView):
@@ -78,7 +80,10 @@ class AppointmentListCreateView(generics.ListCreateAPIView):
         return queryset.none()
 
 
-class AppointmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
+class AppointmentDetailView(
+    HospitalQuerySetMixin,
+    generics.RetrieveUpdateDestroyAPIView
+):
     """
     Retrieve, update, or delete a specific appointment.
 
@@ -89,3 +94,54 @@ class AppointmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestro
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+
+    def perform_update(self, serializer):
+        appointment = self.get_object()
+
+        old_status = appointment.status
+
+        appointment = serializer.save()
+
+        new_status = appointment.status
+
+        # Only create a notification when the status actually changes.
+        if old_status != new_status:
+
+            patient_user = appointment.patient.user
+
+            if new_status == "CONFIRMED":
+                create_notification(
+                    recipient=patient_user,
+                    created_by=self.request.user,
+                    title="Appointment Confirmed",
+                    message=(
+                        f"Your appointment with Dr. "
+                        f"{appointment.doctor.user.get_full_name()} "
+                        f"has been confirmed for "
+                        f"{appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')}."
+                    ),
+                    notification_type=Notification.NotificationType.APPOINTMENT,
+                    notification_key=(
+                        f"appointment-{appointment.id}-confirmed-"
+                        f"{appointment.updated_at.timestamp()}"
+                    ),
+                )
+
+            elif new_status == "CANCELLED":
+                create_notification(
+                    recipient=patient_user,
+                    created_by=self.request.user,
+                    title="Appointment Cancelled",
+                    message=(
+                        f"Your appointment with Dr. "
+                        f"{appointment.doctor.user.get_full_name()} "
+                        f"scheduled for "
+                        f"{appointment.appointment_date.strftime('%B %d, %Y at %I:%M %p')} "
+                        f"has been cancelled."
+                    ),
+                    notification_type=Notification.NotificationType.APPOINTMENT,
+                    notification_key=(
+                        f"appointment-{appointment.id}-cancelled-"
+                        f"{appointment.updated_at.timestamp()}"
+                    ),
+                )
