@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import *
 from accounts.views.mixins import HospitalQuerySetMixin
 
+
 class TreatmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     serializer_class = TreatmentSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
