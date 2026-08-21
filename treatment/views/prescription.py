@@ -19,6 +19,8 @@ class PrescriptionListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIVi
     ordering = ["-prescribed_at"]
 
     hospital_field = "diagnosis__visit__patient__user__hospital"
+    doctor_field = "diagnosis__visit__doctor__user"
+    patient_field = "diagnosis__visit__patient__user"
 
 
 class PrescriptionDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -26,3 +28,5 @@ class PrescriptionDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestr
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
     hospital_field = "diagnosis__visit__patient__user__hospital"
+    doctor_field = "diagnosis__visit__doctor__user"
+    patient_field = "diagnosis__visit__patient__user"

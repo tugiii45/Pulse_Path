@@ -8,6 +8,7 @@ from accounts.views.mixins import HospitalQuerySetMixin
 
 
 class MedicationScheduleListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+    queryset = MedicationSchedule.objects.all()
     serializer_class = MedicationScheduleSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
 
@@ -18,30 +19,27 @@ class MedicationScheduleListCreateView(HospitalQuerySetMixin, generics.ListCreat
     ordering = ["start_date"]
 
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
+    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    patient_field = "prescription__diagnosis__visit__patient__user"
 
     def get_queryset(self):
-      queryset = MedicationSchedule.objects.all()
+        # Get role/doctor/patient/hospital-scoped queryset from the mixin first.
+        queryset = super().get_queryset()
 
-      user = self.request.user
+        if (
+            self.request.query_params.get("is_active") is None
+            and not self.request.query_params.get("all")
+        ):
+            queryset = queryset.filter(is_active=True)
 
-    # Patients can only see their own medication schedules.
-      if user.role == "PATIENT":
-        queryset = queryset.filter(
-            prescription__diagnosis__visit__patient__user=user
-        )
-
-    # By default, only return active schedules.
-      if (
-        self.request.query_params.get("is_active") is None
-        and not self.request.query_params.get("all")
-    ):
-        queryset = queryset.filter(is_active=True)
-
-      return queryset
+        return queryset
 
 
 class MedicationScheduleDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = MedicationSchedule.objects.all()
     serializer_class = MedicationScheduleSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
+    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    patient_field = "prescription__diagnosis__visit__patient__user"

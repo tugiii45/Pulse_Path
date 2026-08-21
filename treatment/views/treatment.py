@@ -11,26 +11,8 @@ class TreatmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView)
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
 
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
-
-    def get_queryset(self):
-        # Schema generation uses AnonymousUser — return empty queryset
-        if not self.request.user.is_authenticated:
-            return Treatment.objects.none()
-
-        user = self.request.user
-
-        if user.is_superuser:
-            return Treatment.objects.all()
-
-        if hasattr(user, "patient"):
-            return Treatment.objects.filter(prescription__diagnosis__visit__patient=user.patient)
-
-        if user.hospital_id:
-            return Treatment.objects.filter(
-                prescription__diagnosis__visit__patient__user__hospital=user.hospital
-            )
-
-        return Treatment.objects.none()
+    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    patient_field = "prescription__diagnosis__visit__patient__user"
 
 
 class TreatmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -38,3 +20,5 @@ class TreatmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyA
     serializer_class = TreatmentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
+    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    patient_field = "prescription__diagnosis__visit__patient__user"

@@ -58,82 +58,95 @@ class IsDoctorOrAdmin(BasePermission):
 
 class IsDoctorOrAdminOrPatientOwner(BasePermission):
     """
-    Mixed permission: doctors and admins get full access, while patients
-    can only access their own records via read-only methods (GET, HEAD, OPTIONS).
+    Doctors and admins have access within their normal hospital scope.
 
-    Object-level check ensures patients can only access objects where
-    they are the owner (traced through various relationship paths).
+    Patients have read-only access and can only access records
+    belonging to themselves.
     """
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
 
-        # Doctors and admins can access any record in their scope.
         if request.user.role in ["ADMIN", "DOCTOR"]:
             return True
 
-        # Patients can only perform read operations.
-        return request.method in ["GET", "HEAD", "OPTIONS"]
+        if request.user.role == "PATIENT":
+            return request.method in ["GET", "HEAD", "OPTIONS"]
 
-    def has_permission(self, request, view):
-       if not request.user.is_authenticated:
         return False
 
-       if request.user.role in ["ADMIN", "DOCTOR"]:
-        return True
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
 
-    # Patients can read, and create their own appointments.
-       return request.method in ["GET", "HEAD", "OPTIONS", "POST"]
+        if request.user.role in ["ADMIN", "DOCTOR"]:
+            return True
+
+        if request.user.role == "PATIENT":
+            if request.method not in ["GET", "HEAD", "OPTIONS"]:
+                return False
+
+            return self._is_patient_owner(request.user, obj)
+
+        return False
 
     def _is_patient_owner(self, user, obj):
         """
-        Trace the object's relationships to determine if the given user
-        is the patient that owns this record.
-
-        Supports multiple relationship paths since different models
-        connect to the patient differently (e.g., direct FK, through
-        visit, through appointment, through diagnosis, etc.).
+        Determine whether the object belongs to the authenticated patient.
         """
-        # Direct patient FK on the object.
+
+        # Direct patient FK.
         if hasattr(obj, "patient"):
             return obj.patient.user == user
 
-        # Relationships via appointment -> patient.
+        # Appointment -> patient.
         if hasattr(obj, "appointment"):
             return obj.appointment.patient.user == user
 
-        # Relationships via visit -> patient.
+        # Visit -> patient.
         if hasattr(obj, "visit"):
             return obj.visit.patient.user == user
 
-        # Relationships via clinical_record -> visit -> patient.
+        # Clinical record -> visit -> patient.
         if hasattr(obj, "clinical_record"):
             return obj.clinical_record.visit.patient.user == user
 
-        # Relationships via diagnosis -> visit -> patient.
+        # Diagnosis -> visit -> patient.
         if hasattr(obj, "diagnosis"):
             return obj.diagnosis.visit.patient.user == user
 
-        # Relationships via prescription -> diagnosis -> visit -> patient.
+        # Prescription -> diagnosis -> visit -> patient.
         if hasattr(obj, "prescription"):
-            return obj.prescription.diagnosis.visit.patient.user == user
-
-        # Relationships via medication_schedule -> prescription -> ...
-        if hasattr(obj, "medication_schedule"):
             return (
-                obj.medication_schedule.prescription.diagnosis.visit.patient.user
+                obj.prescription
+                .diagnosis
+                .visit
+                .patient
+                .user
                 == user
             )
 
-        # Notification ownership (recipient or creator).
-        if hasattr(obj, "recipient"):
-            return obj.recipient == user
+        # Medication schedule -> prescription -> diagnosis -> visit -> patient.
+        if hasattr(obj, "medication_schedule"):
+            return (
+                obj.medication_schedule
+                .prescription
+                .diagnosis
+                .visit
+                .patient
+                .user
+                == user
+            )
 
-        if hasattr(obj, "created_by"):
-            return obj.created_by == user
+        # Notification ownership.
+        if hasattr(obj, "recipient") and obj.recipient == user:
+            return True
 
-        # Generic user FK (e.g., Doctor, Patient models themselves).
+        if hasattr(obj, "created_by") and obj.created_by == user:
+            return True
+
+        # Generic user FK.
         if hasattr(obj, "user"):
             return obj.user == user
 
@@ -142,11 +155,9 @@ class IsDoctorOrAdminOrPatientOwner(BasePermission):
 
 class IsOwnerOrDoctor(BasePermission):
     """
-    Object-level permission: doctors and admins can access any object,
-    while patients can only access objects they own.
+    Doctors and admins can access records within their permitted scope.
 
-    This is a simpler variant of IsDoctorOrAdminOrPatientOwner that
-    delegates the ownership check to the _is_patient_owner method.
+    Patients can only read records that belong to them.
     """
 
     def has_permission(self, request, view):
@@ -156,13 +167,22 @@ class IsOwnerOrDoctor(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        # Doctors and admins can access any object.
+        # Doctors and admins can access records within
+        # their queryset/hospital scope.
         if request.user.role in ["ADMIN", "DOCTOR"]:
             return True
 
-        # Delegate ownership check to the shared utility method.
-        return IsDoctorOrAdminOrPatientOwner()._is_patient_owner(request.user, obj)
+        # Patients are read-only.
+        if request.user.role == "PATIENT":
+            if request.method not in ["GET", "HEAD", "OPTIONS"]:
+                return False
 
+            return IsDoctorOrAdminOrPatientOwner()._is_patient_owner(
+                request.user,
+                obj,
+            )
+
+        return False
 
 class IsInSameHospital(BasePermission):
     """

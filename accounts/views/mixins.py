@@ -24,19 +24,18 @@ Supported configurations:
 
 class HospitalQuerySetMixin:
     """
-    Ensures list and detail views only return records belonging to the current
-    user's hospital, improving privacy and data scoping.
+    Ensures list and detail views only return records belonging to the
+    current user's hospital, doctor, or patient scope — in that priority
+    order: doctor/patient scoping first (if configured), hospital-wide
+    scoping as the fallback.
 
-    Superusers bypass the filter entirely and see all records across
-    all hospitals.
+    Superusers bypass all filters and see every record.
     """
 
-    # The ORM path to the hospital field on the model.
-    # Example: "patient__user__hospital" for Visit model.
     hospital_field = None
+    doctor_field = None   # ORM path ending at the doctor's CustomUser
+    patient_field = None  # ORM path ending at the patient's CustomUser
 
-    # Convenience flags for common field paths.
-    # These avoid repeating the full ORM path string.
     use_patient_field = False
     use_doctor_field = False
     use_user_field = False
@@ -44,43 +43,37 @@ class HospitalQuerySetMixin:
     use_recipient_field = False
 
     def get_queryset(self):
-        """
-        Return the queryset filtered to the current user's hospital.
+     if not self.request.user.is_authenticated:
+        return super().get_queryset().none()
 
-        Superusers see everything. Users without a hospital assignment
-        get an empty queryset. Otherwise, the queryset is filtered
-        using the configured hospital field path.
-        """
-        # Schema generation (drf-spectacular) uses AnonymousUser which
-        # does not have a hospital_id attribute. Return empty queryset
-        # to avoid AttributeError during schema introspection.
-        if not self.request.user.is_authenticated:
-            return super().get_queryset().none()
+     user = self.request.user
 
-        user = self.request.user
+     if user.is_superuser:
+        return super().get_queryset()
 
-        # Superusers bypass the hospital filter and see all records.
-        if user.is_superuser:
-            return super().get_queryset()
+     role = getattr(user, "role", None)
 
-        # If the user has no hospital, they cannot see any records.
+     if role == "DOCTOR" and self.doctor_field:
+        return super().get_queryset().filter(
+            **{self.doctor_field: user}
+        )
+
+     if role == "PATIENT" and self.patient_field:
+        return super().get_queryset().filter(
+            **{self.patient_field: user}
+        )
+
+     if role == "ADMIN":
         if not user.hospital_id:
             return super().get_queryset().none()
 
-        hospital = user.hospital
+        return super().get_queryset().filter(
+            **self._build_hospital_filter(user.hospital)
+        )
 
-        # Build the filter based on the configured field path.
-        filter_kwargs = self._build_hospital_filter(hospital)
-
-        return super().get_queryset().filter(**filter_kwargs)
+     return super().get_queryset().none()
 
     def _build_hospital_filter(self, hospital):
-        """
-        Build the ORM filter kwargs for the given hospital.
-
-        Uses the configured hospital_field directly, or falls back
-        to convenience flags for common relationship paths.
-        """
         if self.hospital_field:
             return {self.hospital_field: hospital}
 
@@ -99,5 +92,4 @@ class HospitalQuerySetMixin:
         if self.use_recipient_field:
             return {"recipient__hospital": hospital}
 
-        # Default: try the most common path (patient -> user -> hospital).
         return {"patient__user__hospital": hospital}

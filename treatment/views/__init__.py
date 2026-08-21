@@ -1,6 +1,6 @@
 from .treatment import TreatmentListCreateView, TreatmentDetailView
 from .prescription import PrescriptionListCreateView, PrescriptionDetailView
-from .medication import MedicationListCreateView, MedicationDetailView
+from .medication import MedicationListCreateView, MedicationDetailView, HospitalMedicationDetailView, HospitalMedicationListCreateView
 from .medication_schedule import MedicationScheduleListCreateView
 from .medication_log import MedicationLogListCreateView
 from .side_effect_report import SideEffectReportListCreateView, SideEffectReportDetailView
