@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import MedicationLog, MedicationSchedule
+from ..models import MedicationLog
 
 
 class MedicationLogSerializer(serializers.ModelSerializer):
@@ -20,14 +20,26 @@ class MedicationLogSerializer(serializers.ModelSerializer):
         ]
 
     def validate_medication_schedule(self, value):
-        user = self.context["request"].user
+        request = self.context.get("request")
 
-        # Doctors and admins can work with schedules
-        # within their normal permissions.
-        if user.role in ["DOCTOR", "ADMIN"] or user.is_superuser:
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError(
+                "Authentication is required."
+            )
+
+        user = request.user
+
+        # Superadmin can work across hospitals.
+        if user.is_superuser:
             return value
 
-        # Patients must have a patient profile.
+        # Doctors and admins are restricted by the view's
+        # permissions and HospitalQuerySetMixin.
+        if user.role in ["DOCTOR", "ADMIN"]:
+            return value
+
+        # Patients can only record medication against
+        # their own medication schedule.
         if user.role == "PATIENT":
             try:
                 patient = user.patient
@@ -36,12 +48,6 @@ class MedicationLogSerializer(serializers.ModelSerializer):
                     "Your account does not have a patient profile."
                 )
 
-            # Follow:
-            # MedicationSchedule
-            # -> Prescription
-            # -> Diagnosis
-            # -> Visit
-            # -> Patient
             schedule_patient = (
                 value.prescription
                 .diagnosis
@@ -51,7 +57,12 @@ class MedicationLogSerializer(serializers.ModelSerializer):
 
             if schedule_patient != patient:
                 raise serializers.ValidationError(
-                    "You can only record medication for your own medication schedule."
+                    "You can only record medication for your own "
+                    "medication schedule."
                 )
 
-        return value
+            return value
+
+        raise serializers.ValidationError(
+            "You are not authorized to use this medication schedule."
+        )

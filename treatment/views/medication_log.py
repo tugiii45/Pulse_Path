@@ -4,33 +4,49 @@ from rest_framework.permissions import IsAuthenticated
 from treatment.models import MedicationLog
 from treatment.serializers import MedicationLogSerializer
 from accounts.models import Patient
-from accounts.permissions import (
-    IsPatient,
-    IsOwnerOrDoctor,
-)
+from accounts.permissions import *
+   
 
 from django_filters.rest_framework import DjangoFilterBackend
 from accounts.views.mixins import HospitalQuerySetMixin
 
-class MedicationLogListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+class MedicationLogListCreateView(
+    HospitalQuerySetMixin,
+    generics.ListCreateAPIView,
+):
     serializer_class = MedicationLogSerializer
-    permission_classes = [IsAuthenticated]
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
     filterset_fields = ["medication_schedule", "status"]
     search_fields = ["notes", "status"]
     ordering_fields = ["taken_at", "status"]
     ordering = ["-taken_at"]
 
-    hospital_field = "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "medication_schedule__prescription__diagnosis__visit__doctor__user"
-    patient_field = "medication_schedule__prescription__diagnosis__visit__patient__user"
+    hospital_field = (
+        "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
+    )
+
+    doctor_field = (
+        "medication_schedule__prescription__diagnosis__visit__doctor__user"
+    )
+
+    patient_field = (
+        "medication_schedule__prescription__diagnosis__visit__patient__user"
+    )
 
     def get_permissions(self):
         if self.request.method == "POST":
             permission_classes = [IsPatient]
         else:
-            permission_classes = [IsAuthenticated]
+            permission_classes = [
+                IsDoctorOrAdminOrPatientOwner
+            ]
+
         return [permission() for permission in permission_classes]
 
 
