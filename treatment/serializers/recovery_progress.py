@@ -7,8 +7,10 @@ class RecoveryProgressSerializer(serializers.ModelSerializer):
     """
     Serializer for patient recovery progress.
 
-    Patients can only create recovery progress for their own visits.
-    The patient is assigned automatically from the authenticated user.
+    Patients can create and update their own recovery progress entries.
+    Doctors/admins may only review — updating `is_reviewed` and
+    `doctor_response` — and cannot create entries or change the
+    patient-reported clinical data.
     """
 
     class Meta:
@@ -22,6 +24,8 @@ class RecoveryProgressSerializer(serializers.ModelSerializer):
             "feeling_better",
             "notes",
             "improvement_percentage",
+            "is_reviewed",
+            "doctor_response",
             "recorded_at",
         ]
 
@@ -30,6 +34,9 @@ class RecoveryProgressSerializer(serializers.ModelSerializer):
             "patient",
             "recorded_at",
         ]
+
+    # Fields a doctor/admin is allowed to touch on update.
+    DOCTOR_EDITABLE_ON_UPDATE = {"is_reviewed", "doctor_response"}
 
     def validate_pain_level(self, value):
         if value is None:
@@ -67,8 +74,42 @@ class RecoveryProgressSerializer(serializers.ModelSerializer):
 
         user = request.user
 
-        # Patient profile is required when creating patient-owned progress.
+        # ----- DOCTOR / ADMIN -----
+        if user.role in ["DOCTOR", "ADMIN"]:
+            if self.instance is None:
+                raise serializers.ValidationError(
+                    "Doctors and admins cannot create recovery "
+                    "progress entries."
+                )
+
+            # Doctors/admins may only change the review fields.
+            for field, value in attrs.items():
+                if field in self.DOCTOR_EDITABLE_ON_UPDATE:
+                    continue
+                if value != getattr(self.instance, field):
+                    raise serializers.ValidationError({
+                        field: (
+                            "You can only update is_reviewed "
+                            "and doctor_response."
+                        )
+                    })
+
+            return attrs
+
+        # ----- PATIENT -----
         if user.role == "PATIENT":
+            # Patients cannot touch the review fields, whether
+            # creating or updating.
+            for field in self.DOCTOR_EDITABLE_ON_UPDATE:
+                if field in attrs and attrs[field] != getattr(
+                    self.instance, field, None
+                ):
+                    raise serializers.ValidationError({
+                        field: (
+                            "Only a doctor can update this field."
+                        )
+                    })
+
             try:
                 patient = user.patient
             except Patient.DoesNotExist:
@@ -95,6 +136,11 @@ class RecoveryProgressSerializer(serializers.ModelSerializer):
                         "for your own visits."
                     )
                 })
+
+        else:
+            raise serializers.ValidationError(
+                "You are not authorized to manage recovery progress."
+            )
 
         pain_level = attrs.get(
             "pain_level",

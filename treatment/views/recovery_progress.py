@@ -9,7 +9,7 @@ from notifications.models import Notification
 
 
 class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
-    queryset = RecoveryProgress.objects.all() 
+    queryset = RecoveryProgress.objects.all()
     serializer_class = RecoveryProgressSerializer
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -30,12 +30,30 @@ class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateA
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
-        # unchanged — keep your existing notification logic here
-        ...
+        recovery = serializer.save()
+
+        # visit is nullable on RecoveryProgress, and a visit isn't
+        # guaranteed to have a confirmed appointment — guard both.
+        visit = recovery.visit
+        if visit and visit.appointment and visit.appointment.doctor:
+            doctor = visit.appointment.doctor.user
+
+            create_notification(
+                recipient=doctor,
+                created_by=self.request.user,
+                title="New Recovery Progress Update",
+                message=(
+                    f"{recovery.patient.user.get_full_name()} has submitted "
+                    f"a new recovery progress entry "
+                    f"({recovery.improvement_percentage}% improvement)."
+                ),
+                notification_type=Notification.NotificationType.RECOVERY,
+                notification_key=f"recovery-progress-{recovery.id}",
+            )
 
 
 class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
-    queryset = RecoveryProgress.objects.all() 
+    queryset = RecoveryProgress.objects.all()
     serializer_class = RecoveryProgressSerializer
     permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
@@ -44,28 +62,38 @@ class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateD
     patient_field = "patient__user"
 
     def perform_update(self, serializer):
-               recovery = serializer.save()
-    
-               patient_user = recovery.patient.user
-    
-               create_notification(
-                  recipient=patient_user,
-                  created_by=self.request.user,
-                  title="Recovery Update",
-                  message=(
-                    f"Your recovery progress has been updated. "
-                    f"Current improvement: "
-                    f"{recovery.improvement_percentage}%."
-            ),
-                  notification_type=Notification.NotificationType.RECOVERY,
-                  notification_key=(
-                    f"recovery-updated-{recovery.id}-"
-                    f"{recovery.updated_at.timestamp()}"
-            ),
+       request_user = self.request.user
+
+    # Capture the review state before saving.
+       recovery = self.get_object()
+       was_reviewed = recovery.is_reviewed
+
+    # Save the update.
+       recovery = serializer.save()
+
+    # Notify the patient only when the entry changes
+    # from not reviewed to reviewed.
+       if (
+         request_user.role in ["DOCTOR", "ADMIN"]
+         and not was_reviewed
+         and recovery.is_reviewed
+    ):
+         patient_user = recovery.patient.user
+
+         reviewer_label = (
+            "doctor"
+            if request_user.role == "DOCTOR"
+            else "hospital administrator"
         )
-    
-    
-            
-            
-        
-        
+
+         create_notification(
+            recipient=patient_user,
+            created_by=request_user,
+            title="Recovery Progress Reviewed",
+            message=(
+                f"Your recovery progress has been reviewed by your "
+                f"{reviewer_label}."
+            ),
+            notification_type=Notification.NotificationType.RECOVERY,
+            notification_key=f"recovery-reviewed-{recovery.id}",
+        )

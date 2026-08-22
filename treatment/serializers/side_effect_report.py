@@ -20,14 +20,22 @@ class SideEffectReportSerializer(serializers.ModelSerializer):
             "reported_at",
         ]
 
+        # is_reviewed / doctor_response are now writable so doctors can
+        # mark reports as reviewed and respond — but validate() below
+        # ensures only DOCTOR/ADMIN can touch them, and only on update.
         read_only_fields = [
             "id",
             "patient",
             "medication",
-            "is_reviewed",
-            "doctor_response",
             "reported_at",
         ]
+
+    # Fields a patient can set at creation. Nothing else should ever
+    # come from a patient, and nothing here should change after creation.
+    PATIENT_EDITABLE_ON_CREATE = {"prescription", "severity", "description"}
+
+    # Fields a doctor/admin is allowed to touch on update.
+    DOCTOR_EDITABLE_ON_UPDATE = {"is_reviewed", "doctor_response"}
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -39,9 +47,35 @@ class SideEffectReportSerializer(serializers.ModelSerializer):
 
         user = request.user
 
-        # The ListCreateView already restricts POST to patients.
-        # This additional validation keeps the serializer safe on its own.
-        if self.instance is None and user.role != "PATIENT":
+        # ----- UPDATE PATH -----
+        if self.instance is not None:
+            if user.role in ["DOCTOR", "ADMIN"]:
+                # Doctors/admins may only change the review fields.
+                for field, value in attrs.items():
+                    if field in self.DOCTOR_EDITABLE_ON_UPDATE:
+                        continue
+                    if value != getattr(self.instance, field):
+                        raise serializers.ValidationError({
+                            field: (
+                                "You can only update is_reviewed "
+                                "and doctor_response."
+                            )
+                        })
+                return attrs
+
+            if user.role == "PATIENT":
+                # Patients have read-only access at the permission layer
+                # already, but block here too as defense in depth.
+                raise serializers.ValidationError(
+                    "Patients cannot modify side effect reports."
+                )
+
+            raise serializers.ValidationError(
+                "You are not authorized to update this report."
+            )
+
+        # ----- CREATE PATH (unchanged logic below) -----
+        if user.role != "PATIENT":
             raise serializers.ValidationError(
                 "Only patients can create side effect reports."
             )
@@ -53,19 +87,16 @@ class SideEffectReportSerializer(serializers.ModelSerializer):
                 "Patient profile not found."
             )
 
-        prescription = attrs.get(
-            "prescription",
-            self.instance.prescription if self.instance else None,
-        )
+        prescription = attrs.get("prescription")
 
         if not prescription:
             raise serializers.ValidationError({
                 "prescription": "A prescription is required."
             })
 
-        # Make sure the prescription belongs to this patient.
         prescription_patient = (
-            prescription.diagnosis
+            prescription
+            .diagnosis
             .visit
             .patient
         )
@@ -77,7 +108,6 @@ class SideEffectReportSerializer(serializers.ModelSerializer):
                 )
             })
 
-        # The prescription must have an active medication schedule.
         has_active_schedule = MedicationSchedule.objects.filter(
             prescription=prescription,
             prescription__diagnosis__visit__patient=patient,

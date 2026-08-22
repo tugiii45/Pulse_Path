@@ -7,6 +7,7 @@ from accounts.views.mixins import HospitalQuerySetMixin
 from notifications.services import create_notification
 from notifications.models import Notification
 
+
 class SideEffectReportListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = SideEffectReport.objects.all()
     serializer_class = SideEffectReportSerializer
@@ -23,14 +24,34 @@ class SideEffectReportListCreateView(HospitalQuerySetMixin, generics.ListCreateA
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
-        # unchanged — keep your existing notification logic here
-        ...
+        report = serializer.save()
+
+        visit = report.prescription.diagnosis.visit
+
+        # A visit isn't guaranteed to have a confirmed appointment,
+        # so guard against None before reaching for the doctor.
+        if visit.appointment and visit.appointment.doctor:
+            doctor = visit.appointment.doctor.user
+
+            create_notification(
+                recipient=doctor,
+                created_by=self.request.user,
+                title="New Side Effect Report",
+                message=(
+                    f"{report.patient.user.get_full_name()} has submitted a "
+                    f"{report.severity.lower()} side effect report for "
+                    f"{report.medication.name}."
+                ),
+                notification_type=Notification.NotificationType.SIDE_EFFECT,
+                notification_key=f"side-effect-report-{report.id}",
+            )
 
 
 class SideEffectReportDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
+    queryset = SideEffectReport.objects.all()
     serializer_class = SideEffectReportSerializer
     permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
     hospital_field = "patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "patient__user"

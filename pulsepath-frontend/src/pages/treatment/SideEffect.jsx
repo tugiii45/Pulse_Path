@@ -33,7 +33,9 @@ function SideEffect() {
   const role = profile?.role?.toUpperCase();
 
   const canManage = role === "ADMIN" || role === "DOCTOR";
-  const canReport = role === "PATIENT" || canManage;
+
+  // Only patients create/report side effects.
+  const canReport = role === "PATIENT";
 
   // --------------------------------------------------
   // LOAD SIDE EFFECT REPORTS
@@ -136,7 +138,7 @@ function SideEffect() {
   };
 
   // --------------------------------------------------
-  // CREATE / UPDATE REPORT
+  // CREATE / REVIEW REPORT
   // --------------------------------------------------
 
   const handleSubmit = async (e) => {
@@ -145,34 +147,33 @@ function SideEffect() {
     try {
       setError("");
 
-      /*
-       * Patients only submit:
-       * - prescription
-       * - severity
-       * - description
-       *
-       * The backend determines:
-       * - patient
-       * - medication
-       */
-      const payload = {
-        prescription: Number(formData.prescription),
-        severity: formData.severity,
-        description: formData.description.trim(),
-      };
-
-      /*
-       * Only doctors/admins can update review information.
-       */
       if (canManage && editingId) {
-        payload.is_reviewed = formData.is_reviewed;
-        payload.doctor_response =
-          formData.doctor_response.trim();
-      }
+        /*
+         * Doctors/admins may only update review fields.
+         * Nothing else is sent, so the backend never sees
+         * an attempted change to patient-owned fields.
+         */
+        const payload = {
+          is_reviewed: formData.is_reviewed,
+          doctor_response: formData.doctor_response.trim(),
+        };
 
-      if (editingId) {
         await updateSideEffect(editingId, payload);
-      } else {
+      } else if (canReport) {
+        /*
+         * Patients only submit:
+         * - prescription
+         * - severity
+         * - description
+         *
+         * The backend determines patient and medication.
+         */
+        const payload = {
+          prescription: Number(formData.prescription),
+          severity: formData.severity,
+          description: formData.description.trim(),
+        };
+
         await createSideEffect(payload);
       }
 
@@ -210,10 +211,10 @@ function SideEffect() {
   };
 
   // --------------------------------------------------
-  // PREPARE REPORT FOR EDITING
+  // PREPARE REPORT FOR DOCTOR REVIEW
   // --------------------------------------------------
 
-  const handleEdit = (sideEffect) => {
+  const handleReview = (sideEffect) => {
     if (!canManage) return;
 
     setEditingId(sideEffect.id);
@@ -370,15 +371,15 @@ function SideEffect() {
       {/* SIDE EFFECT FORM */}
       {/* --------------------------------------------- */}
 
-      {showForm && canReport && (
+      {showForm && (canReport || (canManage && editingId)) && (
         <div className="card shadow-sm mb-4">
           <div className="card-body">
 
             <div className="d-flex justify-content-between align-items-center mb-4">
               <div>
                 <h5 className="card-title mb-1">
-                  {editingId
-                    ? "Edit Side Effect Report"
+                  {canManage && editingId
+                    ? "Review Side Effect Report"
                     : "Report Side Effect"}
                 </h5>
 
@@ -386,6 +387,14 @@ function SideEffect() {
                   <small className="text-muted">
                     Tell us about any unusual reaction or
                     side effect you experienced.
+                  </small>
+                )}
+
+                {canManage && editingId && (
+                  <small className="text-muted">
+                    You can mark this report as reviewed and
+                    leave a response. The reported details
+                    below cannot be changed.
                   </small>
                 )}
               </div>
@@ -396,10 +405,10 @@ function SideEffect() {
               <div className="row">
 
                 {/* ----------------------------------- */}
-                {/* PATIENT MEDICATION */}
+                {/* PATIENT CREATING: MEDICATION SELECT */}
                 {/* ----------------------------------- */}
 
-                {role === "PATIENT" ? (
+                {canReport && !editingId && (
                   <div className="col-md-6 mb-3">
                     <label className="form-label">
                       Medication
@@ -411,10 +420,7 @@ function SideEffect() {
                       value={formData.prescription}
                       onChange={handleChange}
                       required
-                      disabled={
-                        loadingSchedules ||
-                        Boolean(editingId)
-                      }
+                      disabled={loadingSchedules}
                     >
                       <option value="">
                         {loadingSchedules
@@ -441,25 +447,23 @@ function SideEffect() {
                         </small>
                       )}
                   </div>
-                ) : (
-                  /* --------------------------------- */
-                  /* DOCTOR / ADMIN PRESCRIPTION */
-                  /* --------------------------------- */
+                )}
 
-                  <div className="col-md-4 mb-3">
+                {/* ----------------------------------- */}
+                {/* DOCTOR/ADMIN REVIEW: READ-ONLY DETAILS */}
+                {/* ----------------------------------- */}
+
+                {canManage && editingId && (
+                  <div className="col-12 mb-3">
                     <label className="form-label">
-                      Prescription ID
+                      Prescription
                     </label>
-
                     <input
-                      type="number"
-                      name="prescription"
+                      type="text"
                       className="form-control"
-                      placeholder="Enter prescription ID"
-                      value={formData.prescription}
-                      onChange={handleChange}
-                      required
-                      min="1"
+                      value={`#${formData.prescription}`}
+                      disabled
+                      readOnly
                     />
                   </div>
                 )}
@@ -473,25 +477,27 @@ function SideEffect() {
                     Severity
                   </label>
 
-                  <select
-                    name="severity"
-                    className="form-select"
-                    value={formData.severity}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="Mild">
-                      Mild
-                    </option>
-
-                    <option value="Moderate">
-                      Moderate
-                    </option>
-
-                    <option value="Severe">
-                      Severe
-                    </option>
-                  </select>
+                  {canReport && !editingId ? (
+                    <select
+                      name="severity"
+                      className="form-select"
+                      value={formData.severity}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="Mild">Mild</option>
+                      <option value="Moderate">Moderate</option>
+                      <option value="Severe">Severe</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.severity}
+                      disabled
+                      readOnly
+                    />
+                  )}
                 </div>
 
                 {/* ----------------------------------- */}
@@ -510,10 +516,12 @@ function SideEffect() {
                     placeholder="Describe any side effect or unusual reaction you experienced..."
                     value={formData.description}
                     onChange={handleChange}
-                    required
+                    required={canReport && !editingId}
+                    disabled={canManage && editingId}
+                    readOnly={canManage && editingId}
                   />
 
-                  {role === "PATIENT" && (
+                  {role === "PATIENT" && !editingId && (
                     <small className="text-muted">
                       Please provide any relevant details
                       about what you experienced.
@@ -522,10 +530,10 @@ function SideEffect() {
                 </div>
 
                 {/* ----------------------------------- */}
-                {/* DOCTOR RESPONSE */}
+                {/* DOCTOR RESPONSE (editable by doctor/admin only) */}
                 {/* ----------------------------------- */}
 
-                {canManage && (
+                {canManage && editingId && (
                   <div className="col-12 mb-3">
                     <label className="form-label">
                       Doctor Response
@@ -543,10 +551,10 @@ function SideEffect() {
                 )}
 
                 {/* ----------------------------------- */}
-                {/* REVIEWED */}
+                {/* REVIEWED (editable by doctor/admin only) */}
                 {/* ----------------------------------- */}
 
-                {canManage && (
+                {canManage && editingId && (
                   <div className="col-12 mb-3">
                     <div className="form-check">
 
@@ -582,13 +590,13 @@ function SideEffect() {
                   type="submit"
                   className="btn btn-primary"
                   disabled={
-                    role === "PATIENT" &&
-                    (loadingSchedules ||
-                      schedules.length === 0)
+                    canReport &&
+                    !editingId &&
+                    (loadingSchedules || schedules.length === 0)
                   }
                 >
-                  {editingId
-                    ? "Update Report"
+                  {canManage && editingId
+                    ? "Save Review"
                     : "Submit Report"}
                 </button>
 
@@ -759,12 +767,12 @@ function SideEffect() {
                               type="button"
                               className="btn btn-sm btn-outline-primary"
                               onClick={() =>
-                                handleEdit(
+                                handleReview(
                                   sideEffect
                                 )
                               }
                             >
-                              Edit
+                              Review
                             </button>
 
                             <button

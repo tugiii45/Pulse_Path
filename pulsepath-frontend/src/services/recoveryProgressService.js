@@ -102,3 +102,16 @@ export const deleteRecoveryProgress = async (id) => {
     `treatment/recovery_progress/${id}/`
   );
 };
+
+/**
+ * Marks a recovery progress entry as reviewed by a doctor.
+ *
+ * @param {string|number} id - Recovery progress ID.
+ */
+export const markRecoveryProgressReviewed = async (id) => {
+  const response = await api.patch(
+    `treatment/recovery_progress/${id}/review/`
+  );
+
+  return response?.data?.data ?? response?.data;
+};
