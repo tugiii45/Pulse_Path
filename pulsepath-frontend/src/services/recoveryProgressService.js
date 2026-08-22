@@ -80,6 +80,10 @@ export const createRecoveryProgress = async (data) => {
  *
  * PATCH updates only the fields supplied in the request.
  *
+ * For doctors/admins, this is also used to submit:
+ * - is_reviewed
+ * - doctor_response
+ *
  * @param {string|number} id - Recovery progress ID.
  * @param {Object} data - Fields to update.
  */
@@ -101,17 +105,4 @@ export const deleteRecoveryProgress = async (id) => {
   await api.delete(
     `treatment/recovery_progress/${id}/`
   );
-};
-
-/**
- * Marks a recovery progress entry as reviewed by a doctor.
- *
- * @param {string|number} id - Recovery progress ID.
- */
-export const markRecoveryProgressReviewed = async (id) => {
-  const response = await api.patch(
-    `treatment/recovery_progress/${id}/review/`
-  );
-
-  return response?.data?.data ?? response?.data;
 };

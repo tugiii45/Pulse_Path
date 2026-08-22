@@ -13,7 +13,8 @@ from accounts.views.mixins import HospitalQuerySetMixin
 class MedicationLogListCreateView(
     HospitalQuerySetMixin,
     generics.ListCreateAPIView,
-):
+):  
+    queryset = MedicationLog.objects.all()
     serializer_class = MedicationLogSerializer
 
     filter_backends = [
