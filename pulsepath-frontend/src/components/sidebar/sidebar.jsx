@@ -12,7 +12,13 @@ import {
   FaClipboardCheck,
   FaExclamationTriangle,
   FaHeartbeat,
+  FaNotesMedical,
+  FaPrescriptionBottleAlt,
+  FaPills,
+  FaStethoscope,
+  FaFileMedical,
 } from "react-icons/fa";
+
 import { useAuth } from "../../contexts/AuthContext";
 
 function Sidebar() {
@@ -25,9 +31,7 @@ function Sidebar() {
 
   const subLinkClass = ({ isActive }) =>
     `nav-link d-flex align-items-center py-2 px-3 rounded mb-1 ms-3 ${
-      isActive
-        ? "text-primary fw-semibold bg-light"
-        : "text-secondary"
+      isActive ? "text-primary fw-semibold bg-light" : "text-secondary"
     }`;
 
   if (loading) {
@@ -48,6 +52,10 @@ function Sidebar() {
 
   const role = profile?.role || "";
 
+  // =========================
+  // MAIN NAVIGATION
+  // =========================
+
   const menuItems = [
     {
       to: "/dashboard",
@@ -62,11 +70,14 @@ function Sidebar() {
     {
       to: "/dashboard/visits",
       label: "Visits",
-      icon: <FaCalendarAlt className="me-3" />,
+      icon: <FaStethoscope className="me-3" />,
     },
   ];
 
-  // Admin and Doctor navigation.
+  // =========================
+  // ADMIN + DOCTOR
+  // =========================
+
   if (role === "ADMIN" || role === "DOCTOR") {
     menuItems.push({
       to: "/dashboard/patients",
@@ -75,7 +86,10 @@ function Sidebar() {
     });
   }
 
-  // Admin-only navigation.
+  // =========================
+  // ADMIN ONLY
+  // =========================
+
   if (role === "ADMIN") {
     menuItems.push({
       to: "/dashboard/doctors",
@@ -104,7 +118,10 @@ function Sidebar() {
         minHeight: "calc(100vh - 70px)",
       }}
     >
-      {/* Main navigation */}
+      {/* =========================
+          MAIN NAVIGATION
+      ========================== */}
+
       {menuItems.map((item) => (
         <NavLink
           key={item.to}
@@ -117,11 +134,99 @@ function Sidebar() {
         </NavLink>
       ))}
 
-      {/* Patient recovery navigation */}
-      {role === "PATIENT" && (
-        <div className="mb-2">
-          <div className="nav-link d-flex align-items-center py-3 px-3 rounded mb-2 text-dark fw-semibold">
+      {/* =========================
+          DOCTOR CLINICAL CARE
+      ========================== */}
+
+      {role === "DOCTOR" && (
+        <div className="mt-4 mb-3">
+          <div className="text-uppercase text-muted small fw-bold px-3 mb-2">
+            Clinical Care
+          </div>
+
+          <NavLink
+            to="/dashboard/clinical"
+            end
+            className={subLinkClass}
+          >
+            <FaFileMedical className="me-3" />
+            Clinical Records
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/clinical/medical-records"
+            className={subLinkClass}
+          >
+            <FaNotesMedical className="me-3" />
+            Medical Records
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/clinical/diagnosis"
+            className={subLinkClass}
+          >
+            <FaNotesMedical className="me-3" />
+            Diagnoses
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment"
+            end
+            className={subLinkClass}
+          >
+            <FaStethoscope className="me-3" />
+            Treatment
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/prescriptions"
+            className={subLinkClass}
+          >
+            <FaPrescriptionBottleAlt className="me-3" />
+            Prescriptions
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/medication"
+            className={subLinkClass}
+          >
+            <FaPills className="me-3" />
+            Medications
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/medication-schedule"
+            className={subLinkClass}
+          >
+            <FaClock className="me-3" />
+            Medication Schedules
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/recovery-progress"
+            className={subLinkClass}
+          >
             <FaHeartbeat className="me-3" />
+            Recovery Progress
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/treatment/side-effects"
+            className={subLinkClass}
+          >
+            <FaExclamationTriangle className="me-3" />
+            Side Effects
+          </NavLink>
+        </div>
+      )}
+
+      {/* =========================
+          PATIENT RECOVERY
+      ========================== */}
+
+      {role === "PATIENT" && (
+        <div className="mt-4 mb-3">
+          <div className="text-uppercase text-muted small fw-bold px-3 mb-2">
             My Recovery
           </div>
 
@@ -159,7 +264,10 @@ function Sidebar() {
         </div>
       )}
 
-      {/* Notifications */}
+      {/* =========================
+          NOTIFICATIONS
+      ========================== */}
+
       <NavLink
         to="/dashboard/notifications"
         className={linkClass}
@@ -168,7 +276,10 @@ function Sidebar() {
         Notifications
       </NavLink>
 
-      {/* Profile */}
+      {/* =========================
+          PROFILE
+      ========================== */}
+
       <NavLink
         to="/dashboard/profile"
         className={linkClass}

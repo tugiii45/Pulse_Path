@@ -8,10 +8,11 @@ from notifications.services import create_notification
 from notifications.models import Notification
 
 class SideEffectReportListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+    queryset = SideEffectReport.objects.all()
     serializer_class = SideEffectReportSerializer
 
     hospital_field = "patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "patient__user"
 
     def get_permissions(self):

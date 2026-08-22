@@ -19,7 +19,7 @@ class MedicationScheduleListCreateView(HospitalQuerySetMixin, generics.ListCreat
     ordering = ["start_date"]
 
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "prescription__diagnosis__visit__patient__user"
 
     def get_queryset(self):

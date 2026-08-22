@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { FaCalendarCheck, FaUserInjured, FaNotesMedical } from "react-icons/fa";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  FaCalendarCheck,
+  FaUserInjured,
   FaClock,
-  FaStethoscope,
   FaPills,
   FaBell,
   FaChartLine,
   FaArrowRight,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 
 import { getProfile } from "../../services/profileService";
 import { getAppointments } from "../../services/AppointmentService";
 import { getPatients } from "../../services/PatientService";
-import { getVisits } from "../../services/VisitService";
-import { getDiagnoses } from "../../services/diagnosisService";
 import { getNotifications } from "../../services/notificationService";
 import { getClinicalRecords } from "../../services/ClinicalService";
 
@@ -24,13 +23,8 @@ import { getClinicalRecords } from "../../services/ClinicalService";
 const getGreeting = () => {
   const hour = new Date().getHours();
 
-  if (hour < 12) {
-    return "morning";
-  }
-
-  if (hour < 17) {
-    return "afternoon";
-  }
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
 
   return "evening";
 };
@@ -38,11 +32,6 @@ const getGreeting = () => {
 // =========================
 // NORMALIZE LIST RESPONSE
 // =========================
-
-/*
- * Handles different possible API
- * response structures.
- */
 
 const normalizeList = (response) => {
   const payload = response?.data ?? response;
@@ -72,9 +61,12 @@ const normalizeList = (response) => {
 
 const resolvePatientName = (record) => {
   return (
-    record.patient_name ||
-    record.patient?.name ||
-    (typeof record.patient === "string" ? record.patient : "") ||
+    record?.patient_name ||
+    record?.patient?.name ||
+    record?.patient?.full_name ||
+    (typeof record?.patient === "string" ? record.patient : "") ||
+    record?.name ||
+    record?.full_name ||
     "Patient"
   );
 };
@@ -86,7 +78,13 @@ const resolvePatientName = (record) => {
 const formatDate = (date) => {
   if (!date) return "-";
 
-  return new Date(date).toLocaleDateString("en-KE", {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "-";
+  }
+
+  return parsedDate.toLocaleDateString("en-KE", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -96,12 +94,22 @@ const formatDate = (date) => {
 const formatTime = (date) => {
   if (!date) return "-";
 
-  return new Date(date).toLocaleTimeString("en-KE", {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "-";
+  }
+
+  return parsedDate.toLocaleTimeString("en-KE", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   });
 };
+
+// =========================
+// SAME DAY
+// =========================
 
 const isSameDay = (dateA, dateB) => {
   return (
@@ -110,6 +118,42 @@ const isSameDay = (dateA, dateB) => {
     dateA.getDate() === dateB.getDate()
   );
 };
+
+// =========================
+// STATUS BADGE
+// =========================
+
+const getStatusClass = (status) => {
+  const normalized = String(status || "").toLowerCase();
+
+  if (
+    normalized.includes("confirm") ||
+    normalized.includes("complete") ||
+    normalized.includes("approved")
+  ) {
+    return "bg-success-subtle text-success";
+  }
+
+  if (
+    normalized.includes("pending") ||
+    normalized.includes("scheduled")
+  ) {
+    return "bg-warning-subtle text-warning";
+  }
+
+  if (
+    normalized.includes("cancel") ||
+    normalized.includes("reject")
+  ) {
+    return "bg-danger-subtle text-danger";
+  }
+
+  return "bg-primary-subtle text-primary";
+};
+
+// =========================
+// DOCTOR DASHBOARD
+// =========================
 
 function DoctorDashboard() {
   // =========================
@@ -136,23 +180,7 @@ function DoctorDashboard() {
   const [patientError, setPatientError] = useState("");
 
   // =========================
-  // VISITS
-  // =========================
-
-  const [visits, setVisits] = useState([]);
-  const [loadingVisits, setLoadingVisits] = useState(true);
-  const [visitError, setVisitError] = useState("");
-
-  // =========================
-  // DIAGNOSES
-  // =========================
-
-  const [diagnoses, setDiagnoses] = useState([]);
-  const [loadingDiagnoses, setLoadingDiagnoses] = useState(true);
-  const [diagnosisError, setDiagnosisError] = useState("");
-
-  // =========================
-  // NOTIFICATIONS
+  // NOTIFICATIONS / ALERTS
   // =========================
 
   const [notifications, setNotifications] = useState([]);
@@ -160,7 +188,7 @@ function DoctorDashboard() {
   const [notificationError, setNotificationError] = useState("");
 
   // =========================
-  // CLINICAL RECORDS (RECOVERY)
+  // RECOVERY
   // =========================
 
   const [clinicalRecords, setClinicalRecords] = useState([]);
@@ -232,7 +260,7 @@ function DoctorDashboard() {
 
         setPatients(normalizeList(response));
       } catch (error) {
-        console.error("Unable to load patients:", error);
+        console.error("Unable to load your patients:", error);
 
         setPatientError("Unable to load your patient list.");
       } finally {
@@ -241,60 +269,6 @@ function DoctorDashboard() {
     };
 
     loadPatients();
-  }, []);
-
-  // =========================
-  // LOAD VISITS
-  // =========================
-
-  useEffect(() => {
-    const loadVisits = async () => {
-      try {
-        setLoadingVisits(true);
-        setVisitError("");
-
-        const response = await getVisits();
-
-        console.log("DOCTOR DASHBOARD VISITS:", response);
-
-        setVisits(normalizeList(response));
-      } catch (error) {
-        console.error("Unable to load visits:", error);
-
-        setVisitError("Unable to load recent visits.");
-      } finally {
-        setLoadingVisits(false);
-      }
-    };
-
-    loadVisits();
-  }, []);
-
-  // =========================
-  // LOAD DIAGNOSES
-  // =========================
-
-  useEffect(() => {
-    const loadDiagnoses = async () => {
-      try {
-        setLoadingDiagnoses(true);
-        setDiagnosisError("");
-
-        const response = await getDiagnoses();
-
-        console.log("DOCTOR DASHBOARD DIAGNOSES:", response);
-
-        setDiagnoses(normalizeList(response));
-      } catch (error) {
-        console.error("Unable to load diagnoses:", error);
-
-        setDiagnosisError("Unable to load recent diagnoses.");
-      } finally {
-        setLoadingDiagnoses(false);
-      }
-    };
-
-    loadDiagnoses();
   }, []);
 
   // =========================
@@ -315,7 +289,7 @@ function DoctorDashboard() {
       } catch (error) {
         console.error("Unable to load notifications:", error);
 
-        setNotificationError("Unable to load your notifications.");
+        setNotificationError("Unable to load your alerts.");
       } finally {
         setLoadingNotifications(false);
       }
@@ -325,7 +299,7 @@ function DoctorDashboard() {
   }, []);
 
   // =========================
-  // LOAD CLINICAL RECORDS
+  // LOAD RECOVERY RECORDS
   // =========================
 
   useEffect(() => {
@@ -336,11 +310,17 @@ function DoctorDashboard() {
 
         const response = await getClinicalRecords();
 
-        console.log("DOCTOR DASHBOARD CLINICAL RECORDS:", response);
+        console.log(
+          "DOCTOR DASHBOARD CLINICAL RECORDS:",
+          response
+        );
 
         setClinicalRecords(normalizeList(response));
       } catch (error) {
-        console.error("Unable to load clinical records:", error);
+        console.error(
+          "Unable to load recovery updates:",
+          error
+        );
 
         setClinicalError("Unable to load recovery updates.");
       } finally {
@@ -356,45 +336,66 @@ function DoctorDashboard() {
   // =========================
 
   const doctorName =
-    `Dr. ${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() ||
+    `Dr. ${profile?.first_name || ""} ${
+      profile?.last_name || ""
+    }`.trim() ||
     profile?.username ||
     "Doctor";
 
   // =========================
-  // DERIVED: TODAY'S APPOINTMENTS
+  // TODAY
   // =========================
 
   const today = new Date();
 
-  const todaysAppointments = appointments
-    .filter((appointment) => {
-      const appointmentDate =
-        appointment.appointment_date ||
-        appointment.date ||
-        appointment.scheduled_date;
-
-      if (!appointmentDate) return false;
-
-      return isSameDay(new Date(appointmentDate), today);
-    })
-    .sort((a, b) => {
-      const dateA = new Date(
-        a.appointment_date || a.date || a.scheduled_date,
-      );
-      const dateB = new Date(
-        b.appointment_date || b.date || b.scheduled_date,
-      );
-
-      return dateA - dateB;
-    });
-
   // =========================
-  // DERIVED: PENDING FOLLOW-UPS
+  // TODAY'S APPOINTMENTS
   // =========================
 
-  const pendingFollowUps = appointments
-    .filter((appointment) => {
-      const status = String(appointment.status || "").toLowerCase();
+  const todaysAppointments = useMemo(() => {
+    return appointments
+      .filter((appointment) => {
+        const appointmentDate =
+          appointment.appointment_date ||
+          appointment.date ||
+          appointment.scheduled_date;
+
+        if (!appointmentDate) return false;
+
+        const parsedDate = new Date(appointmentDate);
+
+        if (Number.isNaN(parsedDate.getTime())) {
+          return false;
+        }
+
+        return isSameDay(parsedDate, today);
+      })
+      .sort((a, b) => {
+        const dateA = new Date(
+          a.appointment_date ||
+            a.date ||
+            a.scheduled_date
+        );
+
+        const dateB = new Date(
+          b.appointment_date ||
+            b.date ||
+            b.scheduled_date
+        );
+
+        return dateA - dateB;
+      });
+  }, [appointments]);
+
+  // =========================
+  // PENDING FOLLOW-UPS
+  // =========================
+
+  const pendingFollowUps = useMemo(() => {
+    return appointments.filter((appointment) => {
+      const status = String(
+        appointment.status || ""
+      ).toLowerCase();
 
       return (
         status === "pending" ||
@@ -402,81 +403,105 @@ function DoctorDashboard() {
         status === "follow_up" ||
         status === "follow-up"
       );
-    })
-    .slice(0, 5);
+    });
+  }, [appointments]);
 
   // =========================
-  // DERIVED: RECENT VISITS
+  // PATIENT ALERTS
   // =========================
 
-  const recentVisits = [...visits]
-    .sort((a, b) => {
-      const dateA = new Date(a.created_at || a.visit_date || 0);
-      const dateB = new Date(b.created_at || b.visit_date || 0);
+  const patientAlerts = useMemo(() => {
+    return notifications
+      .filter((notification) => {
+        const type = String(
+          notification.notification_type ||
+            notification.type ||
+            notification.title ||
+            ""
+        ).toLowerCase();
 
-      return dateB - dateA;
-    })
-    .slice(0, 5);
+        const title = String(
+          notification.title || ""
+        ).toLowerCase();
 
-  // =========================
-  // DERIVED: RECENT DIAGNOSES
-  // =========================
-
-  const recentDiagnoses = [...diagnoses]
-    .sort((a, b) => {
-      const dateA = new Date(a.created_at || a.diagnosis_date || 0);
-      const dateB = new Date(b.created_at || b.diagnosis_date || 0);
-
-      return dateB - dateA;
-    })
-    .slice(0, 5);
-
-  // =========================
-  // DERIVED: MISSED MEDICATION ALERTS
-  // =========================
-
-  const missedMedicationAlerts = notifications
-    .filter((notification) => {
-      const type = String(
-        notification.notification_type ||
-          notification.type ||
-          notification.title ||
-          "",
-      ).toLowerCase();
-
-      return (
-        type.includes("missed") ||
-        type.includes("medication") ||
-        type.includes("dose")
-      );
-    })
-    .slice(0, 5);
+        return (
+          type.includes("missed") ||
+          type.includes("medication") ||
+          type.includes("dose") ||
+          type.includes("side_effect") ||
+          type.includes("side-effect") ||
+          type.includes("side effect") ||
+          title.includes("missed") ||
+          title.includes("medication") ||
+          title.includes("side effect") ||
+          title.includes("dose")
+        );
+      })
+      .slice(0, 5);
+  }, [notifications]);
 
   // =========================
-  // DERIVED: RECENT NOTIFICATIONS
+  // RECENT NOTIFICATIONS
   // =========================
 
-  const recentNotifications = [...notifications]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 3);
+  const recentNotifications = useMemo(() => {
+    return [...notifications]
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || 0) -
+          new Date(a.created_at || 0)
+      )
+      .slice(0, 5);
+  }, [notifications]);
 
   // =========================
-  // DERIVED: RECOVERY UPDATES
+  // RECOVERY UPDATES
   // =========================
 
-  const recoveryUpdates = clinicalRecords
-    .filter(
-      (record) =>
-        record.improvement_percentage !== undefined ||
-        record.feeling_better !== undefined ||
-        record.pain_level !== undefined,
-    )
-    .slice(0, 5);
+  const recoveryUpdates = useMemo(() => {
+    return clinicalRecords
+      .filter(
+        (record) =>
+          record.improvement_percentage !== undefined ||
+          record.feeling_better !== undefined ||
+          record.pain_level !== undefined
+      )
+      .sort(
+        (a, b) =>
+          new Date(
+            b.recorded_at ||
+              b.created_at ||
+              0
+          ) -
+          new Date(
+            a.recorded_at ||
+              a.created_at ||
+              0
+          )
+      )
+      .slice(0, 5);
+  }, [clinicalRecords]);
+
+  // =========================
+  // RECENT PATIENTS
+  // =========================
+
+  const recentPatients = useMemo(() => {
+    return patients.slice(0, 5);
+  }, [patients]);
+
+  // =========================
+  // UNREAD ALERT COUNT
+  // =========================
+
+  const unreadAlerts = notifications.filter(
+    (notification) => !notification.is_read
+  ).length;
 
   return (
     <div className="container-fluid py-4">
       {/* =========================
-          WELCOME SECTION
+          WELCOME
       ========================== */}
 
       <div className="mb-4">
@@ -487,7 +512,7 @@ function DoctorDashboard() {
         </h2>
 
         <p className="text-muted mb-0">
-          Overview of your patients, appointments and clinical activity.
+          Here's what's happening with your patients today.
         </p>
       </div>
 
@@ -496,69 +521,117 @@ function DoctorDashboard() {
       ========================== */}
 
       <div className="row g-4 mb-4">
-        <div className="col-md-6 col-lg-3">
+        {/* Today's Appointments */}
+
+        <div className="col-6 col-lg-3">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Today's Appointments</p>
+                  <p className="text-muted mb-1">
+                    Today's Appointments
+                  </p>
+
                   <h3 className="fw-bold mb-0">
-                    {loadingAppointments ? "-" : todaysAppointments.length}
+                    {loadingAppointments
+                      ? "-"
+                      : todaysAppointments.length}
                   </h3>
                 </div>
 
-                <FaCalendarCheck className="text-primary" size={26} />
+                <div className="rounded-circle bg-primary-subtle p-3">
+                  <FaCalendarCheck
+                    className="text-primary"
+                    size={20}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="col-md-6 col-lg-3">
+        {/* Patients */}
+
+        <div className="col-6 col-lg-3">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Patients</p>
+                  <p className="text-muted mb-1">
+                    My Patients
+                  </p>
+
                   <h3 className="fw-bold mb-0">
-                    {loadingPatients ? "-" : patients.length}
+                    {loadingPatients
+                      ? "-"
+                      : patients.length}
                   </h3>
                 </div>
 
-                <FaUserInjured className="text-success" size={26} />
+                <div className="rounded-circle bg-success-subtle p-3">
+                  <FaUserInjured
+                    className="text-success"
+                    size={20}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="col-md-6 col-lg-3">
+        {/* Follow-ups */}
+
+        <div className="col-6 col-lg-3">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Recent Visits</p>
+                  <p className="text-muted mb-1">
+                    Pending Follow-ups
+                  </p>
+
                   <h3 className="fw-bold mb-0">
-                    {loadingVisits ? "-" : visits.length}
+                    {loadingAppointments
+                      ? "-"
+                      : pendingFollowUps.length}
                   </h3>
                 </div>
 
-                <FaStethoscope className="text-info" size={26} />
+                <div className="rounded-circle bg-warning-subtle p-3">
+                  <FaClock
+                    className="text-warning"
+                    size={20}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="col-md-6 col-lg-3">
+        {/* Alerts */}
+
+        <div className="col-6 col-lg-3">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Diagnoses</p>
+                  <p className="text-muted mb-1">
+                    Unread Alerts
+                  </p>
+
                   <h3 className="fw-bold mb-0">
-                    {loadingDiagnoses ? "-" : diagnoses.length}
+                    {loadingNotifications
+                      ? "-"
+                      : unreadAlerts}
                   </h3>
                 </div>
 
-                <FaNotesMedical className="text-secondary" size={26} />
+                <div className="rounded-circle bg-danger-subtle p-3">
+                  <FaBell
+                    className="text-danger"
+                    size={20}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -566,465 +639,273 @@ function DoctorDashboard() {
       </div>
 
       {/* =========================
-          DASHBOARD GRID
+          TODAY'S APPOINTMENTS
       ========================== */}
 
-      <div className="row g-4">
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body p-4">
+          <div className="d-flex justify-content-between align-items-start mb-4">
+            <div>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaCalendarCheck className="text-primary" />
+
+                <h5 className="fw-bold mb-0">
+                  Today's Appointments
+                </h5>
+              </div>
+
+              <p className="text-muted mb-0">
+                Your scheduled appointments for today.
+              </p>
+            </div>
+
+            {!loadingAppointments &&
+              todaysAppointments.length > 0 && (
+                <span className="badge bg-primary-subtle text-primary px-3 py-2">
+                  {todaysAppointments.length} scheduled
+                </span>
+              )}
+          </div>
+
+          {loadingAppointments && (
+            <div className="text-center py-5">
+              <div
+                className="spinner-border spinner-border-sm text-primary"
+                role="status"
+              />
+
+              <p className="text-muted small mt-2 mb-0">
+                Loading appointments...
+              </p>
+            </div>
+          )}
+
+          {!loadingAppointments &&
+            appointmentError && (
+              <div className="alert alert-danger small">
+                {appointmentError}
+              </div>
+            )}
+
+          {!loadingAppointments &&
+            !appointmentError &&
+            todaysAppointments.length === 0 && (
+              <div className="text-center py-5">
+                <FaCalendarCheck
+                  className="text-muted mb-3"
+                  size={34}
+                />
+
+                <p className="fw-semibold mb-1">
+                  No appointments today
+                </p>
+
+                <p className="text-muted small mb-0">
+                  You have no appointments scheduled
+                  for today.
+                </p>
+              </div>
+            )}
+
+          {!loadingAppointments &&
+            !appointmentError &&
+            todaysAppointments.length > 0 && (
+              <>
+                <div className="table-responsive">
+                  <table className="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Patient</th>
+                        <th>Time</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {todaysAppointments.map(
+                        (appointment) => (
+                          <tr key={appointment.id}>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <div className="rounded-circle bg-primary-subtle p-2">
+                                  <FaUserInjured
+                                    className="text-primary"
+                                    size={12}
+                                  />
+                                </div>
+
+                                <span className="fw-semibold">
+                                  {resolvePatientName(
+                                    appointment
+                                  )}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td>
+                              {formatTime(
+                                appointment.appointment_date ||
+                                  appointment.date ||
+                                  appointment.scheduled_date
+                              )}
+                            </td>
+
+                            <td>
+                              {appointment.reason ||
+                                appointment.purpose ||
+                                appointment.type ||
+                                "Consultation"}
+                            </td>
+
+                            <td>
+                              <span
+                                className={`badge ${getStatusClass(
+                                  appointment.status
+                                )}`}
+                              >
+                                {appointment.status ||
+                                  "Scheduled"}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <button className="btn btn-outline-primary w-100 mt-4">
+                  View All Appointments
+                  <FaArrowRight
+                    className="ms-2"
+                    size={12}
+                  />
+                </button>
+              </>
+            )}
+        </div>
+      </div>
+
+      {/* =========================
+          ALERTS + RECOVERY
+      ========================== */}
+
+      <div className="row g-4 mb-4">
         {/* =========================
-            TODAY'S APPOINTMENTS
+            PATIENT ALERTS
         ========================== */}
 
-        <div className="col-12">
+        <div className="col-12 col-lg-6">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <div className="d-flex align-items-center gap-2 mb-2">
-                    <FaCalendarCheck className="text-primary" />
+                    <FaTriangleExclamation className="text-danger" />
 
-                    <h5 className="fw-bold mb-0">Today's Appointments</h5>
+                    <h5 className="fw-bold mb-0">
+                      Patient Alerts
+                    </h5>
                   </div>
 
                   <p className="text-muted mb-0">
-                    Appointments scheduled under your name
+                    Medication, missed-dose and side-effect
+                    alerts requiring attention.
                   </p>
                 </div>
 
-                {!loadingAppointments && todaysAppointments.length > 0 && (
-                  <span className="badge bg-primary-subtle text-primary">
-                    {todaysAppointments.length}
+                {patientAlerts.length > 0 && (
+                  <span className="badge bg-danger-subtle text-danger">
+                    {patientAlerts.length}
                   </span>
                 )}
               </div>
 
-              {/* Loading */}
-
-              {loadingAppointments && (
+              {loadingNotifications && (
                 <div className="text-center py-4">
                   <div
-                    className="spinner-border spinner-border-sm text-primary"
+                    className="spinner-border spinner-border-sm text-danger"
                     role="status"
                   />
 
                   <p className="text-muted small mt-2 mb-0">
-                    Loading appointments...
+                    Loading alerts...
                   </p>
                 </div>
               )}
 
-              {/* Error */}
+              {!loadingNotifications &&
+                notificationError && (
+                  <div className="alert alert-danger small">
+                    {notificationError}
+                  </div>
+                )}
 
-              {!loadingAppointments && appointmentError && (
-                <div className="alert alert-danger small">
-                  {appointmentError}
-                </div>
-              )}
-
-              {/* Empty */}
-
-              {!loadingAppointments &&
-                !appointmentError &&
-                todaysAppointments.length === 0 && (
+              {!loadingNotifications &&
+                !notificationError &&
+                patientAlerts.length === 0 && (
                   <div className="text-center py-4">
-                    <FaCalendarCheck className="text-muted mb-3" size={30} />
+                    <FaPills
+                      className="text-muted mb-3"
+                      size={30}
+                    />
 
-                    <p className="fw-semibold mb-1">No appointments today</p>
+                    <p className="fw-semibold mb-1">
+                      No patient alerts
+                    </p>
 
                     <p className="text-muted small mb-0">
-                      You have no appointments scheduled for today.
+                      There are currently no medication or
+                      side-effect alerts requiring attention.
                     </p>
                   </div>
                 )}
 
-              {/* Table */}
-
-              {!loadingAppointments &&
-                !appointmentError &&
-                todaysAppointments.length > 0 && (
+              {!loadingNotifications &&
+                !notificationError &&
+                patientAlerts.length > 0 && (
                   <>
-                    <div className="table-responsive">
-                      <table className="table align-middle">
-                        <thead>
-                          <tr>
-                            <th>Patient</th>
-                            <th>Time</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
+                    {patientAlerts.map(
+                      (notification) => (
+                        <div
+                          key={notification.id}
+                          className="d-flex align-items-start gap-3 p-3 bg-danger-subtle rounded mb-2"
+                        >
+                          <FaPills
+                            className="text-danger mt-1"
+                            size={14}
+                          />
 
-                        <tbody>
-                          {todaysAppointments.map((appointment) => (
-                            <tr key={appointment.id}>
-                              <td>{resolvePatientName(appointment)}</td>
+                          <div className="flex-grow-1">
+                            <div className="fw-semibold">
+                              {notification.title ||
+                                "Patient Alert"}
+                            </div>
 
-                              <td>
-                                {formatTime(
-                                  appointment.appointment_date ||
-                                    appointment.date ||
-                                    appointment.scheduled_date,
+                            <small className="text-muted">
+                              {notification.message ||
+                                "A patient requires attention."}
+                            </small>
+
+                            {notification.created_at && (
+                              <small className="text-muted d-block mt-1">
+                                {formatDate(
+                                  notification.created_at
                                 )}
-                              </td>
-
-                              <td>
-                                <span className="badge bg-primary-subtle text-primary">
-                                  {appointment.status || "Scheduled"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <button className="btn btn-outline-primary w-100 mt-2">
-                      View All Appointments
-                      <FaArrowRight className="ms-2" size={12} />
-                    </button>
-                  </>
-                )}
-            </div>
-          </div>
-        </div>
-
-        {/* =========================
-            ASSIGNED PATIENTS
-        ========================== */}
-
-        <div className="col-12 col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <FaUserInjured className="text-success" />
-
-                <h5 className="fw-bold mb-0">Assigned Patients</h5>
-              </div>
-
-              <p className="text-muted mb-3">
-                Patients currently under your care
-              </p>
-
-              {/* Loading */}
-
-              {loadingPatients && (
-                <div className="text-center py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-success"
-                    role="status"
-                  />
-
-                  <p className="text-muted small mt-2 mb-0">
-                    Loading patients...
-                  </p>
-                </div>
-              )}
-
-              {/* Error */}
-
-              {!loadingPatients && patientError && (
-                <div className="alert alert-danger small">{patientError}</div>
-              )}
-
-              {/* Empty */}
-
-              {!loadingPatients && !patientError && patients.length === 0 && (
-                <div className="text-center py-4">
-                  <FaUserInjured className="text-muted mb-3" size={30} />
-
-                  <p className="fw-semibold mb-1">No patients yet</p>
-
-                  <p className="text-muted small mb-0">
-                    You don't have any patients assigned to you yet.
-                  </p>
-                </div>
-              )}
-
-              {/* List */}
-
-              {!loadingPatients && !patientError && patients.length > 0 && (
-                <>
-                  {patients.slice(0, 5).map((patient) => (
-                    <div
-                      key={patient.id}
-                      className="d-flex justify-content-between align-items-center border-bottom py-3"
-                    >
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="rounded-circle bg-success-subtle p-2">
-                          <FaUserInjured className="text-success" size={12} />
+                              </small>
+                            )}
+                          </div>
                         </div>
+                      )
+                    )}
 
-                        <span className="fw-semibold">
-                          {patient.name ||
-                            patient.full_name ||
-                            `${patient.first_name || ""} ${
-                              patient.last_name || ""
-                            }`.trim() ||
-                            "Patient"}
-                        </span>
-                      </div>
-
-                      <small className="text-muted">
-                        {patient.email || ""}
-                      </small>
-                    </div>
-                  ))}
-
-                  <button className="btn btn-outline-success w-100 mt-3">
-                    View All Patients
-                    <FaArrowRight className="ms-2" size={12} />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* =========================
-            PENDING FOLLOW-UPS
-        ========================== */}
-
-        <div className="col-12 col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <FaClock className="text-warning" />
-
-                <h5 className="fw-bold mb-0">Pending Follow-ups</h5>
-              </div>
-
-              <p className="text-muted mb-3">
-                Appointments awaiting confirmation or follow-up
-              </p>
-
-              {/* Loading */}
-
-              {loadingAppointments && (
-                <div className="text-center py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-warning"
-                    role="status"
-                  />
-
-                  <p className="text-muted small mt-2 mb-0">
-                    Loading follow-ups...
-                  </p>
-                </div>
-              )}
-
-              {/* Error */}
-
-              {!loadingAppointments && appointmentError && (
-                <div className="alert alert-danger small">
-                  {appointmentError}
-                </div>
-              )}
-
-              {/* Empty */}
-
-              {!loadingAppointments &&
-                !appointmentError &&
-                pendingFollowUps.length === 0 && (
-                  <div className="text-center py-4">
-                    <FaClock className="text-muted mb-3" size={30} />
-
-                    <p className="fw-semibold mb-1">No pending follow-ups</p>
-
-                    <p className="text-muted small mb-0">
-                      You're all caught up.
-                    </p>
-                  </div>
-                )}
-
-              {/* List */}
-
-              {!loadingAppointments &&
-                !appointmentError &&
-                pendingFollowUps.length > 0 && (
-                  <>
-                    {pendingFollowUps.map((appointment) => (
-                      <div key={appointment.id} className="border-bottom py-3">
-                        <div className="fw-semibold">
-                          {resolvePatientName(appointment)}
-                        </div>
-
-                        <small className="text-muted">
-                          {formatDate(
-                            appointment.appointment_date ||
-                              appointment.date ||
-                              appointment.scheduled_date,
-                          )}
-                        </small>
-                      </div>
-                    ))}
-
-                    <button className="btn btn-outline-warning w-100 mt-3">
-                      View All Follow-ups
-                      <FaArrowRight className="ms-2" size={12} />
-                    </button>
-                  </>
-                )}
-            </div>
-          </div>
-        </div>
-
-        {/* =========================
-            RECENT VISITS
-        ========================== */}
-
-        <div className="col-12 col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body p-4">
-              <div className="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                  <div className="d-flex align-items-center gap-2">
-                    <FaStethoscope className="text-info" />
-
-                    <h5 className="fw-bold mb-0">Recent Visits</h5>
-                  </div>
-
-                  <p className="text-muted mb-0 mt-1">
-                    Recently logged patient visits
-                  </p>
-                </div>
-              </div>
-
-              {/* Loading */}
-
-              {loadingVisits && (
-                <div className="text-center py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-info"
-                    role="status"
-                  />
-
-                  <p className="text-muted small mt-2 mb-0">
-                    Loading visits...
-                  </p>
-                </div>
-              )}
-
-              {/* Error */}
-
-              {!loadingVisits && visitError && (
-                <div className="alert alert-danger small">{visitError}</div>
-              )}
-
-              {/* Empty */}
-
-              {!loadingVisits && !visitError && recentVisits.length === 0 && (
-                <div className="text-center py-4">
-                  <FaStethoscope className="text-muted mb-3" size={28} />
-
-                  <p className="fw-semibold mb-1">No visit records yet</p>
-
-                  <p className="text-muted small mb-0">
-                    Log a patient visit to see it appear here.
-                  </p>
-                </div>
-              )}
-
-              {/* List */}
-
-              {!loadingVisits && !visitError && recentVisits.length > 0 && (
-                <>
-                  {recentVisits.map((visit) => (
-                    <div key={visit.id} className="border-bottom py-3">
-                      <div className="fw-semibold">
-                        {resolvePatientName(visit)}
-                      </div>
-
-                      <small className="text-muted">
-                        {formatDate(visit.visit_date || visit.created_at)}
-                      </small>
-                    </div>
-                  ))}
-
-                  <button className="btn btn-outline-info w-100 mt-3">
-                    View All Visits
-                    <FaArrowRight className="ms-2" size={12} />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* =========================
-            RECENT DIAGNOSES
-        ========================== */}
-
-        <div className="col-12 col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <FaNotesMedical className="text-secondary" />
-
-                <h5 className="fw-bold mb-0">Recent Diagnoses</h5>
-              </div>
-
-              <p className="text-muted mb-3">
-                Diagnoses recently recorded for your patients
-              </p>
-
-              {/* Loading */}
-
-              {loadingDiagnoses && (
-                <div className="text-center py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-secondary"
-                    role="status"
-                  />
-
-                  <p className="text-muted small mt-2 mb-0">
-                    Loading diagnoses...
-                  </p>
-                </div>
-              )}
-
-              {/* Error */}
-
-              {!loadingDiagnoses && diagnosisError && (
-                <div className="alert alert-danger small">
-                  {diagnosisError}
-                </div>
-              )}
-
-              {/* Empty */}
-
-              {!loadingDiagnoses &&
-                !diagnosisError &&
-                recentDiagnoses.length === 0 && (
-                  <div className="text-center py-4">
-                    <FaNotesMedical className="text-muted mb-3" size={28} />
-
-                    <p className="fw-semibold mb-1">No recent diagnoses</p>
-
-                    <p className="text-muted small mb-0">
-                      Diagnoses you record will appear here.
-                    </p>
-                  </div>
-                )}
-
-              {/* List */}
-
-              {!loadingDiagnoses &&
-                !diagnosisError &&
-                recentDiagnoses.length > 0 && (
-                  <>
-                    {recentDiagnoses.map((diagnosis) => (
-                      <div key={diagnosis.id} className="border-bottom py-3">
-                        <div className="fw-semibold">
-                          {diagnosis.condition || diagnosis.name || "Diagnosis"}
-                        </div>
-
-                        <small className="text-muted">
-                          Patient: {resolvePatientName(diagnosis)}
-                        </small>
-                      </div>
-                    ))}
-
-                    <button className="btn btn-outline-secondary w-100 mt-3">
-                      View All Diagnoses
-                      <FaArrowRight className="ms-2" size={12} />
+                    <button className="btn btn-outline-danger w-100 mt-3">
+                      View All Alerts
+                      <FaArrowRight
+                        className="ms-2"
+                        size={12}
+                      />
                     </button>
                   </>
                 )}
@@ -1042,14 +923,14 @@ function DoctorDashboard() {
               <div className="d-flex align-items-center gap-2 mb-2">
                 <FaChartLine className="text-info" />
 
-                <h5 className="fw-bold mb-0">Patient Recovery Updates</h5>
+                <h5 className="fw-bold mb-0">
+                  Recovery Updates
+                </h5>
               </div>
 
               <p className="text-muted mb-3">
-                Progress reported by your patients
+                Recent progress reported by your patients.
               </p>
-
-              {/* Loading */}
 
               {loadingClinical && (
                 <div className="text-center py-4">
@@ -1064,281 +945,353 @@ function DoctorDashboard() {
                 </div>
               )}
 
-              {/* Error */}
-
-              {!loadingClinical && clinicalError && (
-                <div className="alert alert-danger small">
-                  {clinicalError}
-                </div>
-              )}
-
-              {/* Empty */}
+              {!loadingClinical &&
+                clinicalError && (
+                  <div className="alert alert-danger small">
+                    {clinicalError}
+                  </div>
+                )}
 
               {!loadingClinical &&
                 !clinicalError &&
                 recoveryUpdates.length === 0 && (
                   <div className="text-center py-4">
-                    <FaChartLine className="text-muted mb-3" size={28} />
+                    <FaChartLine
+                      className="text-muted mb-3"
+                      size={30}
+                    />
 
                     <p className="fw-semibold mb-1">
-                      No recovery updates available
+                      No recovery updates
                     </p>
 
                     <p className="text-muted small mb-0">
-                      Patient progress reports will appear here.
+                      Patient progress reports will appear
+                      here.
                     </p>
                   </div>
                 )}
-
-              {/* List */}
 
               {!loadingClinical &&
                 !clinicalError &&
                 recoveryUpdates.length > 0 && (
                   <>
                     {recoveryUpdates.map((record) => (
-                      <div key={record.id} className="border-bottom py-3">
-                        <div className="fw-semibold">
-                          {resolvePatientName(record)}
+                      <div
+                        key={record.id}
+                        className="border-bottom py-3"
+                      >
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div>
+                            <div className="fw-semibold">
+                              {resolvePatientName(record)}
+                            </div>
+
+                            <small className="text-muted">
+                              {formatDate(
+                                record.recorded_at ||
+                                  record.created_at
+                              )}
+                            </small>
+                          </div>
+
+                          {record.improvement_percentage !==
+                            undefined && (
+                            <span className="badge bg-info-subtle text-info">
+                              {
+                                record.improvement_percentage
+                              }
+                              %
+                            </span>
+                          )}
                         </div>
 
-                        {record.improvement_percentage !== undefined && (
-                          <small className="text-muted d-block">
-                            Improvement:{" "}
-                            <strong>{record.improvement_percentage}%</strong>
-                          </small>
-                        )}
+                        <div className="mt-2">
+                          {record.pain_level !== undefined && (
+                            <small className="text-muted me-3">
+                              Pain:{" "}
+                              <strong>
+                                {record.pain_level}/10
+                              </strong>
+                            </small>
+                          )}
 
-                        {record.pain_level !== undefined && (
-                          <small className="text-muted d-block">
-                            Pain level: {record.pain_level}
-                          </small>
-                        )}
+                          {record.feeling_better !==
+                            undefined && (
+                            <small className="text-muted">
+                              Feeling better:{" "}
+                              <strong>
+                                {record.feeling_better
+                                  ? "Yes"
+                                  : "No"}
+                              </strong>
+                            </small>
+                          )}
+                        </div>
                       </div>
                     ))}
 
                     <button className="btn btn-outline-info w-100 mt-3">
                       View All Recovery Updates
-                      <FaArrowRight className="ms-2" size={12} />
+                      <FaArrowRight
+                        className="ms-2"
+                        size={12}
+                      />
                     </button>
                   </>
                 )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* =========================
-            MISSED MEDICATION ALERTS
-        ========================== */}
+      {/* =========================
+          RECENT PATIENTS
+      ========================== */}
 
-        <div className="col-12 col-lg-6">
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body p-4">
+          <div className="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaUserInjured className="text-success" />
+
+                <h5 className="fw-bold mb-0">
+                  Recent Patients
+                </h5>
+              </div>
+
+              <p className="text-muted mb-0">
+                Patients currently within your clinical scope.
+              </p>
+            </div>
+
+            {!loadingPatients &&
+              patients.length > 0 && (
+                <span className="badge bg-success-subtle text-success">
+                  {patients.length} total
+                </span>
+              )}
+          </div>
+
+          {loadingPatients && (
+            <div className="text-center py-4">
+              <div
+                className="spinner-border spinner-border-sm text-success"
+                role="status"
+              />
+
+              <p className="text-muted small mt-2 mb-0">
+                Loading patients...
+              </p>
+            </div>
+          )}
+
+          {!loadingPatients && patientError && (
+            <div className="alert alert-danger small">
+              {patientError}
+            </div>
+          )}
+
+          {!loadingPatients &&
+            !patientError &&
+            recentPatients.length === 0 && (
+              <div className="text-center py-4">
+                <FaUserInjured
+                  className="text-muted mb-3"
+                  size={30}
+                />
+
+                <p className="fw-semibold mb-1">
+                  No patients yet
+                </p>
+
+                <p className="text-muted small mb-0">
+                  Patients within your care scope will
+                  appear here.
+                </p>
+              </div>
+            )}
+
+          {!loadingPatients &&
+            !patientError &&
+            recentPatients.length > 0 && (
+              <>
+                <div className="row g-3">
+                  {recentPatients.map((patient) => (
+                    <div
+                      key={patient.id}
+                      className="col-12 col-md-6 col-lg-4 col-xl"
+                    >
+                      <div className="border rounded p-3 h-100">
+                        <div className="d-flex align-items-center gap-3">
+                          <div className="rounded-circle bg-success-subtle p-2">
+                            <FaUserInjured
+                              className="text-success"
+                              size={13}
+                            />
+                          </div>
+
+                          <div className="overflow-hidden">
+                            <div className="fw-semibold text-truncate">
+                              {patient.name ||
+                                patient.full_name ||
+                                `${patient.first_name || ""} ${
+                                  patient.last_name || ""
+                                }`.trim() ||
+                                "Patient"}
+                            </div>
+
+                            {patient.email && (
+                              <small className="text-muted text-truncate d-block">
+                                {patient.email}
+                              </small>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button className="btn btn-outline-success w-100 mt-4">
+                  View All Patients
+                  <FaArrowRight
+                    className="ms-2"
+                    size={12}
+                  />
+                </button>
+              </>
+            )}
+        </div>
+      </div>
+
+      {/* =========================
+          QUICK CLINICAL SUMMARY
+      ========================== */}
+
+      <div className="row g-4">
+        {/* Follow-ups */}
+
+        <div className="col-12 col-md-6">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <div className="d-flex align-items-center gap-2 mb-2">
-                <FaPills className="text-danger" />
+                <FaClock className="text-warning" />
 
-                <h5 className="fw-bold mb-0">Missed Medication Alerts</h5>
+                <h5 className="fw-bold mb-0">
+                  Follow-up Summary
+                </h5>
               </div>
 
-              <p className="text-muted mb-3">
-                Patients who may have missed a dose
+              <p className="text-muted small mb-3">
+                Appointments that may require your attention.
               </p>
 
-              {/* Loading */}
+              {loadingAppointments ? (
+                <p className="text-muted small mb-0">
+                  Loading...
+                </p>
+              ) : pendingFollowUps.length === 0 ? (
+                <div className="text-center py-3">
+                  <p className="fw-semibold mb-1">
+                    No pending follow-ups
+                  </p>
 
-              {loadingNotifications && (
-                <div className="text-center py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-danger"
-                    role="status"
-                  />
-
-                  <p className="text-muted small mt-2 mb-0">
-                    Loading alerts...
+                  <p className="text-muted small mb-0">
+                    You're all caught up.
                   </p>
                 </div>
-              )}
-
-              {/* Error */}
-
-              {!loadingNotifications && notificationError && (
-                <div className="alert alert-danger small">
-                  {notificationError}
-                </div>
-              )}
-
-              {/* Empty */}
-
-              {!loadingNotifications &&
-                !notificationError &&
-                missedMedicationAlerts.length === 0 && (
-                  <div className="text-center py-4">
-                    <FaPills className="text-muted mb-3" size={28} />
-
-                    <p className="fw-semibold mb-1">
-                      No missed medication alerts
-                    </p>
-
-                    <p className="text-muted small mb-0">
-                      You're all caught up here.
-                    </p>
-                  </div>
-                )}
-
-              {/* List */}
-
-              {!loadingNotifications &&
-                !notificationError &&
-                missedMedicationAlerts.length > 0 && (
-                  <>
-                    {missedMedicationAlerts.map((notification) => (
+              ) : (
+                <div>
+                  {pendingFollowUps
+                    .slice(0, 3)
+                    .map((appointment) => (
                       <div
-                        key={notification.id}
-                        className="d-flex align-items-start gap-3 p-3 bg-danger-subtle rounded mb-2"
+                        key={appointment.id}
+                        className="border-bottom py-2"
                       >
-                        <FaPills className="text-danger mt-1" size={14} />
-
-                        <div>
-                          <div className="fw-semibold">
-                            {notification.title || "Medication Alert"}
-                          </div>
-
-                          <small className="text-muted">
-                            {notification.message ||
-                              "A patient may have missed a medication dose."}
-                          </small>
+                        <div className="fw-semibold">
+                          {resolvePatientName(
+                            appointment
+                          )}
                         </div>
+
+                        <small className="text-muted">
+                          {formatDate(
+                            appointment.appointment_date ||
+                              appointment.date ||
+                              appointment.scheduled_date
+                          )}
+                        </small>
                       </div>
                     ))}
-
-                    <button className="btn btn-outline-danger w-100 mt-3">
-                      View All Alerts
-                      <FaArrowRight className="ms-2" size={12} />
-                    </button>
-                  </>
-                )}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* =========================
-            NOTIFICATIONS
-        ========================== */}
+        {/* Latest Notification */}
 
-        <div className="col-12">
+        <div className="col-12 col-md-6">
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
-              <div className="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                  <div className="d-flex align-items-center gap-2">
-                    <FaBell className="text-warning" />
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <FaBell className="text-warning" />
 
-                    <h5 className="fw-bold mb-0">Recent Notifications</h5>
-                  </div>
-
-                  <p className="text-muted mb-0 mt-1">
-                    Important updates for you
-                  </p>
-                </div>
-
-                {recentNotifications.some(
-                  (notification) => !notification.is_read,
-                ) && (
-                  <span className="badge bg-warning-subtle text-warning">
-                    New
-                  </span>
-                )}
+                <h5 className="fw-bold mb-0">
+                  Latest Notification
+                </h5>
               </div>
 
-              {/* Loading */}
+              <p className="text-muted small mb-3">
+                Your most recent system update.
+              </p>
 
-              {loadingNotifications && (
-                <div className="text-center py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-warning"
-                    role="status"
-                  />
+              {loadingNotifications ? (
+                <p className="text-muted small mb-0">
+                  Loading...
+                </p>
+              ) : recentNotifications.length === 0 ? (
+                <div className="text-center py-3">
+                  <p className="fw-semibold mb-1">
+                    No notifications
+                  </p>
 
-                  <p className="text-muted small mt-2 mb-0">
-                    Loading notifications...
+                  <p className="text-muted small mb-0">
+                    You're up to date.
                   </p>
                 </div>
-              )}
+              ) : (
+                <div className="bg-light rounded p-3">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <span className="fw-semibold">
+                      {recentNotifications[0].title ||
+                        "Notification"}
+                    </span>
 
-              {/* Error */}
+                    {!recentNotifications[0].is_read && (
+                      <span className="badge bg-warning text-dark">
+                        New
+                      </span>
+                    )}
+                  </div>
 
-              {!loadingNotifications && notificationError && (
-                <div className="alert alert-danger small">
-                  {notificationError}
+                  <p className="text-muted small mt-2 mb-1">
+                    {recentNotifications[0].message ||
+                      "You have a new notification."}
+                  </p>
+
+                  {recentNotifications[0].created_at && (
+                    <small className="text-muted">
+                      {formatDate(
+                        recentNotifications[0].created_at
+                      )}
+                    </small>
+                  )}
                 </div>
               )}
-
-              {/* Empty */}
-
-              {!loadingNotifications &&
-                !notificationError &&
-                recentNotifications.length === 0 && (
-                  <div className="text-center py-4">
-                    <FaBell className="text-muted mb-3" size={28} />
-
-                    <p className="fw-semibold mb-1">No notifications</p>
-
-                    <p className="text-muted small mb-0">
-                      You don't have any new notifications.
-                    </p>
-                  </div>
-                )}
-
-              {/* List */}
-
-              {!loadingNotifications &&
-                !notificationError &&
-                recentNotifications.length > 0 && (
-                  <div className="mt-3">
-                    {recentNotifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`d-flex align-items-start gap-3 p-3 rounded mb-2 ${
-                          notification.is_read
-                            ? "bg-light"
-                            : "bg-warning-subtle"
-                        }`}
-                      >
-                        <FaBell
-                          className={
-                            notification.is_read
-                              ? "text-muted mt-1"
-                              : "text-warning mt-1"
-                          }
-                          size={14}
-                        />
-
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <span className="fw-semibold">
-                              {notification.title || "Notification"}
-                            </span>
-
-                            {!notification.is_read && (
-                              <span className="badge bg-warning text-dark ms-2">
-                                New
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-muted small mb-0 mt-1">
-                            {notification.message}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-              <button className="btn btn-outline-warning w-100 mt-3">
-                View All Notifications
-                <FaArrowRight className="ms-2" size={12} />
-              </button>
             </div>
           </div>
         </div>

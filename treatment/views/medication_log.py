@@ -31,9 +31,7 @@ class MedicationLogListCreateView(
         "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
     )
 
-    doctor_field = (
-        "medication_schedule__prescription__diagnosis__visit__doctor__user"
-    )
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
 
     patient_field = (
         "medication_schedule__prescription__diagnosis__visit__patient__user"
@@ -55,5 +53,5 @@ class MedicationLogDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDest
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
 
     hospital_field = "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "medication_schedule__prescription__diagnosis__visit__doctor__user"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "medication_schedule__prescription__diagnosis__visit__patient__user"

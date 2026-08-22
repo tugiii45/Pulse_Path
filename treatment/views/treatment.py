@@ -7,11 +7,12 @@ from accounts.views.mixins import HospitalQuerySetMixin
 
 
 class TreatmentListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+    queryset = Treatment.objects.all()
     serializer_class = TreatmentSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
 
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "prescription__diagnosis__visit__patient__user"
 
 
@@ -20,5 +21,5 @@ class TreatmentDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyA
     serializer_class = TreatmentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
     hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "prescription__diagnosis__visit__patient__user"

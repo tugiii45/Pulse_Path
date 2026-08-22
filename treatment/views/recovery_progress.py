@@ -9,6 +9,7 @@ from notifications.models import Notification
 
 
 class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+    queryset = RecoveryProgress.objects.all() 
     serializer_class = RecoveryProgressSerializer
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -18,7 +19,7 @@ class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateA
     ordering = ["-recorded_at"]
 
     hospital_field = "patient__user__hospital"
-    doctor_field = "visit__doctor__user"
+    doctor_field = "visit__appointment__doctor__user"
     patient_field = "patient__user"
 
     def get_permissions(self):
@@ -34,11 +35,12 @@ class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateA
 
 
 class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
+    queryset = RecoveryProgress.objects.all() 
     serializer_class = RecoveryProgressSerializer
     permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
     hospital_field = "patient__user__hospital"
-    doctor_field = "visit__doctor__user"
+    doctor_field = "visit__appointment__doctor__user"
     patient_field = "patient__user"
 
     def perform_update(self, serializer):
