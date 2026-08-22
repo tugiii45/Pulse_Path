@@ -18,6 +18,9 @@ export const getHospitals = async (
 /**
  * Creates a new hospital.
  *
+ * Superadmin-only, direct creation. Admins register their own
+ * hospital via registerHospital() instead.
+ *
  * @param {Object} hospitalData - Information for the new hospital.
  */
 export const createHospital = async (
@@ -25,6 +28,24 @@ export const createHospital = async (
 ) => {
   const response = await api.post(
     "hospitals/",
+    hospitalData
+  );
+
+  return response.data?.data ?? response.data;
+};
+
+/**
+ * Admin self-service: registers a hospital and links it to the
+ * current admin's account in one step. Fails if the admin already
+ * manages a hospital.
+ *
+ * @param {Object} hospitalData - Information for the new hospital.
+ */
+export const registerHospital = async (
+  hospitalData
+) => {
+  const response = await api.post(
+    "hospitals/register/",
     hospitalData
   );
 

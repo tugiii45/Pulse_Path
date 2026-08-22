@@ -2,15 +2,22 @@
 Hospital API views for PulsePath.
 
 Provides list, create, retrieve, update, and delete endpoints for
-hospitals. These endpoints are restricted to superusers only since
-hospital management is a platform-level operation.
+hospitals. Direct creation (HospitalListCreateView POST) is
+restricted to superusers only, since hospital management is a
+platform-level operation.
+
+HospitalRegisterView is a separate, ADMIN-only self-service endpoint:
+a superadmin-created admin (see admin_provisioning.py) has no hospital
+yet, and uses this to register their own and become linked to it in
+one step. A strict one admin <-> one hospital rule is enforced -- an
+admin who already has a hospital cannot register a second one.
 """
 
 from rest_framework import generics
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import Hospital
-from accounts.permissions import IsSuperAdmin
+from accounts.permissions import IsSuperAdmin, IsAdmin
 
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -28,6 +35,42 @@ class HospitalSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
 
+class HospitalRegisterSerializer(serializers.ModelSerializer):
+    """
+    Lets an ADMIN with no hospital yet register their own hospital.
+
+    On save, links the new hospital to request.user in the same step
+    -- no separate "assign" call is needed. Rejects the request
+    outright if the admin already manages a hospital.
+    """
+
+    class Meta:
+        model = Hospital
+        fields = ["id", "name", "email", "phone", "address", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        user = request.user
+
+        if user.hospital_id:
+            raise serializers.ValidationError(
+                "You already manage a hospital and cannot register "
+                "another one."
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        hospital = Hospital.objects.create(**validated_data)
+
+        user = self.context["request"].user
+        user.hospital = hospital
+        user.save(update_fields=["hospital"])
+
+        return hospital
+
+
 class HospitalListCreateView(generics.ListCreateAPIView):
     """
     Lists active hospitals for authenticated users.
@@ -42,7 +85,9 @@ class HospitalListCreateView(generics.ListCreateAPIView):
         """
         Allow authenticated users to view hospitals.
 
-        Only superadmins can create hospitals.
+        Only superadmins can create hospitals directly through this
+        endpoint. Admins register their own hospital via
+        HospitalRegisterView instead.
         """
         if self.request.method == "POST":
             return [
@@ -51,6 +96,19 @@ class HospitalListCreateView(generics.ListCreateAPIView):
             ]
 
         return [IsAuthenticated()]
+
+
+class HospitalRegisterView(generics.CreateAPIView):
+    """
+    ADMIN-only: self-service hospital registration.
+
+    An admin created by a superadmin (see SuperAdminCreateAdminView)
+    has no hospital yet -- this lets them register one and become
+    linked to it in a single request.
+    """
+
+    serializer_class = HospitalRegisterSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
 
 
 class HospitalDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -76,4 +134,3 @@ class HospitalDetailView(generics.RetrieveUpdateDestroyAPIView):
             ]
 
         return [IsAuthenticated()]
-

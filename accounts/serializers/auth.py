@@ -8,8 +8,9 @@ Public self-registration is PATIENT-only. DOCTOR accounts are created
 exclusively by an ADMIN via AdminCreateDoctorSerializer (see
 accounts/serializers/doctor_provisioning.py), which also handles
 department/hospital assignment and the invite-email flow. ADMIN
-accounts are provisioned out-of-band (e.g. Django admin / a seed
-script), not through this public endpoint.
+accounts are created by a SUPERADMIN via SuperAdminCreateAdminSerializer
+(see accounts/serializers/admin_provisioning.py), not through this
+public endpoint.
 """
 
 from rest_framework import serializers
@@ -117,7 +118,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     Users can view their complete profile and update their own
     personal information. Sensitive account-level fields such as
-    email, role, and hospital remain read-only.
+    email, role, hospital, and is_superuser remain read-only.
     """
 
     hospital_name = serializers.CharField(
@@ -145,6 +146,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "hospital",
             "hospital_name",
             "is_active",
+            "is_superuser",
             "date_joined",
         )
 
@@ -155,5 +157,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "hospital",
             "hospital_name",
             "is_active",
+            "is_superuser",
             "date_joined",
         )

@@ -2,7 +2,8 @@
 Accounts URL configuration.
 
 Defines API routes for authentication, patient profiles, departments,
-doctors, and hospitals. Each route maps to a dedicated view class.
+doctors, admins, and hospitals. Each route maps to a dedicated view
+class.
 """
 
 from django.urls import path
@@ -11,7 +12,12 @@ from .views.patient import PatientProfileView, PatientListView
 from .views.department import DepartmentListCreateView, DepartmentDetailView
 from .views.doctor import DoctorListCreateView, DoctorDetailView, HospitalDoctorsView
 from .views.doctor_provisioning import AdminCreateDoctorView, SetPasswordView
-from .views.hospital import HospitalListCreateView, HospitalDetailView
+from .views.admin_provisioning import SuperAdminCreateAdminView
+from .views.hospital import (
+    HospitalListCreateView,
+    HospitalDetailView,
+    HospitalRegisterView,
+)
 
 urlpatterns = [
     # Authentication
@@ -30,7 +36,10 @@ urlpatterns = [
     path("doctors/by-hospital/",HospitalDoctorsView.as_view(),name="doctors-by-hospital",
 ),
     path("doctors/<int:pk>/", DoctorDetailView.as_view(), name="doctor-detail"),
-    # Hospital management (superadmin only)
+    # Admin management (superadmin only)
+    path("admins/create/", SuperAdminCreateAdminView.as_view(), name="admin-create-superadmin"),
+    # Hospital management
     path("hospitals/", HospitalListCreateView.as_view(), name="hospital-list-create"),
+    path("hospitals/register/", HospitalRegisterView.as_view(), name="hospital-register"),
     path("hospitals/<int:pk>/", HospitalDetailView.as_view(), name="hospital-detail"),
 ]

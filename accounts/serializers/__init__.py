@@ -10,3 +10,4 @@ from .patient import PatientSerializer
 from .department import DepartmentSerializer
 from .doctor import DoctorSerializer
 from .doctor_provisioning import AdminCreateDoctorSerializer, SetPasswordSerializer
+from .admin_provisioning import *
