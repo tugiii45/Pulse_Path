@@ -28,6 +28,7 @@ import Profile from "../pages/profile/Profile";
 import Patients from "../pages/patients/Patients";
 import Doctors from "../pages/doctors/Doctors";
 import Hospitals from "../pages/hospitals/Hospitals";
+import RegisterMyHospital from "../pages/hospitals/Registermyhospital";
 import Departments from "../pages/departments/Departments";
 import SetPassword from "../pages/auth/SetPassword";
 
@@ -87,6 +88,20 @@ function AppRoutes() {
             <Route index element={<Dashboard />} />
 
             {/* ================================
+                ADMIN SELF-SERVICE ONBOARDING
+                Reachable by any authenticated ADMIN, hospital or not.
+                ProtectedRoute redirects an admin with no hospital here
+                automatically; this route itself must stay open to
+                ADMINs regardless of hospital status, or the redirect
+                would loop.
+            ================================= */}
+
+            <Route
+              path="register-hospital"
+              element={<RegisterMyHospital />}
+            />
+
+            {/* ================================
                 GENERAL USER ROUTES
                 ADMIN + DOCTOR + PATIENT
             ================================= */}
@@ -137,9 +152,18 @@ function AppRoutes() {
             <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
               <Route path="doctors" element={<Doctors />} />
 
-              <Route path="hospitals" element={<Hospitals />} />
-
               <Route path="departments" element={<Departments />} />
+            </Route>
+
+            {/* Platform-wide hospital management: superadmin only.
+                Regular ADMINs manage their own hospital via
+                register-hospital above, not this page. */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]} requireSuperuser />
+              }
+            >
+              <Route path="hospitals" element={<Hospitals />} />
             </Route>
 
             {/* ================================
