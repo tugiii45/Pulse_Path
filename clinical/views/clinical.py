@@ -19,11 +19,15 @@ class ClinicalRecordListCreateView(HospitalQuerySetMixin, generics.ListCreateAPI
     ordering_fields = ["created_at", "updated_at"]
     ordering = ["-created_at"]
 
-    hospital_field = "visit__patient__user__hospital"
+    hospital_field = "visit__appointment__hospital"
+    doctor_field = "visit__appointment__doctor__user"
+    patient_field = "visit__patient__user"
 
 
 class ClinicalRecordDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = ClinicalRecord.objects.all()
     serializer_class = ClinicalRecordSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
-    hospital_field = "visit__patient__user__hospital"
+    hospital_field = "visit__appointment__hospital"
+    doctor_field = "visit__appointment__doctor__user"
+    patient_field = "visit__patient__user"

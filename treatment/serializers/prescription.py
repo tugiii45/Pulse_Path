@@ -37,55 +37,45 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         ]
 
     def validate_diagnosis(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                "A diagnosis is required."
-            )
+      if not value:
+        raise serializers.ValidationError("A diagnosis is required.")
 
-        request = self.context.get("request")
+      request = self.context.get("request")
 
-        if not request or not request.user.is_authenticated:
-            raise serializers.ValidationError(
-                "Authentication is required."
-            )
+      if not request or not request.user.is_authenticated:
+        raise serializers.ValidationError("Authentication is required.")
 
-        user = request.user
+      user = request.user
 
-        # Superadmin can work across hospitals.
-        if user.is_superuser:
-            return value
-
-        # Doctors can only prescribe for diagnoses belonging
-        # to their own patient visits.
-        if user.role == "DOCTOR":
-            if value.visit.doctor.user != user:
-                raise serializers.ValidationError(
-                    "You can only create prescriptions for your own patients."
-                )
-
-        # Hospital admins can only work with diagnoses from
-        # their own hospital.
-        elif user.role == "ADMIN":
-            if (
-                not user.hospital_id
-                or value.visit.patient.user.hospital_id != user.hospital_id
-            ):
-                raise serializers.ValidationError(
-                    "You can only create prescriptions within your hospital."
-                )
-
-        # Patients should not be able to create prescriptions.
-        elif user.role == "PATIENT":
-            raise serializers.ValidationError(
-                "Patients cannot create prescriptions."
-            )
-
-        else:
-            raise serializers.ValidationError(
-                "You are not authorized to create a prescription."
-            )
-
+      if user.is_superuser:
         return value
+
+      if user.role == "DOCTOR":
+        if value.visit.appointment.doctor.user != user:
+            raise serializers.ValidationError(
+                "You can only create prescriptions for your own patients."
+            )
+
+      elif user.role == "ADMIN":
+        if (
+            not user.hospital_id
+            or value.visit.appointment.hospital_id != user.hospital_id
+        ):
+            raise serializers.ValidationError(
+                "You can only create prescriptions within your hospital."
+            )
+
+      elif user.role == "PATIENT":
+        raise serializers.ValidationError(
+            "Patients cannot create prescriptions."
+        )
+
+      else:
+        raise serializers.ValidationError(
+            "You are not authorized to create a prescription."
+        )
+
+      return value
 
     def validate_dosage(self, value):
         if not value or not str(value).strip():

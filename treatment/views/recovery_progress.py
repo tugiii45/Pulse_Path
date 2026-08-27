@@ -18,7 +18,7 @@ class RecoveryProgressListCreateView(HospitalQuerySetMixin, generics.ListCreateA
     ordering_fields = ["recorded_at", "pain_level", "improvement_percentage"]
     ordering = ["-recorded_at"]
 
-    hospital_field = "patient__user__hospital"
+    hospital_field = "visit__appointment__hospital"
     doctor_field = "visit__appointment__doctor__user"
     patient_field = "patient__user"
 
@@ -57,7 +57,7 @@ class RecoveryProgressDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateD
     serializer_class = RecoveryProgressSerializer
     permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
-    hospital_field = "patient__user__hospital"
+    hospital_field = "visit__appointment__hospital"
     doctor_field = "visit__appointment__doctor__user"
     patient_field = "patient__user"
 

@@ -39,7 +39,7 @@ class AppointmentListCreateView(generics.ListCreateAPIView):
 
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
-    permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientOwner]
+    permission_classes = [IsAuthenticated, IsDoctorOrAdminOrPatientCreate]
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
@@ -94,6 +94,9 @@ class AppointmentDetailView(
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+
+    doctor_field = "doctor__user"
+    patient_field = "patient__user"
 
     def perform_update(self, serializer):
         appointment = self.get_object()

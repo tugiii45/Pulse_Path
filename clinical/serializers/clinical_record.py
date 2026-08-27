@@ -39,7 +39,7 @@ class ClinicalRecordSerializer(serializers.ModelSerializer):
             and request.user.hospital_id
         ):
             self.fields["visit"].queryset = Visit.objects.filter(
-                patient__user__hospital=request.user.hospital
+                appointment__hospital=request.user.hospital
             )
 
     class Meta:

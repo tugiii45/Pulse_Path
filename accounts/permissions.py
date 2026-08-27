@@ -289,3 +289,21 @@ class IsInSameHospital(BasePermission):
 
         return None
 
+class IsDoctorOrAdminOrPatientCreate(BasePermission):
+    """
+    Doctors and admins have full access.
+    Patients may only create (self-book) new appointments;
+    read/list access for patients is scoped via get_queryset.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.role in ["ADMIN", "DOCTOR"]:
+            return True
+
+        if request.user.role == "PATIENT":
+            return request.method in ["GET", "HEAD", "OPTIONS", "POST"]
+
+        return False

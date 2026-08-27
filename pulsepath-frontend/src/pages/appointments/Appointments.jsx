@@ -79,6 +79,12 @@ function Appointments() {
       // -----------------------------------------------------
       // HOSPITALS
       // -----------------------------------------------------
+      //
+      // getHospitals() returns the full paginated payload from the
+      // backend ({ results, count, next, previous }), not a plain
+      // array -- mirror the extraction used in Hospitals.jsx so the
+      // dropdown actually gets populated instead of silently
+      // resolving to an empty list.
 
       if (isPatient || isAdmin) {
         try {
@@ -86,7 +92,11 @@ function Appointments() {
 
           console.log("HOSPITALS API RESPONSE:", hospitalData);
 
-          setHospitals(Array.isArray(hospitalData) ? hospitalData : []);
+          setHospitals(
+            Array.isArray(hospitalData)
+              ? hospitalData
+              : (hospitalData?.results ?? [])
+          );
         } catch (hospitalError) {
           console.error("HOSPITALS LOAD ERROR:", hospitalError);
         }

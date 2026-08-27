@@ -46,12 +46,13 @@ class TreatmentSerializer(serializers.ModelSerializer):
         # prescriptions belonging to their own patients.
         if user.role == "DOCTOR":
             prescription_doctor = (
-                prescription
-                .diagnosis
-                .visit
-                .doctor
-                .user
-            )
+               prescription
+               .diagnosis
+               .visit
+               .appointment
+               .doctor
+               .user
+)
 
             if prescription_doctor != user:
                 raise serializers.ValidationError({
@@ -72,13 +73,12 @@ class TreatmentSerializer(serializers.ModelSerializer):
                 })
 
             prescription_hospital = (
-                prescription
-                .diagnosis
-                .visit
-                .patient
-                .user
-                .hospital_id
-            )
+               prescription
+               .diagnosis
+               .visit
+               .appointment
+               .hospital_id
+)
 
             if prescription_hospital != user.hospital_id:
                 raise serializers.ValidationError({

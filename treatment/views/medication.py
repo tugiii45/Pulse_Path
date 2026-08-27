@@ -5,16 +5,26 @@ from accounts.permissions import *
 from rest_framework.permissions import IsAuthenticated
 from accounts.views.mixins import HospitalQuerySetMixin
 
-class MedicationListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
+
+class MedicationListCreateView(generics.ListCreateAPIView):
+    """
+    Medication is a shared, global drug catalog (name, generic name,
+    manufacturer, strength, dosage form) -- it isn't scoped to a
+    patient, doctor, or hospital, so it doesn't use
+    HospitalQuerySetMixin. Every authenticated doctor/admin sees the
+    full catalog. Per-hospital stock is tracked separately via
+    HospitalMedication below.
+    """
     queryset = Medication.objects.all()
     serializer_class = MedicationSerializer
     permission_classes = [IsAuthenticated, IsDoctorOrAdmin]
 
 
-class MedicationDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
+class MedicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Medication.objects.all()
     serializer_class = MedicationSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
+
 
 class HospitalMedicationListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
     queryset = HospitalMedication.objects.all()

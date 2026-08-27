@@ -17,12 +17,16 @@ class DiagnosisListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView)
     search_fields = ["condition", "notes", "icd10_code"]
     ordering_fields = ["diagnosed_at", "severity"]
     ordering = ["-diagnosed_at"]
-
-    hospital_field = "visit__patient__user__hospital"
+    hospital_field = "visit__appointment__hospital"
+    doctor_field = "visit__appointment__doctor__user"
+    patient_field = "visit__patient__user"
 
 
 class DiagnosisDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
-    hospital_field = "visit__patient__user__hospital"
+    hospital_field = "visit__appointment__hospital"
+    
+    doctor_field = "visit__appointment__doctor__user"
+    patient_field = "visit__patient__user"

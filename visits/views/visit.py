@@ -49,9 +49,15 @@ class VisitListCreateView(HospitalQuerySetMixin, generics.ListCreateAPIView):
         if hasattr(user, "patient"):
             return Visit.objects.filter(patient=user.patient)
 
-        # For admin/doctor, filter by hospital.
+        
+#
+# Patients are not tied to a single hospital -- they pick one
+# per booking (see AppointmentListCreateView docstring) -- so
+# patient__user__hospital is unreliable and often None. The
+# appointment itself always has the correct hospital, so scope
+# through that relationship instead.
         if user.hospital_id:
-            return Visit.objects.filter(patient__user__hospital=user.hospital)
+           return Visit.objects.filter(appointment__hospital=user.hospital)
 
         return Visit.objects.none()
 

@@ -28,11 +28,9 @@ class MedicationLogListCreateView(
     ordering_fields = ["taken_at", "status"]
     ordering = ["-taken_at"]
 
-    hospital_field = (
-        "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
-    )
+    hospital_field = "medication_schedule__prescription__diagnosis__visit__appointment__hospital"
 
-    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
+    doctor_field = "medication_schedule__prescription__diagnosis__visit__appointment__doctor__user"
 
     patient_field = (
         "medication_schedule__prescription__diagnosis__visit__patient__user"
@@ -53,6 +51,6 @@ class MedicationLogDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateDest
     serializer_class = MedicationLogSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
 
-    hospital_field = "medication_schedule__prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
+    hospital_field = "medication_schedule__prescription__diagnosis__visit__appointment__hospital"
+    doctor_field = "medication_schedule__prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "medication_schedule__prescription__diagnosis__visit__patient__user"

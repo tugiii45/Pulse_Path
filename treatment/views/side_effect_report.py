@@ -12,7 +12,7 @@ class SideEffectReportListCreateView(HospitalQuerySetMixin, generics.ListCreateA
     queryset = SideEffectReport.objects.all()
     serializer_class = SideEffectReportSerializer
 
-    hospital_field = "patient__user__hospital"
+    hospital_field = "prescription__diagnosis__visit__appointment__hospital"
     doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "patient__user"
 
@@ -52,6 +52,6 @@ class SideEffectReportDetailView(HospitalQuerySetMixin, generics.RetrieveUpdateD
     serializer_class = SideEffectReportSerializer
     permission_classes = [IsDoctorOrAdminOrPatientOwner]
 
-    hospital_field = "patient__user__hospital"
+    hospital_field = "prescription__diagnosis__visit__appointment__hospital"
     doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "patient__user"

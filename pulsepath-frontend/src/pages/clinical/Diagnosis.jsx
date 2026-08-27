@@ -33,10 +33,9 @@ function Diagnosis() {
       setLoading(true);
 
       const data = await getDiagnoses();
-
       console.log("DIAGNOSES API RESPONSE:", data);
-
-      setDiagnoses(data.results || []);
+      setDiagnoses(Array.isArray(data) ? data : []);
+      
     } catch (error) {
       console.error("Failed to load diagnoses:", error);
       setError("Failed to load diagnoses.");

@@ -18,7 +18,7 @@ class MedicationScheduleListCreateView(HospitalQuerySetMixin, generics.ListCreat
     ordering_fields = ["start_date", "end_date", "scheduled_time", "created_at"]
     ordering = ["start_date"]
 
-    hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
+    hospital_field = "prescription__diagnosis__visit__appointment__hospital"
     doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "prescription__diagnosis__visit__patient__user"
 
@@ -40,6 +40,6 @@ class MedicationScheduleDetailView(HospitalQuerySetMixin, generics.RetrieveUpdat
     serializer_class = MedicationScheduleSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrDoctor]
 
-    hospital_field = "prescription__diagnosis__visit__patient__user__hospital"
-    doctor_field = "prescription__diagnosis__visit__doctor__user"
+    hospital_field = "prescription__diagnosis__visit__appointment__hospital"
+    doctor_field = "prescription__diagnosis__visit__appointment__doctor__user"
     patient_field = "prescription__diagnosis__visit__patient__user"
