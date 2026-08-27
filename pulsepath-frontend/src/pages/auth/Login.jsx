@@ -7,9 +7,11 @@ import {
   loginUser,
   saveTokens,
 } from "../../services/AuthService";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
+  const { reloadProfile } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,8 +31,16 @@ function Login() {
 
     try {
       const tokens = await loginUser(email, password);
-      
+
       saveTokens(tokens);
+
+      // Refresh the auth profile before navigating. AuthProvider only
+      // loads the profile once on mount, so without this, logging in
+      // right after a different user's session would navigate using
+      // the previous user's stale profile/role until a manual page
+      // refresh forced AuthProvider to remount.
+      await reloadProfile();
+
       navigate("/dashboard");
     } catch (err) {
       setError("Invalid email or password.");
