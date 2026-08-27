@@ -25,13 +25,13 @@ function Sidebar() {
   const { profile, loading } = useAuth();
 
   const linkClass = ({ isActive }) =>
-    `nav-link d-flex align-items-center py-3 px-3 rounded mb-2 ${
-      isActive ? "bg-primary text-white fw-semibold" : "text-dark"
+    `sidebar-link d-flex align-items-center py-2 px-3 rounded-3 mb-1 ${
+      isActive ? "bg-primary text-white fw-semibold shadow-sm" : "text-dark"
     }`;
 
   const subLinkClass = ({ isActive }) =>
-    `nav-link d-flex align-items-center py-2 px-3 rounded mb-1 ms-3 ${
-      isActive ? "text-primary fw-semibold bg-light" : "text-secondary"
+    `sidebar-sublink d-flex align-items-center py-2 px-3 rounded-3 mb-1 ms-3 ${
+      isActive ? "text-primary fw-semibold bg-primary bg-opacity-10" : "text-secondary"
     }`;
 
   if (loading) {
@@ -43,7 +43,7 @@ function Sidebar() {
           minHeight: "calc(100vh - 70px)",
         }}
       >
-        <div className="text-center py-4 text-muted">
+        <div className="text-center py-4 text-muted small">
           Loading menu...
         </div>
       </div>
@@ -112,181 +112,152 @@ function Sidebar() {
 
   return (
     <div
-      className="bg-white border-end shadow-sm p-3"
+      className="d-flex flex-column bg-white border-end shadow-sm"
       style={{
         width: "260px",
-        minHeight: "calc(100vh - 70px)",
+        height: "calc(100vh - 70px)",
+        position: "sticky",
+        top: "70px",
       }}
     >
       {/* =========================
-          MAIN NAVIGATION
+          SCROLLABLE NAVIGATION
       ========================== */}
 
-      {menuItems.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === "/dashboard"}
-          className={linkClass}
-        >
-          {item.icon}
-          {item.label}
+      <div className="flex-grow-1 overflow-y-auto p-3">
+
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/dashboard"}
+            className={linkClass}
+          >
+            {item.icon}
+            {item.label}
+          </NavLink>
+        ))}
+
+        {/* =========================
+            DOCTOR CLINICAL CARE
+        ========================== */}
+
+        {role === "DOCTOR" && (
+          <div className="mt-4 mb-2">
+            <div className="text-uppercase text-muted fw-bold px-3 mb-2" style={{ fontSize: "0.7rem", letterSpacing: "0.06em" }}>
+              Clinical Care
+            </div>
+
+            <NavLink to="/dashboard/clinical" end className={subLinkClass}>
+              <FaFileMedical className="me-3" size={14} />
+              Clinical Records
+            </NavLink>
+
+            <NavLink to="/dashboard/clinical/medical-records" className={subLinkClass}>
+              <FaNotesMedical className="me-3" size={14} />
+              Medical Records
+            </NavLink>
+
+            <NavLink to="/dashboard/clinical/diagnosis" className={subLinkClass}>
+              <FaNotesMedical className="me-3" size={14} />
+              Diagnoses
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment" end className={subLinkClass}>
+              <FaStethoscope className="me-3" size={14} />
+              Treatment
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/prescriptions" className={subLinkClass}>
+              <FaPrescriptionBottleAlt className="me-3" size={14} />
+              Prescriptions
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/medication" className={subLinkClass}>
+              <FaPills className="me-3" size={14} />
+              Medications
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/medication-schedule" className={subLinkClass}>
+              <FaClock className="me-3" size={14} />
+              Medication Schedules
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/recovery-progress" className={subLinkClass}>
+              <FaHeartbeat className="me-3" size={14} />
+              Recovery Progress
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/side-effects" className={subLinkClass}>
+              <FaExclamationTriangle className="me-3" size={14} />
+              Side Effects
+            </NavLink>
+          </div>
+        )}
+
+        {/* =========================
+            PATIENT RECOVERY
+        ========================== */}
+
+        {role === "PATIENT" && (
+          <div className="mt-4 mb-2">
+            <div className="text-uppercase text-muted fw-bold px-3 mb-2" style={{ fontSize: "0.7rem", letterSpacing: "0.06em" }}>
+              My Recovery
+            </div>
+
+            <NavLink to="/dashboard/treatment/medication-schedule" className={subLinkClass}>
+              <FaClock className="me-3" size={14} />
+              Medication Schedule
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/medication-log" className={subLinkClass}>
+              <FaClipboardCheck className="me-3" size={14} />
+              Medication Log
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/side-effects" className={subLinkClass}>
+              <FaExclamationTriangle className="me-3" size={14} />
+              Side Effect Reporting
+            </NavLink>
+
+            <NavLink to="/dashboard/treatment/recovery-progress" className={subLinkClass}>
+              <FaHeartbeat className="me-3" size={14} />
+              Recovery Progress
+            </NavLink>
+          </div>
+        )}
+      </div>
+
+      {/* =========================
+          PERSISTENT FOOTER LINKS
+          Always visible regardless of scroll position in the
+          nav list above.
+      ========================== */}
+
+      <div className="border-top p-3">
+        <NavLink to="/dashboard/notifications" className={linkClass}>
+          <FaBell className="me-3" />
+          Notifications
         </NavLink>
-      ))}
 
-      {/* =========================
-          DOCTOR CLINICAL CARE
-      ========================== */}
+        <NavLink to="/dashboard/profile" className={linkClass}>
+          <FaUser className="me-3" />
+          Profile
+        </NavLink>
+      </div>
 
-      {role === "DOCTOR" && (
-        <div className="mt-4 mb-3">
-          <div className="text-uppercase text-muted small fw-bold px-3 mb-2">
-            Clinical Care
-          </div>
+      <style>{`
+        .sidebar-link:hover,
+        .sidebar-sublink:hover {
+          background-color: rgba(13, 110, 253, 0.08);
+          text-decoration: none;
+        }
 
-          <NavLink
-            to="/dashboard/clinical"
-            end
-            className={subLinkClass}
-          >
-            <FaFileMedical className="me-3" />
-            Clinical Records
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/clinical/medical-records"
-            className={subLinkClass}
-          >
-            <FaNotesMedical className="me-3" />
-            Medical Records
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/clinical/diagnosis"
-            className={subLinkClass}
-          >
-            <FaNotesMedical className="me-3" />
-            Diagnoses
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment"
-            end
-            className={subLinkClass}
-          >
-            <FaStethoscope className="me-3" />
-            Treatment
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/prescriptions"
-            className={subLinkClass}
-          >
-            <FaPrescriptionBottleAlt className="me-3" />
-            Prescriptions
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/medication"
-            className={subLinkClass}
-          >
-            <FaPills className="me-3" />
-            Medications
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/medication-schedule"
-            className={subLinkClass}
-          >
-            <FaClock className="me-3" />
-            Medication Schedules
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/recovery-progress"
-            className={subLinkClass}
-          >
-            <FaHeartbeat className="me-3" />
-            Recovery Progress
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/side-effects"
-            className={subLinkClass}
-          >
-            <FaExclamationTriangle className="me-3" />
-            Side Effects
-          </NavLink>
-        </div>
-      )}
-
-      {/* =========================
-          PATIENT RECOVERY
-      ========================== */}
-
-      {role === "PATIENT" && (
-        <div className="mt-4 mb-3">
-          <div className="text-uppercase text-muted small fw-bold px-3 mb-2">
-            My Recovery
-          </div>
-
-          <NavLink
-            to="/dashboard/treatment/medication-schedule"
-            className={subLinkClass}
-          >
-            <FaClock className="me-3" />
-            Medication Schedule
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/medication-log"
-            className={subLinkClass}
-          >
-            <FaClipboardCheck className="me-3" />
-            Medication Log
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/side-effects"
-            className={subLinkClass}
-          >
-            <FaExclamationTriangle className="me-3" />
-            Side Effect Reporting
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/treatment/recovery-progress"
-            className={subLinkClass}
-          >
-            <FaHeartbeat className="me-3" />
-            Recovery Progress
-          </NavLink>
-        </div>
-      )}
-
-      {/* =========================
-          NOTIFICATIONS
-      ========================== */}
-
-      <NavLink
-        to="/dashboard/notifications"
-        className={linkClass}
-      >
-        <FaBell className="me-3" />
-        Notifications
-      </NavLink>
-
-      {/* =========================
-          PROFILE
-      ========================== */}
-
-      <NavLink
-        to="/dashboard/profile"
-        className={linkClass}
-      >
-        <FaUser className="me-3" />
-        Profile
-      </NavLink>
+        .sidebar-link,
+        .sidebar-sublink {
+          transition: background-color 0.15s ease, color 0.15s ease;
+        }
+      `}</style>
     </div>
   );
 }
