@@ -23,6 +23,7 @@ function MedicationSchedule() {
   });
 
   // Keep track of whether we are editing an existing schedule.
+  // null = creating a new one; a real id = editing that schedule.
   const [editingId, setEditingId] = useState(null);
 
   // Loading and error states.
@@ -34,6 +35,11 @@ function MedicationSchedule() {
 
   // Load medication schedules when the page opens.
   useEffect(() => {
+    // Note: unlike some other pages in this app, this doesn't wait
+    // for `profile` to resolve before loading — it fires immediately
+    // on mount regardless of role. Fine here since schedules are
+    // loaded the same way for every role; only what's rendered
+    // around them (the Add/Edit/Delete controls) differs by role.
     loadSchedules();
   }, []);
 
@@ -59,6 +65,8 @@ function MedicationSchedule() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // Generic handler covering both regular inputs (via value) and
+    // the is_active checkbox (via checked).
     setFormData((previous) => ({
       ...previous,
       [name]: type === "checkbox" ? checked : value,
@@ -83,9 +91,20 @@ function MedicationSchedule() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Note: no canManage guard here — if this were ever called by a
+    // patient (e.g. the form were shown some other way than the
+    // `canManage` check below), the request would still be attempted
+    // and would need the backend to reject it. Compare to
+    // Visits.jsx/Treatment.jsx's handleEdit/handleDelete, which each
+    // include an explicit role check as defense-in-depth even though
+    // the UI already hides the relevant buttons.
     try {
       setError("");
 
+      // prescription is a number input, but its value is still a
+      // string in form state until explicitly cast; the date/time
+      // fields are already in the correct string format the backend
+      // expects thanks to the native date/datetime-local inputs.
       const payload = {
         prescription: Number(formData.prescription),
         scheduled_time: formData.scheduled_time,
@@ -109,6 +128,10 @@ function MedicationSchedule() {
       resetForm();
     } catch (error) {
       console.error("Unable to save medication schedule:", error);
+      // Generic error message regardless of cause (validation error,
+      // permission error, network failure, etc.) — no field-specific
+      // backend message is surfaced here, unlike SideEffect.jsx's
+      // handleSubmit.
       setError("Unable to save medication schedule.");
     }
   };
@@ -119,6 +142,11 @@ function MedicationSchedule() {
 
     setFormData({
       prescription: schedule.prescription || "",
+      // scheduled_time from the backend likely includes seconds
+      // and/or timezone info (e.g. full ISO 8601), but the
+      // datetime-local input only accepts "YYYY-MM-DDTHH:mm" —
+      // slice(0, 16) trims it down to exactly that length so the
+      // input doesn't reject or mangle the pre-filled value.
       scheduled_time: schedule.scheduled_time
         ? schedule.scheduled_time.slice(0, 16)
         : "",
@@ -213,6 +241,13 @@ function MedicationSchedule() {
                     Prescription ID
                   </label>
 
+                  {/* Note: this is a free-typed numeric input rather
+                      than a <select> populated from getPrescriptions()
+                      (unlike Treatment.jsx, which uses a dropdown of
+                      real prescriptions). The doctor/admin has to
+                      already know the correct prescription ID to
+                      enter here — there's no validation that the ID
+                      typed actually exists until the backend responds. */}
                   <input
                     type="number"
                     name="prescription"
@@ -267,6 +302,10 @@ function MedicationSchedule() {
                     End Date
                   </label>
 
+                  {/* No min/validation tying end_date to be after
+                      start_date — that's left entirely to whoever
+                      fills the form in (or the backend, if it
+                      enforces it there). */}
                   <input
                     type="date"
                     name="end_date"
@@ -367,6 +406,10 @@ function MedicationSchedule() {
                     <tr key={schedule.id}>
 
                       <td>
+                        {/* Two-line cell: bold raw id on top, then
+                            the resolved human-readable label (if the
+                            backend provided one) underneath in
+                            muted/smaller text. */}
                         <div className="fw-semibold">
                           Prescription #{schedule.prescription}
                         </div>

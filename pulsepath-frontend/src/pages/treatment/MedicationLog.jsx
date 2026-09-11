@@ -23,6 +23,10 @@ function MedicationLog() {
   });
 
   // Keep track of whether we are editing an existing log.
+  // Only ever set via handleEdit, which is only reachable by
+  // canManage roles (doctor/admin) — see the Actions column below.
+  // A patient recording their own intake always creates a new log,
+  // never edits one.
   const [editingId, setEditingId] = useState(null);
 
   // Loading and error states.
@@ -34,6 +38,10 @@ function MedicationLog() {
 
   // Load medication logs when the page opens.
   useEffect(() => {
+    // Both fire immediately and independently — schedules doesn't
+    // block/depend on logs or vice versa, and neither waits on
+    // `profile` to resolve first (schedules are needed to populate
+    // the form's medication dropdown for anyone who can open it).
     loadLogs();
     loadSchedules();
   }, []);
@@ -57,6 +65,10 @@ function MedicationLog() {
   };
 
   const loadSchedules = async () => {
+    // Note: unlike loadLogs, this doesn't set `loading` or surface a
+    // user-facing `error` on failure — a schedules-fetch failure only
+    // logs to the console and silently leaves the dropdown empty,
+    // rather than blocking the page or showing an alert.
     try {
       const data = await getMedicationSchedules();
 
@@ -72,6 +84,10 @@ function MedicationLog() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // No checkbox handling needed here (unlike
+    // MedicationSchedule.jsx's handleChange) since this form has no
+    // boolean fields — status/medication_schedule are <select>s and
+    // notes is a <textarea>, all plain string values.
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -97,6 +113,9 @@ function MedicationLog() {
     try {
       setError("");
 
+      // medication_schedule comes from a <select>, so its value is a
+      // string in form state — cast to Number for the numeric FK the
+      // backend expects.
       const payload = {
         medication_schedule: Number(formData.medication_schedule),
         status: formData.status,
@@ -105,9 +124,14 @@ function MedicationLog() {
 
       if (editingId) {
         // Update an existing medication log.
+        // In practice, only reachable by canManage roles, since
+        // editingId can only be set via handleEdit, whose button is
+        // gated by canManage below.
         await updateMedicationLog(editingId, payload);
       } else {
         // Create a new medication log.
+        // This is the path a patient takes when recording their own
+        // medication intake.
         await createMedicationLog(payload);
       }
 
@@ -124,6 +148,10 @@ function MedicationLog() {
 
   // Prepare a medication log for editing.
   const handleEdit = (log) => {
+    // No explicit canManage guard here — relies entirely on the Edit
+    // button only being rendered for canManage roles (see the
+    // Actions column further down), unlike Visits.jsx/Treatment.jsx
+    // which double-check role inside the handler itself.
     setEditingId(log.id);
 
     setFormData({
@@ -137,6 +165,8 @@ function MedicationLog() {
 
   // Delete a medication log.
   const handleDelete = async (id) => {
+    // Same as handleEdit above: no inline role guard, relies on the
+    // Delete button only rendering for canManage.
     const confirmed = window.confirm(
       "Are you sure you want to delete this medication log?",
     );
@@ -160,7 +190,16 @@ function MedicationLog() {
   const role = profile?.role?.toUpperCase();
 
   // Patients should only view medication logs.
+  // (Comment as originally written — note this actually governs the
+  // Actions/Edit/Delete column below, not general viewing. See
+  // canRecordMedication just below for who can create/view the form.)
   const canManage = role === "ADMIN" || role === "DOCTOR";
+
+  // Unlike every other "canManage"-style flag in this app's other
+  // pages, patients ARE included here — this page's central purpose
+  // is letting patients log their own medication intake, while
+  // doctors/admins can additionally correct/manage any log via Edit
+  // and Delete (gated separately by canManage above).
   const canRecordMedication =
     role === "PATIENT" || role === "ADMIN" || role === "DOCTOR";
 
@@ -177,6 +216,7 @@ function MedicationLog() {
         return <span className="badge bg-warning text-dark">Skipped</span>;
 
       default:
+        // Covers null/undefined/unexpected status values.
         return (
           <span className="badge bg-secondary">{status || "Unknown"}</span>
         );
@@ -196,6 +236,10 @@ function MedicationLog() {
         </div>
 
         {/* Only doctors/admins should see the Add button. */}
+        {/* (Comment as originally written — note the condition below
+            is actually canRecordMedication, which includes PATIENT
+            too; this button is really "Record Medication" for anyone
+            who can log an intake, not admin/doctor-only.) */}
         {canRecordMedication && (
           <button
             className="btn btn-primary"
@@ -227,6 +271,11 @@ function MedicationLog() {
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Medication</label>
 
+                  {/* Dropdown built from `schedules` (loaded via
+                      getMedicationSchedules) rather than a free-typed
+                      ID like MedicationSchedule.jsx's own form uses
+                      for its Prescription field — this ensures only
+                      a real, existing schedule can be selected. */}
                   <select
                     name="medication_schedule"
                     className="form-select"
@@ -327,6 +376,9 @@ function MedicationLog() {
                     <th>Status</th>
                     <th>Notes</th>
 
+                    {/* Actions column (Edit/Delete) is admin/doctor
+                        only — a patient who created a log cannot
+                        edit or delete it afterward from this page. */}
                     {canManage && <th>Actions</th>}
                   </tr>
                 </thead>
@@ -335,6 +387,10 @@ function MedicationLog() {
                   {logs.map((log) => (
                     <tr key={log.id}>
                       <td>
+                        {/* Shows only the raw schedule id — unlike
+                            MedicationSchedule.jsx's table, there's no
+                            resolved prescription_details shown here
+                            underneath it. */}
                         <span className="fw-semibold">
                           Schedule #{log.medication_schedule}
                         </span>

@@ -8,6 +8,9 @@ import {
 } from "../../services/treatmentService";
 import { useAuth } from "../../contexts/AuthContext";
 
+// Blank/default shape for the create-treatment form. status defaults
+// to "ACTIVE" since that's the natural starting state for any newly
+// created treatment plan.
 const initialFormState = {
   prescription: "",
   follow_up_date: "",
@@ -23,6 +26,9 @@ function Treatment() {
 
   const role = profile?.role;
 
+  // Same three-way role split used across the app's other pages
+  // (Visits, Notifications, etc.) — computed once here rather than
+  // repeating role === "..." checks throughout the JSX below.
   const isPatient = role === "PATIENT";
   const isDoctor = role === "DOCTOR";
   const isAdmin = role === "ADMIN";
@@ -40,6 +46,8 @@ function Treatment() {
   const [showForm, setShowForm] = useState(false);
 
   // Stores the treatment ID when editing.
+  // null = creating a new treatment; a real ID = editing that one.
+  // handleSubmit branches on this the same way Visits.jsx does.
   const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState(initialFormState);
@@ -52,6 +60,10 @@ function Treatment() {
   // =========================================================
 
   useEffect(() => {
+    // Wait for AuthContext to resolve a profile before loading,
+    // otherwise isDoctor/isAdmin would be false on first render and
+    // prescriptions wouldn't load for a doctor/admin whose profile
+    // just hasn't arrived yet.
     if (!profile) return;
 
     loadData();
@@ -74,6 +86,9 @@ function Treatment() {
 
       // Only Doctor and Admin need prescriptions
       // because they can create/edit treatments.
+      // Prescriptions are also used later (in the table render) to
+      // resolve a treatment's medication_name for display — but that
+      // lookup only matters for roles that have this list loaded.
       if (isDoctor || isAdmin) {
         const prescriptionData = await getPrescriptions();
 
@@ -99,6 +114,9 @@ function Treatment() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Single generic handler for all three fields (prescription,
+    // follow_up_date, status) — works because each input's `name`
+    // attribute matches a key in formData.
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -137,6 +155,10 @@ function Treatment() {
       return;
     }
 
+    // Note: `status` isn't validated here because the <select> below
+    // always has a value (defaults to "ACTIVE" and only offers the
+    // three valid options), so it can never be empty.
+
     try {
       setSaving(true);
 
@@ -147,6 +169,11 @@ function Treatment() {
       //   follow_up_date: "2026-08-15",
       //   status: "ACTIVE"
       // }
+      //
+      // prescription is cast to Number() since <select> values are
+      // always strings but the backend expects a numeric FK id.
+      // follow_up_date is already in "YYYY-MM-DD" form thanks to the
+      // native <input type="date">, so no reformatting is needed.
 
       const payload = {
         prescription: Number(formData.prescription),
@@ -165,6 +192,9 @@ function Treatment() {
 
         resetForm();
 
+        // Re-fetch from the server (rather than patching state
+        // locally) so the table always reflects what the backend
+        // actually persisted.
         await loadData();
 
         return;
@@ -184,6 +214,10 @@ function Treatment() {
     } catch (err) {
       console.error("TREATMENT SAVE ERROR:", err);
 
+      // Different backend error paths (validation vs permission vs
+      // generic exception) surface the message under different keys
+      // — check them in priority order before falling back to a
+      // generic create/update failure message.
       const backendMessage =
         err?.response?.data?.errors ||
         err?.response?.data?.message ||
@@ -207,10 +241,14 @@ function Treatment() {
 
   const handleEdit = (treatment) => {
     // Patients should not be able to edit treatments.
+    // (Defense-in-depth: the Edit button is already hidden for
+    // patients in the table below, this just guards the handler
+    // itself in case it's ever invoked another way.)
     if (!isDoctor && !isAdmin) return;
 
     setEditingId(treatment.id);
 
+    // Pre-fill the form with the existing treatment's current values.
     setFormData({
       prescription: treatment.prescription || "",
       follow_up_date: treatment.follow_up_date || "",
@@ -234,6 +272,7 @@ function Treatment() {
   const handleDelete = async (id) => {
     if (!isAdmin) return;
 
+    // Simple native confirmation before a destructive action.
     const confirmed = window.confirm(
       "Are you sure you want to delete this treatment?"
     );
@@ -248,6 +287,8 @@ function Treatment() {
 
       setSuccess("Treatment deleted successfully.");
 
+      // Re-fetch rather than filtering locally, consistent with how
+      // create/update also refresh from the server above.
       await loadData();
     } catch (err) {
       console.error("DELETE TREATMENT ERROR:", err);
@@ -265,10 +306,16 @@ function Treatment() {
 
     const date = new Date(dateValue);
 
+    // If the value can't be parsed as a date, show the raw value
+    // instead of "Invalid Date".
     if (Number.isNaN(date.getTime())) {
       return dateValue;
     }
 
+    // `undefined` locale = defer to the browser/device's own locale
+    // settings for date formatting. No time component here (unlike
+    // Visits' formatDate), since follow-up/created dates are
+    // day-level, not appointment-time-level.
     return new Intl.DateTimeFormat(undefined, {
       year: "numeric",
       month: "short",
@@ -281,6 +328,11 @@ function Treatment() {
   // =========================================================
 
   const getPrescriptionLabel = (prescription) => {
+    // Builds a human-readable label for the <select> options below,
+    // e.g. "Prescription #12 — Amoxicillin — 500mg — Twice daily".
+    // dosage/frequency segments are only appended if present, so a
+    // prescription missing that data still renders a sensible label
+    // instead of "undefined".
     const medicationName =
       prescription.medication_name || "Medication";
 
@@ -328,6 +380,9 @@ function Treatment() {
           <button
             className="btn btn-primary"
             onClick={() => {
+              // Toggle: closes+resets an open form, or opens a fresh
+              // one. Same pattern as the Visits page's New/Close
+              // button.
               if (showForm) {
                 resetForm();
               } else {
@@ -552,6 +607,14 @@ function Treatment() {
                     // Find the prescription associated with
                     // this treatment so we can display the
                     // medication name.
+                    //
+                    // Note: this lookup only succeeds for
+                    // doctors/admins, since `prescriptions` is only
+                    // populated for those roles in loadData() above.
+                    // For a patient, `prescription` will always be
+                    // undefined here, so the fallback
+                    // "Prescription #<id>" label is what patients
+                    // actually see in this column.
                     const prescription =
                       prescriptions.find(
                         (item) =>
@@ -580,6 +643,10 @@ function Treatment() {
                         {/* Status */}
 
                         <td>
+                          {/* Color-codes the status badge: green for
+                              active, blue for completed, and a
+                              neutral gray fallback (covers
+                              CANCELLED and any unexpected value). */}
                           <span
                             className={`badge ${
                               treatment.status ===

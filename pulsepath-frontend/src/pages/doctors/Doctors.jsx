@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { createDoctorByAdmin, getDoctors } from "../../services/DoctorService";
 import { getDepartments } from "../../services/DepartmentService";
 
+// ============================================================
+// INITIAL FORM STATE
+// Default values used when creating a new doctor.
+// ============================================================
 const initialFormState = {
   first_name: "",
   last_name: "",
@@ -14,23 +18,51 @@ const initialFormState = {
 };
 
 function Doctors() {
+  // ============================================================
+  // DOCTORS & DEPARTMENTS STATE
+  // Stores the doctors displayed in the table and the departments
+  // available when creating a new doctor.
+  // ============================================================
   const [doctors, setDoctors] = useState([]);
   const [departments, setDepartments] = useState([]);
+
+  // ============================================================
+  // PAGINATION STATE
+  // Keeps track of pagination links, current page, total pages,
+  // and the total number of doctors.
+  // ============================================================
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDoctors, setTotalDoctors] = useState(0);
+
+  // ============================================================
+  // FORM & UI STATE
+  // Controls whether the form is visible, whether a request is
+  // being submitted, and any success/error messages.
+  // ============================================================
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // ============================================================
+  // DOCTOR FORM DATA
+  // Stores the values entered into the doctor creation form.
+  // ============================================================
   const [formData, setFormData] = useState(initialFormState);
 
+  // ============================================================
+  // LOAD DOCTORS
+  // Fetches doctors from the API and updates the table and
+  // pagination information.
+  // ============================================================
   const loadDoctors = async (url = "doctors/", page = 1) => {
     try {
       const response = await getDoctors(url);
 
+      // Extract the paginated results and total count.
       const results = response?.results || [];
       const count = response?.count || 0;
 
@@ -39,10 +71,13 @@ function Doctors() {
       setPreviousPage(response?.previous || null);
       setCurrentPage(page);
       setTotalDoctors(count);
+
+      // The backend uses a page size of 10.
       setTotalPages(Math.max(1, Math.ceil(count / 10)));
     } catch (error) {
       console.error("Error fetching doctors:", error);
 
+      // Reset the doctor list and pagination if the request fails.
       setDoctors([]);
       setNextPage(null);
       setPreviousPage(null);
@@ -51,6 +86,11 @@ function Doctors() {
     }
   };
 
+  // ============================================================
+  // LOAD DEPARTMENTS
+  // Fetches departments so the admin can select a department
+  // when creating a doctor.
+  // ============================================================
   const loadDepartments = async () => {
     try {
       const response = await getDepartments();
@@ -68,11 +108,20 @@ function Doctors() {
     }
   };
 
+  // ============================================================
+  // INITIAL DATA LOAD
+  // Load doctors and departments when the component first mounts.
+  // ============================================================
   useEffect(() => {
     loadDoctors();
     loadDepartments();
   }, []);
 
+  // ============================================================
+  // HANDLE FORM INPUT CHANGES
+  // Updates the corresponding field in formData whenever the
+  // administrator changes an input.
+  // ============================================================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -82,17 +131,29 @@ function Doctors() {
     }));
   };
 
+  // ============================================================
+  // RESET FORM
+  // Closes the form and restores all fields to their initial
+  // empty values.
+  // ============================================================
   const resetForm = () => {
     setShowForm(false);
     setFormData(initialFormState);
   };
 
+  // ============================================================
+  // HANDLE DOCTOR CREATION
+  // Validates the form, prepares the API payload, creates the
+  // doctor account, and refreshes the doctor list.
+  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Clear previous messages before starting a new submission.
     setError("");
     setSuccess("");
 
+    // Validate the required doctor fields.
     if (
       !formData.first_name ||
       !formData.last_name ||
@@ -110,6 +171,7 @@ function Doctors() {
     try {
       setSaving(true);
 
+      // Prepare the payload expected by the backend.
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -121,19 +183,25 @@ function Doctors() {
         department: Number(formData.department),
       };
 
+      // Create the doctor through the admin-only service.
       const result = await createDoctorByAdmin(payload);
 
+      // Display the backend warning when available, otherwise
+      // show the normal success message.
       setSuccess(
         result?.warning ||
           "Doctor account created. An invite email has been sent so they can set their password.",
       );
 
+      // Reset the form after successful creation.
       resetForm();
 
+      // Refresh the doctor list so the newly created doctor appears.
       await loadDoctors();
     } catch (err) {
       console.error("Create doctor error:", err);
 
+      // Extract a possible backend error message.
       const backendMessage =
         err?.response?.data?.errors || err?.response?.data?.message;
 
@@ -143,13 +211,21 @@ function Doctors() {
           : "Failed to create doctor.",
       );
     } finally {
+      // Re-enable the submit button after the request finishes.
       setSaving(false);
     }
   };
 
+  // ============================================================
+  // PAGE LAYOUT
+  // ============================================================
   return (
     <div className="container-fluid py-4">
-      {/* Page Header */}
+      {/* ========================================================
+          PAGE HEADER
+          Displays the page title, description, Add Doctor button,
+          and total number of doctors.
+      ========================================================= */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="fw-bold mb-1">Doctors</h2>
@@ -160,6 +236,7 @@ function Doctors() {
         </div>
 
         <div className="d-flex gap-2 align-items-center">
+          {/* Toggle the doctor creation form */}
           <button
             className="btn btn-primary"
             onClick={() => {
@@ -175,18 +252,26 @@ function Doctors() {
             {showForm ? "Close" : "+ Add Doctor"}
           </button>
 
+          {/* Display the total number of doctors */}
           <div className="badge bg-primary fs-6 px-3 py-2">
             {totalDoctors} Doctors
           </div>
         </div>
       </div>
 
-      {/* Alerts */}
+      {/* ========================================================
+          ALERT MESSAGES
+          Displays validation, API, and successful creation
+          messages.
+      ========================================================= */}
       {error && <div className="alert alert-warning">{error}</div>}
 
       {success && <div className="alert alert-success">{success}</div>}
 
-      {/* Add Doctor Form */}
+      {/* ========================================================
+          ADD DOCTOR FORM
+          Visible only when showForm is true.
+      ========================================================= */}
       {showForm && (
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body">
@@ -198,6 +283,7 @@ function Doctors() {
             </p>
 
             <form onSubmit={handleSubmit} className="row g-3">
+              {/* First Name */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">First Name</label>
 
@@ -210,6 +296,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* Last Name */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Last Name</label>
 
@@ -222,6 +309,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* Email */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Email</label>
 
@@ -235,6 +323,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* Phone Number */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Phone Number
@@ -250,6 +339,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* Department */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Department</label>
 
@@ -270,6 +360,7 @@ function Doctors() {
                 </select>
               </div>
 
+              {/* Specialization */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Specialization
@@ -284,6 +375,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* License Number */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   License Number
@@ -298,6 +390,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* Years of Experience */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Years of Experience
@@ -313,6 +406,7 @@ function Doctors() {
                 />
               </div>
 
+              {/* Form Actions */}
               <div className="col-12 d-flex justify-content-end gap-2">
                 <button
                   type="button"
@@ -322,7 +416,11 @@ function Doctors() {
                   Cancel
                 </button>
 
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={saving}
+                >
                   {saving ? "Creating..." : "Create Doctor"}
                 </button>
               </div>
@@ -331,7 +429,10 @@ function Doctors() {
         </div>
       )}
 
-      {/* Doctors Table */}
+      {/* ========================================================
+          DOCTORS TABLE
+          Displays all doctors returned by the current API page.
+      ========================================================= */}
       <div className="card border-0 shadow-sm">
         <div className="card-body p-0">
           <div className="table-responsive">
@@ -352,7 +453,7 @@ function Doctors() {
                 {doctors.length > 0 ? (
                   doctors.map((doctor) => (
                     <tr key={doctor.id}>
-                      {/* Doctor */}
+                      {/* Doctor Information */}
                       <td className="px-4">
                         <div className="d-flex align-items-center">
                           <div
@@ -378,24 +479,24 @@ function Doctors() {
                         </div>
                       </td>
 
-                      {/* Email */}
+                      {/* Doctor Email */}
                       <td>{doctor.email}</td>
 
-                      {/* Department */}
+                      {/* Doctor Department */}
                       <td>
                         <span className="badge bg-light text-dark">
                           {doctor.department_name}
                         </span>
                       </td>
 
-                      {/* Specialization */}
+                      {/* Doctor Specialization */}
                       <td>
                         <span className="badge bg-info-subtle text-info-emphasis">
                           {doctor.specialization}
                         </span>
                       </td>
 
-                      {/* Experience */}
+                      {/* Years of Experience */}
                       <td>
                         <span className="fw-semibold">
                           {doctor.years_of_experience}
@@ -403,12 +504,12 @@ function Doctors() {
                         years
                       </td>
 
-                      {/* License */}
+                      {/* Medical License */}
                       <td>
                         <code>{doctor.license_number}</code>
                       </td>
 
-                      {/* Action */}
+                      {/* Doctor Action */}
                       <td className="text-center">
                         <button className="btn btn-sm btn-outline-primary">
                           View
@@ -417,6 +518,7 @@ function Doctors() {
                     </tr>
                   ))
                 ) : (
+                  // Empty state when there are no doctors.
                   <tr>
                     <td colSpan="7" className="text-center py-5">
                       <div className="text-muted">No doctors found.</div>
@@ -429,11 +531,14 @@ function Doctors() {
         </div>
       </div>
 
-      {/* Pagination */}
+      {/* ========================================================
+          PAGINATION
+          Allows the admin to navigate between pages of doctors.
+      ========================================================= */}
       <div className="d-flex justify-content-center align-items-center mt-4">
         <nav>
           <ul className="pagination mb-0">
-            {/* Previous */}
+            {/* Previous Page */}
             <li className={`page-item ${!previousPage ? "disabled" : ""}`}>
               <button
                 className="page-link"
@@ -462,7 +567,10 @@ function Doctors() {
                         return;
                       }
 
-                      loadDoctors(`doctors/?page=${pageNumber}`, pageNumber);
+                      loadDoctors(
+                        `doctors/?page=${pageNumber}`,
+                        pageNumber
+                      );
                     }}
                   >
                     {pageNumber}
@@ -471,7 +579,7 @@ function Doctors() {
               );
             })}
 
-            {/* Next */}
+            {/* Next Page */}
             <li className={`page-item ${!nextPage ? "disabled" : ""}`}>
               <button
                 className="page-link"

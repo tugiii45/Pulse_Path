@@ -11,6 +11,11 @@ function RecoveryProgress() {
 
   const [progressEntries, setProgressEntries] = useState([]);
 
+  // Fields a PATIENT fills in when logging a new recovery entry.
+  // Kept entirely separate from reviewData below since patients and
+  // doctors/admins never edit the same fields — this avoids one
+  // shared object where half the keys are irrelevant depending on
+  // who's using the form.
   const [formData, setFormData] = useState({
     visit: "",
     pain_level: "",
@@ -20,11 +25,16 @@ function RecoveryProgress() {
     improvement_percentage: "",
   });
 
+  // Fields a DOCTOR/ADMIN fills in when reviewing an existing entry.
+  // Only ever touched via handleReviewChange / handleReviewSubmit.
   const [reviewData, setReviewData] = useState({
     is_reviewed: false,
     doctor_response: "",
   });
 
+  // Set only when a doctor/admin opens an entry to review it (see
+  // handleReview). Patients never set this — creating a new entry is
+  // their only action, there's no patient-side "edit" flow here.
   const [editingId, setEditingId] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -42,6 +52,11 @@ function RecoveryProgress() {
   const canCreate = isPatient;
 
   useEffect(() => {
+    // Unlike some of the other pages in this app, this doesn't wait
+    // for `profile`/`role` to resolve first — it loads immediately
+    // on mount. getRecoveryProgress() presumably still works
+    // correctly even before role is known, since the backend does
+    // its own filtering by authenticated user regardless.
     loadRecoveryProgress();
   }, []);
 
@@ -67,6 +82,9 @@ function RecoveryProgress() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // Generic handler for the patient-facing create form. Handles
+    // both text/number inputs (via value) and the "feeling_better"
+    // checkbox (via checked).
     setFormData((previous) => ({
       ...previous,
       [name]: type === "checkbox" ? checked : value,
@@ -76,6 +94,10 @@ function RecoveryProgress() {
   const handleReviewChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // Same pattern as handleChange above, but scoped to reviewData
+    // instead — kept as a separate function specifically so a
+    // doctor/admin's review inputs can never accidentally write into
+    // the patient's formData (or vice versa).
     setReviewData((previous) => ({
       ...previous,
       [name]: type === "checkbox" ? checked : value,
@@ -83,6 +105,10 @@ function RecoveryProgress() {
   };
 
   const resetForm = () => {
+    // Resets BOTH formData and reviewData together, since only one
+    // of the two forms is ever visible at a time (see canCreate vs
+    // canReview + editingId in the render section) — there's no
+    // harm in clearing both regardless of which one was in use.
     setFormData({
       visit: "",
       pain_level: "",
@@ -108,6 +134,11 @@ function RecoveryProgress() {
       setSaving(true);
       setError("");
 
+      // visit is optional (see "Optional" placeholder on that input),
+      // so it's only converted to a Number when actually provided —
+      // otherwise explicitly sent as null rather than NaN or "".
+      // pain_level/improvement_percentage are required numeric
+      // fields, so they're always coerced directly.
       const data = {
         visit: formData.visit ? Number(formData.visit) : null,
         pain_level: Number(formData.pain_level),
@@ -135,6 +166,10 @@ function RecoveryProgress() {
   };
 
   const handleReview = (entry) => {
+    // No role guard here (unlike handleEdit/handleDelete in the
+    // Visits/Treatment pages) — this relies entirely on the "Review"
+    // button only being rendered when canReview is true (see the
+    // table's Actions column below).
     setEditingId(entry.id);
 
     setReviewData({
@@ -148,6 +183,10 @@ function RecoveryProgress() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
 
+    // Safety check: this form should never be reachable without
+    // editingId set (see the `showForm && canReview && editingId`
+    // guard on the review form below), but bail out cleanly if it
+    // somehow is.
     if (!editingId) return;
 
     try {
@@ -177,6 +216,13 @@ function RecoveryProgress() {
   };
 
   const getPatientName = (entry) => {
+    // The `patient` field on an entry can apparently arrive in
+    // several different shapes depending on how the backend
+    // serializes it (a raw string, a nested object with different
+    // possible name fields, or a nested user object) — this walks
+    // through each possibility in order of preference before
+    // falling back to just the patient's id, or "Unknown" if nothing
+    // is present at all.
     if (!entry.patient) return "Unknown";
 
     if (typeof entry.patient === "string") {
@@ -241,6 +287,14 @@ function RecoveryProgress() {
 
       {/* ================================
           PATIENT CREATE FORM
+
+          Note the `!editingId` check here: this form and the
+          doctor/admin review form below are mutually exclusive
+          purely by these two conditions (canCreate vs canReview +
+          editingId) — a patient could theoretically never have
+          editingId set, but the extra check makes the intent
+          explicit and future-proofs against that assumption
+          changing.
       ================================= */}
       {showForm && canCreate && !editingId && (
         <div className="card shadow-sm mb-4">
@@ -375,6 +429,11 @@ function RecoveryProgress() {
 
       {/* ================================
           DOCTOR / ADMIN REVIEW FORM
+
+          Deliberately styled with `border-primary` to visually set
+          it apart from the plain patient create form above — a
+          small cue that this is a different kind of action
+          (reviewing someone else's data vs logging your own).
       ================================= */}
       {showForm && canReview && editingId && (
         <div className="card shadow-sm mb-4 border-primary">
@@ -489,6 +548,10 @@ function RecoveryProgress() {
               <table className="table table-hover align-middle">
                 <thead>
                   <tr>
+                    {/* Patient column hidden for patients themselves
+                        — same reasoning as the other role-scoped
+                        tables in this app: they already know every
+                        row is theirs. */}
                     {!isPatient && <th>Patient</th>}
 
                     <th>Visit</th>
@@ -566,6 +629,14 @@ function RecoveryProgress() {
 
                       {canReview && (
                         <td>
+                          {/* Button styling/label/icon all flip
+                              based on whether this entry has already
+                              been reviewed: a solid "Review" button
+                              for pending entries (draws attention to
+                              what still needs action), vs an outline
+                              "Edit Review" button for ones already
+                              handled (lower visual priority, but
+                              still editable). */}
                           <button
                             className={`btn btn-sm ${
                               entry.is_reviewed

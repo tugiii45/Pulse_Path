@@ -7,6 +7,16 @@ import {
 import { getMedications } from "../../services/medicationService";
 import { getDiagnoses } from "../../services/diagnosisService";
 
+// Note: unlike Visits, Treatment, SideEffect, and RecoveryProgress,
+// this component has no useAuth()/role checks at all — the create
+// form and table always render for whoever loads this page. Access
+// control here is presumably enforced entirely on the backend
+// (e.g. the prescription create/list endpoints likely reject or
+// filter for non-doctor/admin users), rather than being hidden in
+// the UI like the other pages. Worth confirming that's intentional,
+// since a patient hitting this page would currently see a full
+// "Add Prescription" form even if their submission would ultimately
+// be rejected server-side.
 function Prescription() {
   // Stores all prescription records.
   const [prescriptions, setPrescriptions] = useState([]);
@@ -37,6 +47,10 @@ function Prescription() {
       setLoading(true);
       setError("");
 
+      // All three requests fire in parallel via Promise.all rather
+      // than sequentially, since they're independent of each other
+      // and this cuts total load time roughly to that of the
+      // slowest single request instead of the sum of all three.
       const [prescriptionData, diagnosisData, medicationData] =
         await Promise.all([
           getPrescriptions(),
@@ -44,6 +58,12 @@ function Prescription() {
           getMedications(),
         ]);
 
+      // Unlike other pages in this app, there's no
+      // Array.isArray(...) ? ... : [] guard here — if any of these
+      // three calls returns something other than an array (e.g. an
+      // unexpected response shape), setPrescriptions/etc. would
+      // store that non-array value directly, which could break the
+      // .map() calls further down.
       setPrescriptions(prescriptionData);
       setDiagnoses(diagnosisData);
       setMedications(medicationData);
@@ -77,6 +97,10 @@ function Prescription() {
       setError("");
 
       // Convert IDs and duration to numbers before sending them.
+      // diagnosis/medication are <select> values (always strings in
+      // the DOM) that map to numeric FK ids on the backend; duration
+      // similarly comes from a number input but is still a string
+      // until explicitly converted.
       const payload = {
         diagnosis: Number(formData.diagnosis),
         medication: Number(formData.medication),
@@ -99,9 +123,20 @@ function Prescription() {
       });
 
       // Refresh the prescription records.
+      // Re-fetches everything (prescriptions + diagnoses +
+      // medications) rather than just the prescriptions list, even
+      // though diagnoses/medications didn't change — simplest way to
+      // stay consistent with how the other pages in this app always
+      // reload full state after a mutation, at the cost of two
+      // unnecessary requests.
       await loadData();
     } catch (err) {
       console.error("Unable to create prescription:", err);
+      // Note: unlike SideEffect/RecoveryProgress, this doesn't
+      // surface a field-specific backend validation message (e.g.
+      // err.response.data.dosage) — any failure just shows this one
+      // generic string, so the user won't know *why* creation failed
+      // (missing field, invalid diagnosis, permission error, etc.).
       setError("Unable to create prescription.");
     }
   };
@@ -310,6 +345,12 @@ function Prescription() {
                     <tr key={prescription.id}>
                       <td>{prescription.id}</td>
 
+                      {/* Note: this renders prescription.diagnosis
+                          directly, which is presumably the raw
+                          diagnosis id/FK rather than a readable
+                          label — compare to the Medication column
+                          just below, which uses the already-resolved
+                          medication_name instead of a raw id. */}
                       <td>
                         {prescription.diagnosis}
                       </td>

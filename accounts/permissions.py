@@ -307,3 +307,37 @@ class IsDoctorOrAdminOrPatientCreate(BasePermission):
             return request.method in ["GET", "HEAD", "OPTIONS", "POST"]
 
         return False
+
+
+class IsNotificationRecipientOrStaff(BasePermission):
+    """
+    Doctors/admins get full access within their normal scope.
+    Patients may read, update (mark as read), and delete
+    notifications where they are the recipient — but nothing else.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.role in ["ADMIN", "DOCTOR"]:
+            return True
+
+        if request.user.role == "PATIENT":
+            return request.method in [
+                "GET", "HEAD", "OPTIONS", "PATCH", "PUT", "DELETE"
+            ]
+
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.role in ["ADMIN", "DOCTOR"]:
+            return True
+
+        if request.user.role == "PATIENT":
+            return getattr(obj, "recipient", None) == request.user
+
+        return False

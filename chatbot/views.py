@@ -4,13 +4,38 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.conf import settings
 
+# Single shared Groq client, built once at import time using the API key
+# from settings (which should itself come from an env var, not be
+# hardcoded). Reused across every request rather than recreated each time.
 client = Groq(api_key=settings.GROQ_API_KEY)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
+
+@api_view(['POST'])  # Only accept POST — this endpoint takes a chat payload,
+                      # it doesn't make sense as GET.
+@permission_classes([IsAuthenticated])  # Must be logged in to use the
+                                         # assistant; no anonymous access.
 def chat_view(request):
+    """
+    Proxies a chat conversation to Groq's hosted LLM, prepending a fixed
+    system prompt that scopes the assistant to PulsePath support/navigation
+    help only (no medical advice, no direct record access).
+    """
+
+    # The frontend is expected to send the running conversation as a list
+    # of {role, content} messages (e.g. prior user/assistant turns).
+    # Defaults to an empty list if missing so this doesn't crash on a
+    # malformed request.
     messages = request.data.get('messages', [])
 
+    # This system message is prepended to every request and is what
+    # actually constrains the model's behavior. Key rules baked in here:
+    #   1. Scope: app navigation/support only, not clinical advice.
+    #   2. Safety: never diagnose, never interpret symptoms/results —
+    #      redirect to booking an appointment or, if urgent, emergency care.
+    #   3. Honesty: never claim to access/change real patient data, since
+    #      this endpoint has no actual access to the database.
+    #   4. Formatting: plain conversational prose, no markdown, to match
+    #      how the chat UI renders replies.
     system_message = {
      "role": "system",
      "content": (
@@ -56,10 +81,19 @@ def chat_view(request):
 }
 
     try:
+        # Prepend the system message to whatever conversation history the
+        # frontend sent, then forward the whole thing to Groq's API.
+        # "openai/gpt-oss-120b" is the specific hosted model being used.
         response = client.chat.completions.create(
            model="openai/gpt-oss-120b",
            messages=[system_message] + messages,
 )
+        # Only the assistant's reply text is sent back to the frontend —
+        # the rest of Groq's response object (usage stats, ids, etc.)
+        # is discarded.
         return Response({"reply": response.choices[0].message.content})
     except Exception as e:
+        # Catch-all: if Groq's API errors (bad key, rate limit, network
+        # issue, etc.), surface the error message with a 500 instead of
+        # letting the view raise an unhandled exception.
         return Response({"error": str(e)}, status=500)

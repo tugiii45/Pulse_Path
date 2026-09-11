@@ -1,9 +1,16 @@
+
 import { useEffect, useState } from "react";
 import {
   createPatient,
   getPatients,
 } from "../../services/PatientService";
 
+/**
+ * Default values for the Add Patient form.
+ *
+ * This object is also used to reset the form after
+ * successfully creating a patient.
+ */
 const initialFormState = {
   first_name: "",
   last_name: "",
@@ -17,41 +24,93 @@ const initialFormState = {
   address: "",
 };
 
+/**
+ * Patients Page
+ *
+ * Allows an administrator to:
+ * - View registered patients
+ * - Add new patients
+ * - View patient information
+ * - Navigate through paginated patient results
+ */
 function Patients() {
+  // Stores the list of patients returned by the API.
   const [patients, setPatients] = useState([]);
+
+  // Stores the URL for the next page of patients.
   const [nextPage, setNextPage] = useState(null);
+
+  // Stores the URL for the previous page of patients.
   const [previousPage, setPreviousPage] = useState(null);
+
+  // Tracks the currently displayed page number.
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Stores the total number of pages calculated from the API count.
   const [totalPages, setTotalPages] = useState(1);
+
+  // Stores the total number of registered patients.
   const [totalPatients, setTotalPatients] = useState(0);
 
+  // Controls whether the Add Patient form is visible.
   const [showForm, setShowForm] = useState(false);
+
+  // Tracks whether the patient creation request is currently running.
   const [saving, setSaving] = useState(false);
 
+  // Stores an error message to display to the user.
   const [error, setError] = useState("");
+
+  // Stores a success message after a patient is created.
   const [success, setSuccess] = useState("");
 
+  // Stores the values entered into the Add Patient form.
   const [formData, setFormData] =
     useState(initialFormState);
 
+  /**
+   * Load patients from the backend.
+   *
+   * @param {string} url - API URL or endpoint to request.
+   * @param {number} page - Page number currently being displayed.
+   *
+   * The backend response is expected to contain:
+   * - results: patients for the current page
+   * - count: total number of patients
+   * - next: URL for the next page
+   * - previous: URL for the previous page
+   */
   const loadPatients = async (
     url = "patients/",
     page = 1
   ) => {
     try {
+      // Request the patient list from the backend.
       const response = await getPatients(url);
 
+      // Extract the patients from the paginated response.
       const results = response?.results || [];
+
+      // Extract the total patient count.
       const count = response?.count || 0;
 
+      // Update the displayed patient list.
       setPatients(results);
+
+      // Store pagination URLs returned by the backend.
       setNextPage(response?.next || null);
       setPreviousPage(response?.previous || null);
 
+      // Update the currently displayed page.
       setCurrentPage(page);
 
+      // Update the total number of patients.
       setTotalPatients(count);
 
+      // Calculate the number of pages.
+      //
+      // The current implementation assumes that the API
+      // returns 10 patients per page.
       setTotalPages(
         Math.max(1, Math.ceil(count / 10))
       );
@@ -61,18 +120,33 @@ function Patients() {
         error
       );
 
+      // Clear patient data if the request fails.
       setPatients([]);
+
+      // Clear pagination information.
       setNextPage(null);
       setPreviousPage(null);
+
+      // Reset patient count and pagination.
       setTotalPatients(0);
       setTotalPages(1);
     }
   };
 
+  /**
+   * Load the first page of patients when the component
+   * is initially rendered.
+   */
   useEffect(() => {
     loadPatients();
   }, []);
 
+  /**
+   * Handle changes to any field in the patient form.
+   *
+   * The input's "name" attribute determines which property
+   * in formData should be updated.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -82,9 +156,22 @@ function Patients() {
     }));
   };
 
+  /**
+   * Handle submission of the Add Patient form.
+   *
+   * Performs basic frontend validation before sending
+   * the patient information to the backend.
+   */
   const handleSubmit = async (e) => {
+    // Prevent the browser from performing a normal form submission.
     e.preventDefault();
 
+    /**
+     * Check that all required patient fields have been filled.
+     *
+     * These checks provide immediate feedback before
+     * making an API request.
+     */
     if (
       !formData.first_name ||
       !formData.last_name ||
@@ -96,14 +183,22 @@ function Patients() {
       setError(
         "Please fill out the required patient fields."
       );
+
       return;
     }
 
     try {
+      // Show the saving state and clear previous messages.
       setSaving(true);
       setError("");
       setSuccess("");
 
+      /**
+       * Prepare the patient data expected by the backend.
+       *
+       * The role is explicitly set to PATIENT because
+       * this page is used to create patient accounts.
+       */
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -119,15 +214,22 @@ function Patients() {
         address: formData.address,
       };
 
+      // Send the new patient information to the backend.
       await createPatient(payload);
 
+      // Display a success message after creation.
       setSuccess(
         "Patient added successfully."
       );
 
+      // Reset the form to its initial values.
       setFormData(initialFormState);
+
+      // Close the Add Patient form.
       setShowForm(false);
 
+      // Reload the patient list so the newly created
+      // patient appears in the table.
       await loadPatients();
     } catch (err) {
       console.error(
@@ -135,16 +237,22 @@ function Patients() {
         err
       );
 
+      // Attempt to retrieve a useful error message
+      // from the backend response.
       const backendMessage =
         err?.response?.data?.errors ||
         err?.response?.data?.message;
 
+      // Display the backend message when it is a string.
+      // Otherwise display a generic error.
       setError(
         typeof backendMessage === "string"
           ? backendMessage
           : "Failed to create patient."
       );
     } finally {
+      // Stop the saving indicator regardless of
+      // whether the request succeeded or failed.
       setSaving(false);
     }
   };
@@ -152,7 +260,13 @@ function Patients() {
   return (
     <div className="container-fluid py-4">
 
-      {/* Page Header */}
+      {/* =========================
+          PAGE HEADER
+          Displays the page title,
+          Add Patient button, and
+          total patient count.
+      ========================== */}
+
       <div className="d-flex justify-content-between align-items-center mb-4">
 
         <div>
@@ -167,6 +281,7 @@ function Patients() {
 
         <div className="d-flex gap-2 align-items-center">
 
+          {/* Toggle the Add Patient form. */}
           <button
             className="btn btn-primary"
             onClick={() =>
@@ -178,6 +293,7 @@ function Patients() {
               : "+ Add Patient"}
           </button>
 
+          {/* Display the total number of patients. */}
           <div className="badge bg-primary fs-6 px-3 py-2">
             {totalPatients} Patients
           </div>
@@ -185,7 +301,12 @@ function Patients() {
         </div>
       </div>
 
-      {/* Alerts */}
+      {/* =========================
+          ALERTS
+          Displays validation,
+          backend errors, and
+          success messages.
+      ========================== */}
 
       {error && (
         <div className="alert alert-warning">
@@ -199,7 +320,11 @@ function Patients() {
         </div>
       )}
 
-      {/* Add Patient Form */}
+      {/* =========================
+          ADD PATIENT FORM
+          Only displayed when
+          showForm is true.
+      ========================== */}
 
       {showForm && (
         <div className="card border-0 shadow-sm mb-4">
@@ -215,7 +340,9 @@ function Patients() {
               className="row g-3"
             >
 
-              {/* First Name */}
+              {/* =========================
+                  FIRST NAME
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -233,7 +360,9 @@ function Patients() {
 
               </div>
 
-              {/* Last Name */}
+              {/* =========================
+                  LAST NAME
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -251,7 +380,9 @@ function Patients() {
 
               </div>
 
-              {/* Email */}
+              {/* =========================
+                  EMAIL
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -270,7 +401,9 @@ function Patients() {
 
               </div>
 
-              {/* Password */}
+              {/* =========================
+                  PASSWORD
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -289,7 +422,9 @@ function Patients() {
 
               </div>
 
-              {/* Phone */}
+              {/* =========================
+                  PHONE NUMBER
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -306,7 +441,9 @@ function Patients() {
 
               </div>
 
-              {/* Date of Birth */}
+              {/* =========================
+                  DATE OF BIRTH
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -325,7 +462,9 @@ function Patients() {
 
               </div>
 
-              {/* Gender */}
+              {/* =========================
+                  GENDER
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -354,7 +493,9 @@ function Patients() {
 
               </div>
 
-              {/* Blood Group */}
+              {/* =========================
+                  BLOOD GROUP
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -371,7 +512,9 @@ function Patients() {
 
               </div>
 
-              {/* Emergency Contact */}
+              {/* =========================
+                  EMERGENCY CONTACT
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -391,7 +534,9 @@ function Patients() {
 
               </div>
 
-              {/* Address */}
+              {/* =========================
+                  ADDRESS
+              ========================== */}
 
               <div className="col-md-6">
 
@@ -408,10 +553,14 @@ function Patients() {
 
               </div>
 
-              {/* Form Buttons */}
+              {/* =========================
+                  FORM BUTTONS
+              ========================== */}
 
               <div className="col-12 d-flex justify-content-end gap-2">
 
+                {/* Close the form without creating
+                    a patient. */}
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
@@ -422,6 +571,8 @@ function Patients() {
                   Cancel
                 </button>
 
+                {/* Submit the form and create
+                    the patient account. */}
                 <button
                   type="submit"
                   className="btn btn-primary"
@@ -440,7 +591,11 @@ function Patients() {
         </div>
       )}
 
-      {/* Patients Table */}
+      {/* =========================
+          PATIENTS TABLE
+          Displays the patients returned
+          by the current API page.
+      ========================== */}
 
       <div className="card border-0 shadow-sm">
 
@@ -449,6 +604,10 @@ function Patients() {
           <div className="table-responsive">
 
             <table className="table table-hover align-middle mb-0">
+
+              {/* =========================
+                  TABLE HEADER
+              ========================== */}
 
               <thead className="table-light">
 
@@ -486,14 +645,21 @@ function Patients() {
 
               </thead>
 
+              {/* =========================
+                  TABLE BODY
+              ========================== */}
+
               <tbody>
 
+                {/* Display patients when the
+                    current page contains results. */}
                 {patients.length > 0 ? (
 
                   patients.map((patient) => (
 
                     <tr key={patient.id}>
 
+                      {/* Patient name */}
                       <td className="px-4">
 
                         <div className="fw-semibold">
@@ -502,14 +668,17 @@ function Patients() {
 
                       </td>
 
+                      {/* Patient email */}
                       <td>
                         {patient.email}
                       </td>
 
+                      {/* Patient date of birth */}
                       <td>
                         {patient.date_of_birth}
                       </td>
 
+                      {/* Patient gender */}
                       <td>
 
                         <span className="badge bg-light text-dark">
@@ -518,6 +687,7 @@ function Patients() {
 
                       </td>
 
+                      {/* Patient blood group */}
                       <td>
 
                         <span className="badge bg-danger">
@@ -526,12 +696,17 @@ function Patients() {
 
                       </td>
 
+                      {/* Emergency contact */}
                       <td>
                         {patient.emergency_contact}
                       </td>
 
+                      {/* Patient action */}
                       <td className="text-center">
 
+                        {/* Currently displays a View button.
+                            The button does not have an action
+                            attached yet. */}
                         <button className="btn btn-sm btn-outline-primary">
                           View
                         </button>
@@ -544,6 +719,8 @@ function Patients() {
 
                 ) : (
 
+                  /* Display this row when there are
+                     no patients to show. */
                   <tr>
 
                     <td
@@ -569,7 +746,11 @@ function Patients() {
 
       </div>
 
-      {/* Pagination */}
+      {/* =========================
+          PAGINATION
+          Allows navigation between
+          patient result pages.
+      ========================== */}
 
       <div className="d-flex justify-content-center align-items-center mt-4">
 
@@ -577,7 +758,9 @@ function Patients() {
 
           <ul className="pagination mb-0">
 
-            {/* Previous */}
+            {/* =========================
+                PREVIOUS BUTTON
+            ========================== */}
 
             <li
               className={`page-item ${
@@ -602,12 +785,18 @@ function Patients() {
 
             </li>
 
-            {/* Page Numbers */}
+            {/* =========================
+                PAGE NUMBERS
+                Creates a button for each
+                calculated page.
+            ========================== */}
 
             {Array.from(
               { length: totalPages },
               (_, index) => {
 
+                // Convert the zero-based array
+                // index into a page number.
                 const pageNumber =
                   index + 1;
 
@@ -626,6 +815,9 @@ function Patients() {
                       className="page-link"
                       onClick={() => {
 
+                        // Do nothing when the user
+                        // clicks the page they are
+                        // already viewing.
                         if (
                           pageNumber ===
                           currentPage
@@ -633,6 +825,7 @@ function Patients() {
                           return;
                         }
 
+                        // Request the selected page.
                         loadPatients(
                           `patients/?page=${pageNumber}`,
                           pageNumber
@@ -649,7 +842,9 @@ function Patients() {
               }
             )}
 
-            {/* Next */}
+            {/* =========================
+                NEXT BUTTON
+            ========================== */}
 
             <li
               className={`page-item ${
@@ -685,3 +880,4 @@ function Patients() {
 }
 
 export default Patients;
+

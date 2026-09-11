@@ -14,6 +14,10 @@ function Medication() {
   const [medications, setMedications] = useState([]);
 
   // Store form data when creating or editing a medication.
+  // This is the catalog/reference data itself (drug name, generic
+  // name, manufacturer, etc.) — not tied to any specific patient,
+  // unlike Prescription or MedicationSchedule which reference a
+  // particular patient's treatment.
   const [formData, setFormData] = useState({
     name: "",
     generic_name: "",
@@ -24,6 +28,7 @@ function Medication() {
   });
 
   // Keep track of whether we are editing an existing medication.
+  // null = creating a new catalog entry; a real id = editing that one.
   const [editingId, setEditingId] = useState(null);
 
   // Loading and error states.
@@ -35,6 +40,10 @@ function Medication() {
 
   // Load medications when the page opens.
   useEffect(() => {
+    // Fires immediately without waiting on `profile`/role — the
+    // medication catalog is visible to every role (it's just the
+    // create/edit/delete actions that are role-gated below), so
+    // there's no need to delay loading.
     loadMedications();
   }, []);
 
@@ -60,6 +69,8 @@ function Medication() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // All fields here are plain text inputs/textarea — no checkboxes
+    // or selects, so a single value-based handler covers everything.
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -88,6 +99,11 @@ function Medication() {
     try {
       setError("");
 
+      // Unlike most of this app's other forms, formData is sent
+      // as-is here with no Number()/payload reshaping — every field
+      // in this form is a plain string, and there's no separate FK
+      // id to coerce (name/generic_name/manufacturer/strength/
+      // dosage_form/description are all free text on the backend).
       if (editingId) {
         // Update an existing medication.
         await updateMedication(editingId, formData);
@@ -109,6 +125,9 @@ function Medication() {
 
   // Prepare a medication for editing.
   const handleEdit = (medication) => {
+    // No inline canManage check — relies on the Edit button only
+    // being rendered for canManage roles further down, same pattern
+    // as MedicationLog.jsx/MedicationSchedule.jsx.
     setEditingId(medication.id);
 
     setFormData({
@@ -132,6 +151,11 @@ function Medication() {
     if (!confirmed) return;
 
     try {
+      // Note: setError("") isn't called at the start here (unlike
+      // handleDelete in the other pages), so a leftover error
+      // message from a previous failed action could still be
+      // showing on screen even after this delete succeeds — not
+      // harmful, just a small inconsistency with the rest of the app.
       await deleteMedication(id);
 
       // Reload the list after deletion.

@@ -14,6 +14,13 @@ function SideEffect() {
   const [sideEffects, setSideEffects] = useState([]);
   const [schedules, setSchedules] = useState([]);
 
+  // Shared form state for BOTH flows this page handles:
+  // - a patient reporting a new side effect (prescription, severity,
+  //   description)
+  // - a doctor/admin reviewing an existing report (is_reviewed,
+  //   doctor_response)
+  // Which fields are actually editable/visible depends on role and
+  // whether editingId is set — see the render section further down.
   const [formData, setFormData] = useState({
     prescription: "",
     severity: "Mild",
@@ -22,6 +29,10 @@ function SideEffect() {
     doctor_response: "",
   });
 
+  // Set when a doctor/admin opens a report to review it. Patients
+  // never set this — they only ever create new reports, they don't
+  // edit existing ones (see handleSubmit's canReport branch, which
+  // ignores editingId entirely).
   const [editingId, setEditingId] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -30,6 +41,8 @@ function SideEffect() {
 
   const [showForm, setShowForm] = useState(false);
 
+  // Normalized to uppercase defensively, in case the backend or
+  // token ever returns the role in a different case.
   const role = profile?.role?.toUpperCase();
 
   const canManage = role === "ADMIN" || role === "DOCTOR";
@@ -65,6 +78,10 @@ function SideEffect() {
   // --------------------------------------------------
 
   const loadSchedules = async () => {
+    // Guard here in addition to the useEffect's own role check below
+    // — this function is only ever meaningful for patients, since
+    // they're the only ones who need a medication dropdown to report
+    // against.
     if (role !== "PATIENT") return;
 
     try {
@@ -74,6 +91,8 @@ function SideEffect() {
 
       console.log("SIDE EFFECT MEDICATION SCHEDULES:", data);
 
+      // Only currently-active schedules make sense to report a side
+      // effect against — filter out anything inactive/discontinued.
       const activeSchedules = Array.isArray(data)
         ? data.filter((schedule) => schedule.is_active)
         : [];
@@ -98,6 +117,9 @@ function SideEffect() {
   // --------------------------------------------------
 
   useEffect(() => {
+    // Wait until the profile (and therefore role) has actually
+    // resolved before loading anything, to avoid a flash of
+    // incorrect role-based behavior on first render.
     if (!role) return;
 
     loadSideEffects();
@@ -114,6 +136,10 @@ function SideEffect() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // Single handler for every field in the form, including the
+    // is_reviewed checkbox — checkboxes report state via `checked`
+    // rather than `value`, so branch on input type to pick the right
+    // one.
     setFormData((previous) => ({
       ...previous,
       [name]: type === "checkbox" ? checked : value,
@@ -147,6 +173,11 @@ function SideEffect() {
     try {
       setError("");
 
+      // These two branches are mutually exclusive by role: a
+      // patient can never hit the first (canManage is false for
+      // them), and a doctor/admin can never hit the second (canReport
+      // is false for them). editingId being set is what distinguishes
+      // "doctor reviewing an existing report" from any other case.
       if (canManage && editingId) {
         /*
          * Doctors/admins may only update review fields.
@@ -186,6 +217,10 @@ function SideEffect() {
         error.response?.data || error
       );
 
+      // DRF validation errors come back keyed by field name (e.g.
+      // { prescription: ["This field is required."] }), so check the
+      // specific fields this form actually submits before falling
+      // back to a generic detail message or a catch-all string.
       const apiError = error.response?.data;
 
       if (apiError?.detail) {
@@ -219,6 +254,11 @@ function SideEffect() {
 
     setEditingId(sideEffect.id);
 
+    // Pre-fills the ORIGINAL patient-reported fields too (prescription,
+    // severity, description), even though the doctor/admin can't edit
+    // them — this is so those values can still be displayed read-only
+    // in the form (see the disabled/readOnly inputs further down)
+    // without needing a second piece of state just for display.
     setFormData({
       prescription: sideEffect.prescription || "",
       severity: sideEffect.severity || "Mild",
@@ -269,6 +309,10 @@ function SideEffect() {
   const getSeverityBadge = (severity) => {
     switch (severity) {
       case "Mild":
+        // Note: Mild and Moderate currently render with the same
+        // warning/yellow styling — only Severe is visually
+        // distinguished (red/danger). Worth knowing if you ever want
+        // Mild vs Moderate to look different at a glance.
         return (
           <span className="badge bg-warning text-dark">
             Mild
@@ -290,6 +334,8 @@ function SideEffect() {
         );
 
       default:
+        // Covers null/undefined/unexpected severity values so the
+        // table never renders a blank badge.
         return (
           <span className="badge bg-secondary">
             {severity || "Unknown"}
@@ -303,10 +349,20 @@ function SideEffect() {
   // --------------------------------------------------
 
   const getMedicationName = (sideEffect) => {
+    // Tries several possible sources in order of preference, since
+    // depending on role/context the side effect object and the
+    // locally-loaded `schedules` list may or may not carry a
+    // human-readable medication name:
+
+    // 1. Backend already included a resolved name directly on the
+    //    side effect object — best case, use it as-is.
     if (sideEffect.medication_name) {
       return sideEffect.medication_name;
     }
 
+    // 2. Fall back to cross-referencing the patient's own loaded
+    //    schedules (only populated for patients — see loadSchedules
+    //    above) by matching prescription id.
     const schedule = schedules.find(
       (item) =>
         Number(item.prescription) ===
@@ -317,6 +373,8 @@ function SideEffect() {
       return schedule.prescription_details;
     }
 
+    // 3. Last resorts: show whatever raw id is available rather than
+    //    nothing at all.
     if (sideEffect.medication) {
       return `Medication #${sideEffect.medication}`;
     }
@@ -347,6 +405,10 @@ function SideEffect() {
           <button
             className="btn btn-primary"
             onClick={() => {
+              // resetForm() first ensures a stale editingId/previous
+              // form values can never leak into a brand-new report
+              // (shouldn't happen since patients never set editingId,
+              // but keeps this button's behavior self-contained).
               resetForm();
               setShowForm(true);
             }}
@@ -371,6 +433,9 @@ function SideEffect() {
       {/* SIDE EFFECT FORM */}
       {/* --------------------------------------------- */}
 
+      {/* This single form serves two very different purposes
+          depending on who's looking at it — see the field-level
+          comments below for how each input adapts. */}
       {showForm && (canReport || (canManage && editingId)) && (
         <div className="card shadow-sm mb-4">
           <div className="card-body">
@@ -477,6 +542,11 @@ function SideEffect() {
                     Severity
                   </label>
 
+                  {/* Same field, two renderings: an editable <select>
+                      for the patient creating a report, or a
+                      disabled/read-only <input> showing what the
+                      patient already reported when a doctor/admin is
+                      reviewing it. */}
                   {canReport && !editingId ? (
                     <select
                       name="severity"
@@ -509,6 +579,13 @@ function SideEffect() {
                     Describe the Side Effect
                   </label>
 
+                  {/* Only required/editable when a patient is
+                      creating a NEW report; when a doctor/admin is
+                      reviewing (canManage && editingId), this becomes
+                      disabled+readOnly so they can read the original
+                      description but never alter it — matching the
+                      "reported details cannot be changed" notice
+                      above. */}
                   <textarea
                     name="description"
                     className="form-control"
@@ -589,6 +666,11 @@ function SideEffect() {
                 <button
                   type="submit"
                   className="btn btn-primary"
+                  // Prevents a patient from submitting a report before
+                  // their medication list has finished loading, or
+                  // when they have no active medications to report
+                  // against at all (submitting would otherwise send
+                  // an empty/invalid prescription id).
                   disabled={
                     canReport &&
                     !editingId &&
@@ -664,6 +746,10 @@ function SideEffect() {
                 <thead>
                   <tr>
 
+                    {/* Patient column only makes sense for
+                        doctors/admins viewing multiple patients'
+                        reports — a patient already knows these are
+                        all theirs. */}
                     {role !== "PATIENT" && (
                       <th>Patient</th>
                     )}
@@ -710,6 +796,11 @@ function SideEffect() {
 
                       {/* DESCRIPTION */}
                       <td>
+                        {/* Fixed min/max width wrapper keeps long
+                            descriptions from either collapsing the
+                            column too narrow or stretching the table
+                            too wide — text wraps naturally inside
+                            this box instead. */}
                         <div
                           style={{
                             minWidth: "220px",

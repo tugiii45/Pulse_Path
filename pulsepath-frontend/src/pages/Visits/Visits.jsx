@@ -8,6 +8,8 @@ import {
 import { getAppointments } from "../../services/AppointmentService";
 import { useAuth } from "../../contexts/AuthContext";
 
+// Shape of a fresh/blank visit form. Reused both for the initial
+// state and whenever the form is reset after a create/update/cancel.
 const initialFormState = {
   appointment: "",
   patient: "",
@@ -26,6 +28,10 @@ function Visits() {
 
   const role = profile?.role;
 
+  // These three booleans drive almost every conditional in this
+  // component (what data loads, what buttons render, what actions
+  // are allowed). Deriving them once here keeps the JSX below
+  // readable instead of repeating `role === "..."` everywhere.
   const isPatient = role === "PATIENT";
   const isDoctor = role === "DOCTOR";
   const isAdmin = role === "ADMIN";
@@ -43,6 +49,8 @@ function Visits() {
   const [showForm, setShowForm] = useState(false);
 
   // Stores the ID when ADMIN or DOCTOR is editing a visit.
+  // null = "creating a new visit"; a real ID = "editing that visit".
+  // handleSubmit branches on this to decide create vs update.
   const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState(initialFormState);
@@ -55,6 +63,10 @@ function Visits() {
   // =========================================================
 
   useEffect(() => {
+    // Wait until AuthContext has actually resolved a profile before
+    // loading anything — otherwise isDoctor/isAdmin/isPatient would
+    // all be false on the very first render and we'd skip loading
+    // appointments for a doctor/admin who just hasn't loaded yet.
     if (!profile) return;
 
     loadData();
@@ -86,6 +98,9 @@ function Visits() {
       // Doctors and Admins need appointments when creating
       // a visit.
       //
+      // Patients don't get appointments loaded at all here, since
+      // they can't create/edit visits (see the isDoctor/isAdmin
+      // guards further down) and so never need this list.
       if (isDoctor || isAdmin) {
         const appointmentData = await getAppointments();
 
@@ -111,6 +126,9 @@ function Visits() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Generic update: works for every field by name (reason,
+    // symptoms, diagnosis, notes, and also appointment before the
+    // special-case below overrides it).
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -125,7 +143,13 @@ function Visits() {
     // Therefore, we automatically set the patient ID instead
     // of allowing the user to select a different patient.
     //
-
+    // Note: this runs as a SECOND setFormData call right after the
+    // generic one above. React batches these, so the end result is
+    // just the second update "winning" for the `appointment` key —
+    // it re-sets `appointment` (redundant but harmless) and adds
+    // `patient` in the same pass. This is why there isn't a separate
+    // patient <select> in the form: patient is always derived from
+    // whichever appointment was chosen, never picked independently.
     if (name === "appointment") {
       const selectedAppointment = appointments.find(
         (appointment) =>
@@ -163,6 +187,10 @@ function Visits() {
     // -------------------------------------------------------
     // BASIC VALIDATION
     // -------------------------------------------------------
+    // Checked in order of dependency: an appointment must be picked
+    // before a patient can exist, and a patient must be resolved
+    // before the visit is meaningful. `reason` is the one genuinely
+    // free-typed required field.
 
     if (!formData.appointment) {
       setError("Please select an appointment.");
@@ -170,6 +198,9 @@ function Visits() {
     }
 
     if (!formData.patient) {
+      // This shouldn't normally happen since patient is auto-derived
+      // in handleChange above — it's a safety net in case an
+      // appointment somehow has no associated patient field.
       setError(
         "Unable to determine the patient from the selected appointment."
       );
@@ -199,6 +230,9 @@ function Visits() {
       //   notes: "..."
       // }
       //
+      // appointment/patient are cast to Number() because the <select>
+      // and form state store them as strings (HTML form values are
+      // always strings), but the backend expects numeric FK ids.
 
       const payload = {
         appointment: Number(formData.appointment),
@@ -212,6 +246,9 @@ function Visits() {
       // -------------------------------------------------------
       // UPDATE EXISTING VISIT
       // -------------------------------------------------------
+      // editingId is only ever set by handleEdit, so reaching this
+      // branch means the user opened the form via "Edit" on an
+      // existing row rather than "+ New Visit".
 
       if (editingId) {
         await updateVisit(editingId, payload);
@@ -220,6 +257,10 @@ function Visits() {
 
         resetForm();
 
+        // Re-fetch from the server rather than patching local state
+        // directly, so the table reflects whatever the backend
+        // actually stored (including any server-side computed
+        // fields like patient_name).
         await loadData();
 
         return;
@@ -239,6 +280,10 @@ function Visits() {
     } catch (err) {
       console.error("VISIT SAVE ERROR:", err);
 
+      // Backends can return the error message under different keys
+      // depending on the exception type (validation vs permission vs
+      // generic) — check the common ones in priority order before
+      // falling back to a generic message.
       const backendMessage =
         err?.response?.data?.errors ||
         err?.response?.data?.message ||
@@ -265,10 +310,17 @@ function Visits() {
   //
 
   const handleEdit = (visit) => {
+    // Extra guard in addition to the UI already hiding the Edit
+    // button for patients — defends against this being called
+    // programmatically or the button briefly rendering during a
+    // role/profile transition.
     if (!isDoctor && !isAdmin) return;
 
     setEditingId(visit.id);
 
+    // Pre-fill the form with the existing visit's values so the
+    // user is editing, not starting from a blank form. Falls back to
+    // "" for any field that's null/undefined on the visit object.
     setFormData({
       appointment: visit.appointment || "",
       patient: visit.patient || "",
@@ -292,8 +344,13 @@ function Visits() {
   //
 
   const handleDelete = async (id) => {
+    // Same defense-in-depth pattern as handleEdit: the Delete button
+    // is only rendered for admins, but this guard stops the action
+    // even if it's triggered some other way.
     if (!isAdmin) return;
 
+    // Native browser confirm dialog — simple but blocks the main
+    // thread; fine for a low-frequency destructive action like this.
     const confirmed = window.confirm(
       "Are you sure you want to delete this visit?"
     );
@@ -308,6 +365,9 @@ function Visits() {
 
       setSuccess("Visit deleted successfully.");
 
+      // Re-fetch rather than filtering the deleted visit out of
+      // local state, keeping this consistent with how create/update
+      // refresh from the server above.
       await loadData();
     } catch (err) {
       console.error("DELETE VISIT ERROR:", err);
@@ -325,10 +385,16 @@ function Visits() {
 
     const date = new Date(dateValue);
 
+    // Guards against unparsable date strings (e.g. malformed backend
+    // data) — rather than showing "Invalid Date", fall back to
+    // whatever raw value was passed in.
     if (Number.isNaN(date.getTime())) {
       return dateValue;
     }
 
+    // `undefined` locale = use the browser's own locale settings,
+    // so dates render in whatever format/timezone convention the
+    // user's device is already set to.
     return new Intl.DateTimeFormat(undefined, {
       year: "numeric",
       month: "short",
@@ -342,6 +408,9 @@ function Visits() {
   // PAGE TEXT
   // =========================================================
 
+  // Same page, different copy depending on whether the viewer is a
+  // patient (their own history) or staff (managing many patients'
+  // visits).
   const pageTitle = isPatient
     ? "My Visits"
     : "Visits";
@@ -381,6 +450,12 @@ function Visits() {
           <button
             className="btn btn-primary"
             onClick={() => {
+              // Toggle button: closes (and resets) the form if it's
+              // already open, otherwise opens a blank one. Note this
+              // button's label already changes below depending on
+              // whether an edit is in progress, but clicking it while
+              // editing still just calls resetForm (cancels the edit)
+              // rather than closing without resetting.
               if (showForm) {
                 resetForm();
               } else {
@@ -490,6 +565,10 @@ function Visits() {
                     Patient
                   </label>
 
+                  {/* Disabled, read-only display — this is not a
+                      real form input the user edits directly; its
+                      only job is to show which patient handleChange
+                      resolved from the chosen appointment above. */}
                   <input
                     type="text"
                     className="form-control"
@@ -700,6 +779,13 @@ function Visits() {
 
                       {/* =================================================
                           ACTIONS
+
+                          These three blocks are mutually exclusive in
+                          practice per role: a patient only ever sees
+                          "View only"; a doctor sees Edit; an admin sees
+                          both Edit and Delete. They're not wrapped in a
+                          single if/else here, just three independent
+                          conditionals guarding each button/label.
                       ================================================== */}
 
                       <td>

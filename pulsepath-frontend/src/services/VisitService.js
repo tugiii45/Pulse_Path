@@ -35,6 +35,13 @@ const normalizeListResponse = (response) => {
 
 /**
  * Fetches all visits available to the authenticated user.
+ *
+ * Note: this hits the list/create endpoint at "visits/" — a single
+ * segment. Compare with getVisit/updateVisit/deleteVisit below, which
+ * hit "visits/visits/:id/" (doubled segment). That's presumably how the
+ * backend's URL routing is actually structured (e.g. a nested router
+ * where "visits/" is the app namespace and "visits/<id>/" is the
+ * viewset's own path), not a typo — but it's easy to misread as one.
  */
 export const getVisits = async () => {
   const response = await api.get("visits/");
