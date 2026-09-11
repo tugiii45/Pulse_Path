@@ -1,0 +1,18 @@
+{
+  "services": {
+    "backend": {
+      "root": "./",
+      "entrypoint": "config.wsgi:application"
+    },
+    "frontend": {
+      "root": "pulsepath-frontend/"
+    }
+  },
+  "rewrites": [
+    { "source": "/admin/(.*)", "destination": { "service": "backend" } },
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/static/(.*)", "destination": { "service": "backend" } },
+    { "source": "/media/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}
