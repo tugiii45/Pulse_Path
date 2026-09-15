@@ -9,12 +9,14 @@ const setAuthMessage = (message) => {
   sessionStorage.removeItem("auth_message");
 };
 
-// Falls back to 127.0.0.1 for local-only development. Set
-// VITE_API_BASE_URL in your .env (e.g. http://192.168.1.66:8000/api/)
-// when you need the backend reachable from another device, like a
-// phone on the same network.
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
+// Set VITE_API_URL to the Django server origin, for example:
+// https://your-backend.onrender.com
+// The API routes are mounted under /api/ in Django.
+const configuredApiUrl =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = `${configuredApiUrl
+  .replace(/\/+$/, "")
+  .replace(/\/api$/, "")}/api/`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

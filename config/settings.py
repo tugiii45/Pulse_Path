@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
-from decouple import config 
+from decouple import Csv, config
 from datetime import timedelta
 import dj_database_url
 import os
@@ -35,8 +35,11 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 
-allowed_hosts_str = config('ALLOWED_HOSTS', default='pulse-path-app.onrender.com,127.0.0.1,localhost')
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS",
+    default="pulse-path-app.onrender.com,127.0.0.1,localhost",
+    cast=Csv(),
+)
 
 # Application definition
 
@@ -61,8 +64,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,12 +75,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://192.168.1.72:5173",
-]
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174",
+    cast=Csv(),
+)
+
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174",
+    cast=Csv(),
+)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -149,6 +158,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "OPTIONS": {
+            "location": STATIC_ROOT,
+        },
+    },
+}
 
 # Configure Django REST Framework with JWT auth, pagination, filtering, and a custom response format.
 REST_FRAMEWORK = {
