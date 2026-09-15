@@ -5,7 +5,7 @@ import {
   getPrescriptions,
   getTreatments,
   updateTreatment,
-} from "../../services/Treatmentservice";
+} from "../../services/treatmentService";
 import { useAuth } from "../../contexts/AuthContext";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
