@@ -5,6 +5,7 @@ import {
   updateRecoveryProgress,
 } from "../../services/recoveryProgressService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function RecoveryProgress() {
   const { profile } = useAuth();
@@ -73,7 +74,7 @@ function RecoveryProgress() {
     } catch (error) {
       console.error("Unable to load recovery progress:", error);
 
-      setError("Unable to load recovery progress.");
+      setError(getFriendlyErrorMessage(error, "Unable to load recovery progress. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -157,8 +158,10 @@ function RecoveryProgress() {
       console.error("Unable to save recovery progress:", error);
 
       setError(
-        error?.response?.data?.detail ||
-          "Unable to save recovery progress.",
+        getFriendlyErrorMessage(
+          error,
+          "Unable to save recovery progress. Please check your recovery details and try again.",
+        ),
       );
     } finally {
       setSaving(false);
@@ -207,8 +210,10 @@ function RecoveryProgress() {
       console.error("Unable to review recovery progress:", error);
 
       setError(
-        error?.response?.data?.detail ||
-          "Unable to update recovery review.",
+        getFriendlyErrorMessage(
+          error,
+          "Unable to update recovery review. Please check your review notes and try again.",
+        ),
       );
     } finally {
       setSaving(false);

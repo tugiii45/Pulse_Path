@@ -6,6 +6,7 @@ import {
   deleteMedicationSchedule,
 } from "../../services/medicationScheduleService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function MedicationSchedule() {
   const { profile } = useAuth();
@@ -55,7 +56,7 @@ function MedicationSchedule() {
       setSchedules(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Unable to load medication schedules:", error);
-      setError("Unable to load medication schedules.");
+      setError(getFriendlyErrorMessage(error, "Unable to load medication schedules. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -128,11 +129,9 @@ function MedicationSchedule() {
       resetForm();
     } catch (error) {
       console.error("Unable to save medication schedule:", error);
-      // Generic error message regardless of cause (validation error,
-      // permission error, network failure, etc.) — no field-specific
-      // backend message is surfaced here, unlike SideEffect.jsx's
-      // handleSubmit.
-      setError("Unable to save medication schedule.");
+      setError(getFriendlyErrorMessage(error, editingId
+        ? "Unable to update this medication schedule. Please check the dates and prescription and try again."
+        : "Unable to create this medication schedule. Please check the dates and prescription and try again."));
     }
   };
 
@@ -175,7 +174,7 @@ function MedicationSchedule() {
       await loadSchedules();
     } catch (error) {
       console.error("Unable to delete medication schedule:", error);
-      setError("Unable to delete medication schedule.");
+      setError(getFriendlyErrorMessage(error, "Unable to delete this medication schedule. Please try again."));
     }
   };
 

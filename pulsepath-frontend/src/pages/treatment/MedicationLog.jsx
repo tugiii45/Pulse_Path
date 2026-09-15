@@ -7,6 +7,7 @@ import {
 } from "../../services/medicationLogService";
 import { getMedicationSchedules } from "../../services/medicationScheduleService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function MedicationLog() {
   const { profile } = useAuth();
@@ -58,7 +59,7 @@ function MedicationLog() {
       setLogs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Unable to load medication logs:", error);
-      setError("Unable to load medication logs.");
+      setError(getFriendlyErrorMessage(error, "Unable to load medication logs. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -77,6 +78,7 @@ function MedicationLog() {
       setSchedules(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Unable to load medication schedules:", error);
+      setError(getFriendlyErrorMessage(error, "Unable to load your medication schedules. Please check your connection and try again."));
     }
   };
 
@@ -142,7 +144,9 @@ function MedicationLog() {
       resetForm();
     } catch (error) {
       console.error("Unable to save medication log:", error);
-      setError("Unable to save medication log.");
+      setError(getFriendlyErrorMessage(error, editingId
+        ? "Unable to update this medication log. Please check the medication and status and try again."
+        : "Unable to record this medication. Please select a medication schedule and try again."));
     }
   };
 
@@ -182,7 +186,7 @@ function MedicationLog() {
       await loadLogs();
     } catch (error) {
       console.error("Unable to delete medication log:", error);
-      setError("Unable to delete medication log.");
+      setError(getFriendlyErrorMessage(error, "Unable to delete this medication log. Please try again."));
     }
   };
 

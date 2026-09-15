@@ -4,6 +4,7 @@ import {
   createPatient,
   getPatients,
 } from "../../services/PatientService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 /**
  * Default values for the Add Patient form.
@@ -119,6 +120,8 @@ function Patients() {
         "Error fetching patients:",
         error
       );
+
+      setError(getFriendlyErrorMessage(error, "Unable to load patients. Please check your connection and try again."));
 
       // Clear patient data if the request fails.
       setPatients([]);
@@ -237,18 +240,11 @@ function Patients() {
         err
       );
 
-      // Attempt to retrieve a useful error message
-      // from the backend response.
-      const backendMessage =
-        err?.response?.data?.errors ||
-        err?.response?.data?.message;
-
-      // Display the backend message when it is a string.
-      // Otherwise display a generic error.
       setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : "Failed to create patient."
+        getFriendlyErrorMessage(
+          err,
+          "Failed to create patient. Please check the required details and try again.",
+        ),
       );
     } finally {
       // Stop the saving indicator regardless of

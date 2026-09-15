@@ -8,6 +8,7 @@ import {
 } from "../../services/ClinicalService";
 import { getVisits } from "../../services/visitService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 const initialFormState = {
   visit: "",
@@ -74,7 +75,7 @@ function ClinicalRecords() {
       }
     } catch (err) {
       console.error("CLINICAL RECORDS LOAD ERROR:", err);
-      setError("Failed to load clinical records.");
+      setError(getFriendlyErrorMessage(err, "Unable to load clinical records. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -139,18 +140,13 @@ function ClinicalRecords() {
     } catch (err) {
       console.error("CLINICAL RECORD SAVE ERROR:", err);
 
-      const backendMessage =
-        err?.response?.data?.errors?.visit?.[0] ||
-        err?.response?.data?.errors ||
-        err?.response?.data?.message ||
-        err?.response?.data?.detail;
-
       setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : editingId
-            ? "Failed to update clinical record."
-            : "Failed to create clinical record."
+        getFriendlyErrorMessage(
+          err,
+          editingId
+            ? "Failed to update clinical record. Please check the selected visit and try again."
+            : "Failed to create clinical record. Please check the selected visit and try again.",
+        ),
       );
     } finally {
       setSaving(false);
@@ -190,7 +186,7 @@ function ClinicalRecords() {
       await loadData();
     } catch (err) {
       console.error("DELETE CLINICAL RECORD ERROR:", err);
-      setError("Failed to delete clinical record.");
+      setError(getFriendlyErrorMessage(err, "Unable to delete this clinical record. It may be linked to another visit."));
     }
   };
 

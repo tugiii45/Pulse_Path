@@ -8,6 +8,7 @@ import {
   saveTokens,
 } from "../../services/AuthService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function Login() {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ function Login() {
 
       navigate("/dashboard");
     } catch (err) {
-      setError("Invalid email or password.");
+      setError(getFriendlyErrorMessage(err, "Invalid email or password."));
       console.error(err);
     }
   };

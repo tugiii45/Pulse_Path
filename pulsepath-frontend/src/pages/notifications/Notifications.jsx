@@ -16,6 +16,7 @@ import {
   markNotificationAsRead,
   deleteNotification,
 } from "../../services/notificationService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 /**
  * Notifications Page
@@ -74,7 +75,7 @@ function Notifications() {
       console.error("Failed to load notifications:", err);
 
       // Display a user-friendly error message.
-      setError("Failed to load notifications.");
+      setError(getFriendlyErrorMessage(err, "Unable to load notifications. Please check your connection and try again."));
     } finally {
       // Stop the loading indicator regardless of success or failure.
       setLoading(false);
@@ -104,7 +105,7 @@ function Notifications() {
       console.error("Failed to mark notification as read:", err);
 
       // Display an error if the update fails.
-      setError("Failed to update notification.");
+      setError(getFriendlyErrorMessage(err, "Unable to mark this notification as read. Please try again."));
     }
   };
 
@@ -127,7 +128,7 @@ function Notifications() {
       console.error("Failed to delete notification:", err);
 
       // Display an error if deletion fails.
-      setError("Failed to delete notification.");
+      setError(getFriendlyErrorMessage(err, "Unable to delete this notification. Please try again."));
     }
   };
 
@@ -163,7 +164,7 @@ function Notifications() {
       console.error("Failed to mark all as read:", err);
 
       // Display an error if any of the requests fail.
-      setError("Failed to mark all notifications as read.");
+      setError(getFriendlyErrorMessage(err, "Unable to mark all notifications as read. Please try again."));
     }
   };
 

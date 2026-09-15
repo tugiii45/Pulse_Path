@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getHospitals } from "../../services/hospitalService";
 import { createAdmin } from "../../services/adminService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function SuperAdminDashboard() {
   const [hospitals, setHospitals] = useState([]);
@@ -40,7 +41,7 @@ function SuperAdminDashboard() {
       setHospitals(results);
     } catch (err) {
       console.error("Unable to load hospitals:", err);
-      setError("Unable to load hospitals.");
+      setError(getFriendlyErrorMessage(err, "Unable to load hospitals. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -106,19 +107,7 @@ function SuperAdminDashboard() {
         err.response?.data || err
       );
 
-      const apiError = err.response?.data;
-
-      if (apiError?.email) {
-        setError(
-          Array.isArray(apiError.email)
-            ? apiError.email.join(" ")
-            : apiError.email
-        );
-      } else if (apiError?.detail) {
-        setError(apiError.detail);
-      } else {
-        setError("Unable to create admin account.");
-      }
+      setError(getFriendlyErrorMessage(err, "Unable to create the administrator account. Please check the email and contact details and try again."));
     } finally {
       setSubmitting(false);
     }

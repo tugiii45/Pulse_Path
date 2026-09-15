@@ -7,6 +7,7 @@ import {
 } from "../../services/sideEffectService";
 import { getMedicationSchedules } from "../../services/medicationScheduleService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function SideEffect() {
   const { profile } = useAuth();
@@ -67,7 +68,7 @@ function SideEffect() {
     } catch (error) {
       console.error("Unable to load side effects:", error);
 
-      setError("Unable to load side effect reports.");
+      setError(getFriendlyErrorMessage(error, "Unable to load side effect reports. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -217,31 +218,12 @@ function SideEffect() {
         error.response?.data || error
       );
 
-      // DRF validation errors come back keyed by field name (e.g.
-      // { prescription: ["This field is required."] }), so check the
-      // specific fields this form actually submits before falling
-      // back to a generic detail message or a catch-all string.
-      const apiError = error.response?.data;
-
-      if (apiError?.detail) {
-        setError(apiError.detail);
-      } else if (apiError?.prescription) {
-        setError(
-          Array.isArray(apiError.prescription)
-            ? apiError.prescription.join(" ")
-            : apiError.prescription
-        );
-      } else if (apiError?.description) {
-        setError(
-          Array.isArray(apiError.description)
-            ? apiError.description.join(" ")
-            : apiError.description
-        );
-      } else {
-        setError(
-          "Unable to save side effect report."
-        );
-      }
+      setError(
+        getFriendlyErrorMessage(
+          error,
+          "Unable to save side effect report. Please review the medication and description and try again.",
+        ),
+      );
     }
   };
 

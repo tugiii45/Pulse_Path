@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaHospital } from "react-icons/fa";
 import { registerHospital } from "../../services/hospitalService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 /**
  * RegisterMyHospital Page
@@ -100,23 +101,7 @@ function RegisterMyHospital() {
     } catch (err) {
       console.error("Failed to register hospital:", err);
 
-      /**
-       * Extract the most useful error message from the backend.
-       *
-       * Priority:
-       * 1. General detail message
-       * 2. Hospital name validation error
-       * 3. Hospital email validation error
-       * 4. Generic fallback message
-       */
-      const detail =
-        err.response?.data?.detail ||
-        err.response?.data?.name?.[0] ||
-        err.response?.data?.email?.[0] ||
-        "Failed to register hospital.";
-
-      // Display the backend error to the user.
-      setError(detail);
+      setError(getFriendlyErrorMessage(err, "Unable to register your hospital. Please check the hospital name, email, phone number, and address."));
 
     } finally {
       // Stop the saving indicator regardless of success or failure.

@@ -14,6 +14,7 @@ import {
 
 import { useAuth } from "../../contexts/AuthContext";
 import { getProfile, updateProfile } from "../../services/profileService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 /**
  * Profile Page
@@ -112,7 +113,7 @@ function Profile() {
 
       // Display a user-friendly error instead of exposing
       // the technical API error directly.
-      setError("Unable to load profile information.");
+      setError(getFriendlyErrorMessage(err, "Unable to load your profile. Please check your connection and try again."));
     } finally {
       // Stop displaying the loading state regardless of success or failure.
       setLoading(false);
@@ -349,27 +350,7 @@ function Profile() {
     } catch (err) {
       console.error("Unable to update profile:", err);
 
-      // Attempt to extract validation errors returned by the backend.
-      const responseData = err?.response?.data;
-
-      if (responseData && typeof responseData === "object") {
-        // Convert field-specific API errors into one readable message.
-        const messages = Object.entries(responseData)
-          .map(([field, messages]) => {
-            const value = Array.isArray(messages)
-              ? messages.join(", ")
-              : messages;
-
-            return `${field}: ${value}`;
-          })
-          .join(" ");
-
-        setError(messages || "Unable to update profile.");
-      } else {
-        // Fall back to a generic error if the backend response
-        // does not contain structured validation information.
-        setError("Unable to update profile.");
-      }
+      setError(getFriendlyErrorMessage(err, "Unable to update your profile. Please check your name, phone number, address, and profile picture."));
     } finally {
       // Always stop the saving indicator when the request finishes.
       setSaving(false);

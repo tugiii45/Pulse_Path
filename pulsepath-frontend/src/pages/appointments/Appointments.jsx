@@ -9,6 +9,7 @@ import {getPatients,getMyPatientProfile,} from "../../services/PatientService";
 import { getDoctors, getDoctorsByHospital } from "../../services/DoctorService";
 import { getHospitals } from "../../services/HospitalService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // Default form values.
 // Patient ID is intentionally NOT included because patients should not
@@ -139,7 +140,7 @@ function Appointments() {
       }
     } catch (err) {
       console.error("APPOINTMENTS ERROR:", err);
-      setError("Failed to load appointments.");
+      setError(getFriendlyErrorMessage(err, "Unable to load appointments. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -298,7 +299,7 @@ function Appointments() {
 
         setDoctors([]);
 
-        setError("Failed to load doctors for the selected hospital.");
+        setError(getFriendlyErrorMessage(doctorError, "Unable to load doctors for this hospital. Please choose another hospital or try again."));
       }
     }
   };
@@ -327,6 +328,20 @@ function Appointments() {
     // an appointment.
     if (!formData.doctor || !formData.appointment_date) {
       setError("Please select a doctor and appointment date.");
+      return;
+    }
+
+    const selectedAppointmentDate = new Date(formData.appointment_date);
+
+    if (Number.isNaN(selectedAppointmentDate.getTime())) {
+      setError("Please enter a valid appointment date and time.");
+      return;
+    }
+
+    const appointmentHour = selectedAppointmentDate.getHours();
+
+    if (appointmentHour < 8 || appointmentHour >= 17) {
+      setError("Appointments are available from 8:00 AM to 5:00 PM. Please choose a time within those hours.");
       return;
     }
 
@@ -408,17 +423,13 @@ function Appointments() {
     } catch (err) {
       console.error("APPOINTMENT SAVE ERROR:", err);
 
-      const backendMessage =
-        err?.response?.data?.errors ||
-        err?.response?.data?.message ||
-        err?.response?.data?.detail;
-
       setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : editingId
-            ? "Failed to update appointment."
-            : "Failed to create appointment.",
+        getFriendlyErrorMessage(
+          err,
+          editingId
+            ? "Failed to update appointment. Please check the date, doctor, and status and try again."
+            : "Failed to create appointment. Please check the date, doctor, and patient details and try again.",
+        )
       );
     } finally {
       setSaving(false);
@@ -473,7 +484,12 @@ function Appointments() {
     } catch (err) {
       console.error("DELETE APPOINTMENT ERROR:", err);
 
-      setError("Failed to delete appointment.");
+      setError(
+        getFriendlyErrorMessage(
+          err,
+          "This appointment could not be deleted. Please try again or contact an administrator.",
+        ),
+      );
     }
   };
 
@@ -501,15 +517,11 @@ function Appointments() {
     } catch (err) {
       console.error("STATUS UPDATE ERROR:", err);
 
-      const backendMessage =
-        err?.response?.data?.errors ||
-        err?.response?.data?.message ||
-        err?.response?.data?.detail;
-
       setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : "Failed to update appointment status.",
+        getFriendlyErrorMessage(
+          err,
+          "Unable to update appointment status. Please ensure the appointment is valid and the status change is allowed.",
+        )
       );
     }
   };

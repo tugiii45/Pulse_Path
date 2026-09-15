@@ -7,6 +7,7 @@ import {
 } from "../../services/visitService";
 import { getAppointments } from "../../services/AppointmentService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // Shape of a fresh/blank visit form. Reused both for the initial
 // state and whenever the form is reset after a create/update/cancel.
@@ -113,7 +114,7 @@ function Visits() {
     } catch (err) {
       console.error("VISITS LOAD ERROR:", err);
 
-      setError("Failed to load visits.");
+      setError(getFriendlyErrorMessage(err, "Unable to load visits. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -280,21 +281,13 @@ function Visits() {
     } catch (err) {
       console.error("VISIT SAVE ERROR:", err);
 
-      // Backends can return the error message under different keys
-      // depending on the exception type (validation vs permission vs
-      // generic) — check the common ones in priority order before
-      // falling back to a generic message.
-      const backendMessage =
-        err?.response?.data?.errors ||
-        err?.response?.data?.message ||
-        err?.response?.data?.detail;
-
       setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : editingId
-          ? "Failed to update visit."
-          : "Failed to create visit."
+        getFriendlyErrorMessage(
+          err,
+          editingId
+            ? "Failed to update visit. Please check the appointment and visit details and try again."
+            : "Failed to create visit. Please check the appointment and visit details and try again.",
+        ),
       );
     } finally {
       setSaving(false);
@@ -372,7 +365,7 @@ function Visits() {
     } catch (err) {
       console.error("DELETE VISIT ERROR:", err);
 
-      setError("Failed to delete visit.");
+      setError(getFriendlyErrorMessage(err, "Unable to delete this visit. It may be linked to clinical records."));
     }
   };
 

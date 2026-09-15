@@ -11,6 +11,7 @@ import {
   FaUserTag,
 } from "react-icons/fa";
 import { registerUser } from "../../services/AuthService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function Register() {
   const navigate = useNavigate();
@@ -85,13 +86,7 @@ function Register() {
       navigate("/login");
     } catch (err) {
       console.error(err);
-
-      const backendError =
-        err.response?.data?.message ||
-        err.response?.data?.detail ||
-        "Registration failed. Please check your information and try again.";
-
-      setError(backendError);
+      setError(getFriendlyErrorMessage(err, "Registration failed. Please check your information and try again."));
     } finally {
       setLoading(false);
     }

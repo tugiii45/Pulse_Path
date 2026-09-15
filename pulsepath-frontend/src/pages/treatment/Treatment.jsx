@@ -7,6 +7,7 @@ import {
   updateTreatment,
 } from "../../services/treatmentService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // Blank/default shape for the create-treatment form. status defaults
 // to "ACTIVE" since that's the natural starting state for any newly
@@ -101,7 +102,7 @@ function Treatment() {
     } catch (err) {
       console.error("TREATMENT LOAD ERROR:", err);
 
-      setError("Failed to load treatment information.");
+      setError(getFriendlyErrorMessage(err, "Unable to load treatment information. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -214,22 +215,9 @@ function Treatment() {
     } catch (err) {
       console.error("TREATMENT SAVE ERROR:", err);
 
-      // Different backend error paths (validation vs permission vs
-      // generic exception) surface the message under different keys
-      // — check them in priority order before falling back to a
-      // generic create/update failure message.
-      const backendMessage =
-        err?.response?.data?.errors ||
-        err?.response?.data?.message ||
-        err?.response?.data?.detail;
-
-      setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : editingId
-          ? "Failed to update treatment."
-          : "Failed to create treatment."
-      );
+      setError(getFriendlyErrorMessage(err, editingId
+        ? "Unable to update this treatment. Please check the prescription, follow-up date, and status."
+        : "Unable to create this treatment. Please check the prescription, follow-up date, and status."));
     } finally {
       setSaving(false);
     }
@@ -293,7 +281,7 @@ function Treatment() {
     } catch (err) {
       console.error("DELETE TREATMENT ERROR:", err);
 
-      setError("Failed to delete treatment.");
+      setError(getFriendlyErrorMessage(err, "Unable to delete this treatment. It may be linked to other clinical records."));
     }
   };
 

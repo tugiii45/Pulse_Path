@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FaHeartbeat, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { setPassword as setPasswordRequest } from "../../services/AuthService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 /**
  * Destination page for the "set your password" link in a doctor's
@@ -61,16 +62,11 @@ function SetPassword() {
     } catch (err) {
       console.error(err);
 
-      const backendError =
-        err.response?.data?.errors?.detail ||
-        err.response?.data?.message ||
-        err.response?.data?.detail ||
-        "This invite link is invalid or has expired. Please ask your administrator to resend it.";
-
       setError(
-        typeof backendError === "string"
-          ? backendError
-          : "This invite link is invalid or has expired. Please ask your administrator to resend it.",
+        getFriendlyErrorMessage(
+          err,
+          "This invite link is invalid or has expired. Please ask your administrator to resend it.",
+        ),
       );
     } finally {
       setLoading(false);

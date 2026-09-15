@@ -6,6 +6,7 @@ import {
 
 import { getMedications } from "../../services/medicationService";
 import { getDiagnoses } from "../../services/diagnosisService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // Note: unlike Visits, Treatment, SideEffect, and RecoveryProgress,
 // this component has no useAuth()/role checks at all — the create
@@ -69,7 +70,7 @@ function Prescription() {
       setMedications(medicationData);
     } catch (err) {
       console.error("Unable to load prescription data:", err);
-      setError("Unable to load prescription data.");
+      setError(getFriendlyErrorMessage(err, "Unable to load prescriptions. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -132,12 +133,7 @@ function Prescription() {
       await loadData();
     } catch (err) {
       console.error("Unable to create prescription:", err);
-      // Note: unlike SideEffect/RecoveryProgress, this doesn't
-      // surface a field-specific backend validation message (e.g.
-      // err.response.data.dosage) — any failure just shows this one
-      // generic string, so the user won't know *why* creation failed
-      // (missing field, invalid diagnosis, permission error, etc.).
-      setError("Unable to create prescription.");
+      setError(getFriendlyErrorMessage(err, "Unable to create prescription. Please check the diagnosis, medication, dosage, and duration."));
     }
   };
 

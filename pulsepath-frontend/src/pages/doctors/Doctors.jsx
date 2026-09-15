@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createDoctorByAdmin, getDoctors } from "../../services/DoctorService";
 import { getDepartments } from "../../services/DepartmentService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // ============================================================
 // INITIAL FORM STATE
@@ -77,6 +78,8 @@ function Doctors() {
     } catch (error) {
       console.error("Error fetching doctors:", error);
 
+      setError(getFriendlyErrorMessage(error, "Unable to load doctors. Please check your connection and try again."));
+
       // Reset the doctor list and pagination if the request fails.
       setDoctors([]);
       setNextPage(null);
@@ -104,6 +107,7 @@ function Doctors() {
       setDepartments(list);
     } catch (error) {
       console.error("Error fetching departments:", error);
+      setError(getFriendlyErrorMessage(error, "Unable to load departments for the doctor form. Please try again."));
       setDepartments([]);
     }
   };
@@ -201,14 +205,11 @@ function Doctors() {
     } catch (err) {
       console.error("Create doctor error:", err);
 
-      // Extract a possible backend error message.
-      const backendMessage =
-        err?.response?.data?.errors || err?.response?.data?.message;
-
       setError(
-        typeof backendMessage === "string"
-          ? backendMessage
-          : "Failed to create doctor.",
+        getFriendlyErrorMessage(
+          err,
+          "Failed to create doctor. Please check the email, department, and license details and try again.",
+        ),
       );
     } finally {
       // Re-enable the submit button after the request finishes.

@@ -16,6 +16,7 @@ import {
   patchHospital,
   deleteHospital,
 } from "../../services/hospitalService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 /**
  * Hospitals Page
@@ -147,7 +148,7 @@ function Hospitals() {
       console.error("Failed to load hospitals:", err);
 
       // Display a user-friendly error message.
-      setError("Failed to load hospitals.");
+      setError(getFriendlyErrorMessage(err, "Unable to load hospitals. Please check your connection and try again."));
 
     } finally {
       // Stop the loading indicator regardless of success or failure.
@@ -242,16 +243,11 @@ function Hospitals() {
         err
       );
 
-      // Log the complete backend response for debugging.
-      console.error(
-        "Backend error:",
-        err.response?.data
-      );
-
-      // Display the backend detail message when available.
       setError(
-        err.response?.data?.detail ||
-          "Failed to save hospital."
+        getFriendlyErrorMessage(
+          err,
+          "Failed to save hospital. Please check your details and try again.",
+        ),
       );
 
     } finally {
@@ -319,9 +315,7 @@ function Hospitals() {
         err
       );
 
-      setError(
-        "Failed to update hospital status."
-      );
+      setError(getFriendlyErrorMessage(err, "Unable to change this hospital's availability. Please try again."));
     }
   };
 
@@ -363,9 +357,7 @@ function Hospitals() {
         err
       );
 
-      setError(
-        "Failed to delete hospital."
-      );
+      setError(getFriendlyErrorMessage(err, "Unable to delete this hospital. It may still contain departments or records."));
     }
   };
 

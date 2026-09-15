@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getDiagnoses, createDiagnosis } from "../../services/diagnosisService";
 import { getVisits } from "../../services/visitService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function Diagnosis() {
   const [diagnoses, setDiagnoses] = useState([]);
@@ -38,7 +39,7 @@ function Diagnosis() {
       
     } catch (error) {
       console.error("Failed to load diagnoses:", error);
-      setError("Failed to load diagnoses.");
+      setError(getFriendlyErrorMessage(error, "Unable to load diagnoses. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -55,7 +56,7 @@ function Diagnosis() {
       setVisits(Array.isArray(data) ? data : data?.results || []);
     } catch (error) {
       console.error("Failed to load visits:", error);
-      setError("Failed to load visits.");
+      setError(getFriendlyErrorMessage(error, "Unable to load visits for diagnosis. Please check your connection and try again."));
     } finally {
       setLoadingVisits(false);
     }
@@ -116,12 +117,8 @@ function Diagnosis() {
     } catch (error) {
       console.error("Failed to create diagnosis:", error);
 
-      console.log("BACKEND ERROR:", error.response?.data);
-
       setError(
-        error.response?.data
-          ? JSON.stringify(error.response.data)
-          : "Failed to add diagnosis."
+        getFriendlyErrorMessage(error, "Failed to add diagnosis. Please check the visit and diagnosis details and try again."),
       );
     } finally {
       setSaving(false);

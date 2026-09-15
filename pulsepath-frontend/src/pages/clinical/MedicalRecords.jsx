@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaFileMedical, FaEye, FaSyncAlt } from "react-icons/fa";
 import { getClinicalRecords } from "../../services/ClinicalService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function MedicalRecords() {
   const [records, setRecords] = useState([]);
@@ -17,7 +18,7 @@ function MedicalRecords() {
       setRecords(data.data?.results || []);
     } catch (err) {
       console.error(err);
-      setError("Failed to load medical records.");
+      setError(getFriendlyErrorMessage(err, "Unable to load your medical records. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }

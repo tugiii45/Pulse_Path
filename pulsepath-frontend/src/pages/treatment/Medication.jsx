@@ -6,6 +6,7 @@ import {
   deleteMedication,
 } from "../../services/medicationService";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function Medication() {
   const { profile } = useAuth();
@@ -59,7 +60,7 @@ function Medication() {
       setMedications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Unable to load medications:", error);
-      setError("Unable to load medications.");
+      setError(getFriendlyErrorMessage(error, "Unable to load medications. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -119,7 +120,9 @@ function Medication() {
       resetForm();
     } catch (error) {
       console.error("Unable to save medication:", error);
-      setError("Unable to save medication.");
+      setError(getFriendlyErrorMessage(error, editingId
+        ? "Unable to update this medication. Please check the medication details and try again."
+        : "Unable to create this medication. Please check the medication details and try again."));
     }
   };
 
@@ -162,7 +165,7 @@ function Medication() {
       await loadMedications();
     } catch (error) {
       console.error("Unable to delete medication:", error);
-      setError("Unable to delete medication.");
+      setError(getFriendlyErrorMessage(error, "Unable to delete this medication. It may still be used in a prescription."));
     }
   };
 

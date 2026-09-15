@@ -5,6 +5,7 @@ import {
   patchDepartment,
   deleteDepartment,
 } from "../../services/departmentService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function Department() {
   const [departments, setDepartments] = useState([]);
@@ -59,9 +60,7 @@ function Department() {
         error
       );
 
-      setError(
-        "Failed to load departments."
-      );
+      setError(getFriendlyErrorMessage(error, "Unable to load departments. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -120,14 +119,11 @@ function Department() {
         error
       );
 
-      console.error(
-        "Backend error:",
-        error.response?.data
-      );
-
       setError(
-        error.response?.data?.detail ||
-          "Failed to save department."
+        getFriendlyErrorMessage(
+          error,
+          "Failed to save department. Please check the department name and hospital details and try again.",
+        ),
       );
     } finally {
       setSubmitting(false);
@@ -176,9 +172,7 @@ function Department() {
         error
       );
 
-      setError(
-        "Failed to delete department."
-      );
+      setError(getFriendlyErrorMessage(error, "Unable to delete this department. It may still have doctors or records assigned to it."));
     }
   };
 

@@ -9,10 +9,12 @@ import {
 } from "react-icons/fa";
 
 import { getAdminDashboardData } from "../../services/adminDashboardService";
+import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     loadDashboard();
@@ -27,6 +29,7 @@ function AdminDashboard() {
       setDashboardData(data);
     } catch (error) {
       console.error("Failed to load admin dashboard:", error);
+      setErrorMessage(getFriendlyErrorMessage(error, "Unable to load the dashboard. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,7 @@ function AdminDashboard() {
   if (!dashboardData) {
     return (
       <div className="alert alert-danger">
-        Failed to load dashboard data.
+        {errorMessage || "Unable to load dashboard data. Please try again."}
       </div>
     );
   }
