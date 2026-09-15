@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 
 import { getProfile } from "../../services/profileService";
-import { getAppointments } from "../../services/appointmentService";
+import { getAppointments } from "../../services/AppointmentService";
 
 import { getMedicationSchedules } from "../../services/medicationScheduleService";
 

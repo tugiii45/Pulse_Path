@@ -6,7 +6,7 @@ import {
   updateClinicalRecord,
   deleteClinicalRecord,
 } from "../../services/ClinicalService";
-import { getVisits } from "../../services/visitService";
+import { getVisits } from "../../services/VisitService";
 import { useAuth } from "../../contexts/AuthContext";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 

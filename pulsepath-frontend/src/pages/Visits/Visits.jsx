@@ -4,7 +4,7 @@ import {
   deleteVisit,
   getVisits,
   updateVisit,
-} from "../../services/visitService";
+} from "../../services/VisitService";
 import { getAppointments } from "../../services/AppointmentService";
 import { useAuth } from "../../contexts/AuthContext";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";

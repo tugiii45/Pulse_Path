@@ -7,7 +7,7 @@ import {
 } from "../../services/AppointmentService";
 import {getPatients,getMyPatientProfile,} from "../../services/PatientService";
 import { getDoctors, getDoctorsByHospital } from "../../services/DoctorService";
-import { getHospitals } from "../../services/HospitalService";
+import { getHospitals } from "../../services/hospitalService";
 import { useAuth } from "../../contexts/AuthContext";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 

@@ -1,6 +1,6 @@
 import { useAuth } from "../../contexts/AuthContext";
 
-import SuperAdminDashboard from "./SuperAdminDashboard";
+import SuperAdminDashboard from "./Superadmindashboard";
 import AdminDashboard from "./AdminDashboard";
 import DoctorDashboard from "./DoctorDashboard";
 import PatientDashboard from "./PatientDashboard";

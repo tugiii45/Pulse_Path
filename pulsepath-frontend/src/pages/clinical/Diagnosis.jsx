@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getDiagnoses, createDiagnosis } from "../../services/diagnosisService";
-import { getVisits } from "../../services/visitService";
+import { getVisits } from "../../services/VisitService";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function Diagnosis() {

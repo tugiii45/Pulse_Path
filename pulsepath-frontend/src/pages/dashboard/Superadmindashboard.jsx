@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getHospitals } from "../../services/hospitalService";
-import { createAdmin } from "../../services/adminService";
+import { createAdmin } from "../../services/adminservice";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 function SuperAdminDashboard() {

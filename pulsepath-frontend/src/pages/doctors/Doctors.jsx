@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createDoctorByAdmin, getDoctors } from "../../services/DoctorService";
-import { getDepartments } from "../../services/DepartmentService";
+import { getDepartments } from "../../services/departmentService";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // ============================================================
