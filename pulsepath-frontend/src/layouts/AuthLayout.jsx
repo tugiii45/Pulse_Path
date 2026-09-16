@@ -1,5 +1,11 @@
 import { FaCheck } from "react-icons/fa";
 
+// -----------------------------------------------------------------------------
+// Authentication layout
+// -----------------------------------------------------------------------------
+// This layout splits the page into a branded left panel and a form panel on the
+// right. It keeps the auth screens visually consistent while allowing each form
+// page to render inside the same shell.
 function AuthLayout({ children }) {
   return (
     <div className="container-fluid vh-100">

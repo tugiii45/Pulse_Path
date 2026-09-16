@@ -21,6 +21,11 @@ import { getClinicalRecords } from "../../services/ClinicalService";
 // GREETING
 // =========================
 
+// -----------------------------------------------------------------------------
+// Dashboard helpers
+// -----------------------------------------------------------------------------
+// These helpers standardize greeting text, list normalization, and small UI
+// formatting tasks so the dashboard can present consistent data across roles.
 const getGreeting = () => {
   const hour = new Date().getHours();
 
@@ -156,6 +161,8 @@ const getStatusClass = (status) => {
 // DOCTOR DASHBOARD
 // =========================
 
+// The doctor dashboard brings together profile details, appointment counts,
+// patient activity, and alert data into a single overview for quick triage.
 function DoctorDashboard() {
   // =========================
   // PROFILE

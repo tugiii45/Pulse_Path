@@ -26,6 +26,11 @@ import { getRecoveryProgress } from "../../services/recoveryProgressService";
 // GREETING
 // =========================
 
+// -----------------------------------------------------------------------------
+// Patient dashboard helpers
+// -----------------------------------------------------------------------------
+// Small utility functions keep dates, medication times, and greeting text in a
+// consistent format throughout the patient summary view.
 const getGreeting = () => {
   const hour = new Date().getHours();
 
@@ -82,6 +87,8 @@ const formatMedicationTime = (date) => {
   });
 };
 
+// The patient dashboard presents a concise snapshot of upcoming care, recent
+// medication activity, and outstanding notifications for everyday follow-up.
 function PatientDashboard() {
   // =========================
   // PROFILE

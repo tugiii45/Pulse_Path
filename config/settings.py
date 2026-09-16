@@ -20,6 +20,14 @@ import os
 
 load_dotenv()
 
+# -----------------------------------------------------------------------------
+# Project configuration
+# -----------------------------------------------------------------------------
+# This settings module centralizes the Django app configuration for local
+# development and deployment. It defines the app registry, security settings,
+# API behavior, database connection, and any environment-based values used by
+# the backend throughout the application.
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -41,8 +49,12 @@ ALLOWED_HOSTS = config(
     cast=Csv(),
 )
 
-# Application definition
-
+# -----------------------------------------------------------------------------
+# Installed applications
+# -----------------------------------------------------------------------------
+# These are the Django apps and third-party packages the project relies on.
+# They include the custom healthcare modules, API framework, schema generator,
+# and CORS support needed for the frontend to talk to the backend.
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,6 +75,11 @@ INSTALLED_APPS = [
     'chatbot',
 ]
 
+# -----------------------------------------------------------------------------
+# Request pipeline and security
+# -----------------------------------------------------------------------------
+# Middleware runs for every request and handles security headers, sessions,
+# CORS, authentication, and CSRF protection before the view logic executes.
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -111,9 +128,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
+# -----------------------------------------------------------------------------
+# Database connection
+# -----------------------------------------------------------------------------
+# The project prefers DATABASE_URL when available so deployments can override
+# local SQLite settings without changing application code.
 DATABASES = {
     'default': dj_database_url.config(
         # Fallback to local SQLite if DATABASE_URL environment variable is missing
@@ -172,7 +191,11 @@ STORAGES = {
     },
 }
 
-# Configure Django REST Framework with JWT auth, pagination, filtering, and a custom response format.
+# -----------------------------------------------------------------------------
+# API framework configuration
+# -----------------------------------------------------------------------------
+# JWT is required for authenticated access, pagination keeps list responses
+# consistent, and the custom renderer enables a uniform API response format.
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES":
     (
@@ -215,6 +238,11 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
+# -----------------------------------------------------------------------------
+# Media and user model
+# -----------------------------------------------------------------------------
+# Profile pictures and other uploaded files are stored under the media folder,
+# while the custom user model replaces Django's default authentication model.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

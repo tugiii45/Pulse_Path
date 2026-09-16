@@ -4,6 +4,12 @@ import "./ChatWidget.css";
 
 const PULSE_PATH = "M0,12 L14,12 L18,4 L24,20 L28,12 L34,12 L38,6 L42,18 L46,12 L64,12";
 
+// -----------------------------------------------------------------------------
+// Chat assistant widget
+// -----------------------------------------------------------------------------
+// This component keeps the assistant panel self-contained: it manages its own
+// open/closed state, message history, and API requests without needing a
+// larger global chat store.
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -17,6 +23,8 @@ export default function ChatWidget() {
     }
   }, [messages, loading]);
 
+  // Send the current conversation to the backend and append the assistant's
+  // reply to the local message list so the UI stays responsive.
   const sendMessage = async () => {
     if (!input.trim()) return;
     const newMessages = [...messages, { role: "user", content: input }];
