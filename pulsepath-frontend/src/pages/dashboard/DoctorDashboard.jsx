@@ -8,6 +8,7 @@ import {
   FaChartLine,
   FaArrowRight,
   FaTriangleExclamation,
+  FaHandPeace,
 } from "react-icons/fa6";
 
 import { getProfile } from "../../services/profileService";
@@ -505,10 +506,18 @@ function DoctorDashboard() {
       ========================== */}
 
       <div className="mb-4">
-        <h2 className="fw-bold mb-1">
-          {loadingProfile
-            ? "Welcome 👋"
-            : `Good ${getGreeting()}, ${doctorName} 👋`}
+        <h2 className="fw-bold mb-1 d-flex align-items-center gap-2">
+          {loadingProfile ? (
+            <>
+              <span>Welcome</span>
+              <FaHandPeace />
+            </>
+          ) : (
+            <>
+              <span>{`Good ${getGreeting()}, ${doctorName}`}</span>
+              <FaHandPeace />
+            </>
+          )}
         </h2>
 
         <p className="text-muted mb-0">

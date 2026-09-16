@@ -1,3 +1,5 @@
+import { FaCheck } from "react-icons/fa";
+
 function AuthLayout({ children }) {
   return (
     <div className="container-fluid vh-100">
@@ -23,10 +25,22 @@ function AuthLayout({ children }) {
             <hr className="my-4" />
 
             <div className="text-start d-inline-block">
-              <p>✔ Secure Patient Records</p>
-              <p>✔ Smart Appointment Scheduling</p>
-              <p>✔ Medication Tracking</p>
-              <p>✔ Recovery Monitoring</p>
+              <p className="d-flex align-items-center gap-2 mb-2">
+                <FaCheck />
+                <span>Secure Patient Records</span>
+              </p>
+              <p className="d-flex align-items-center gap-2 mb-2">
+                <FaCheck />
+                <span>Smart Appointment Scheduling</span>
+              </p>
+              <p className="d-flex align-items-center gap-2 mb-2">
+                <FaCheck />
+                <span>Medication Tracking</span>
+              </p>
+              <p className="d-flex align-items-center gap-2 mb-2">
+                <FaCheck />
+                <span>Recovery Monitoring</span>
+              </p>
             </div>
 
           </div>

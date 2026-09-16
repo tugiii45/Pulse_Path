@@ -9,6 +9,7 @@ import {
   FaUserMd,
   FaCheckCircle,
   FaArrowRight,
+  FaHandPeace,
 } from "react-icons/fa";
 
 import { getProfile } from "../../services/profileService";
@@ -446,10 +447,18 @@ function PatientDashboard() {
       ========================== */}
 
       <div className="mb-4">
-        <h2 className="fw-bold mb-1">
-          {loadingProfile
-            ? "Welcome 👋"
-            : `Good ${getGreeting()}, ${patientName} 👋`}
+        <h2 className="fw-bold mb-1 d-flex align-items-center gap-2">
+          {loadingProfile ? (
+            <>
+              <span>Welcome</span>
+              <FaHandPeace />
+            </>
+          ) : (
+            <>
+              <span>{`Good ${getGreeting()}, ${patientName}`}</span>
+              <FaHandPeace />
+            </>
+          )}
         </h2>
 
         <p className="text-muted mb-0">Here's your health summary for today.</p>

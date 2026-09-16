@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { FaXmark } from "react-icons/fa6";
 import "./ChatWidget.css";
 
 const PULSE_PATH = "M0,12 L14,12 L18,4 L24,20 L28,12 L34,12 L38,6 L42,18 L46,12 L64,12";
@@ -68,7 +69,9 @@ export default function ChatWidget() {
             <div className="pp-header-title">PulsePath Assistant</div>
             <div className="pp-header-sub">Here to help you navigate</div>
           </div>
-          <button className="pp-close" onClick={() => setOpen(false)} aria-label="Close">✕</button>
+          <button className="pp-close" onClick={() => setOpen(false)} aria-label="Close">
+            <FaXmark />
+          </button>
         </div>
         <div className="pp-pulse-line">
           <svg viewBox="0 0 64 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
