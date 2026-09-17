@@ -1,3 +1,4 @@
+// API helpers for super-admin account creation.
 import api from "./api";
 
 export const createAdmin = async (formData) => {

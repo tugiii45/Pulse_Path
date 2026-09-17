@@ -1,3 +1,4 @@
+// Displays diagnoses and lets authorized clinical users record new diagnoses.
 import { useEffect, useState } from "react";
 import { getDiagnoses, createDiagnosis } from "../../services/diagnosisService";
 import { getVisits } from "../../services/VisitService";

@@ -1,3 +1,4 @@
+// Landing-page section highlighting recovery and ongoing-care tracking.
 import { Link } from "react-router-dom";
 import {
   FaPills,

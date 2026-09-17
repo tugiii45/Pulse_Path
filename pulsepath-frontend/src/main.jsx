@@ -1,3 +1,4 @@
+// Browser entry point: load global styles and mount the React application.
 import React from "react";
 import { createRoot } from "react-dom/client";
 

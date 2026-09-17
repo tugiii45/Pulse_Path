@@ -1,3 +1,4 @@
+// API helpers for dashboard summary data.
 import api from "./api";
 
 export const getDashboardStats = 

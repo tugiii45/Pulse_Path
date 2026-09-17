@@ -1,3 +1,4 @@
+// Root application composition: authentication, routing, and global chat support.
 import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./contexts/AuthContext";
 import ChatWidget from "./components/ChatWidget";

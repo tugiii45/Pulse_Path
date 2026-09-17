@@ -1,3 +1,4 @@
+// Composes the public marketing sections shown before authentication.
 import Navbar from "../components/Landing/Navbar";
 import Hero from "../components/Landing/Hero";
 import Features from "../components/Landing/Features";

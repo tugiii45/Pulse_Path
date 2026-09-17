@@ -1,3 +1,4 @@
+// Collects an email address and starts the secure password-recovery flow.
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../../layouts/AuthLayout";

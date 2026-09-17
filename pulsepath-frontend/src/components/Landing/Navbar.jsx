@@ -1,3 +1,4 @@
+// Public navigation bar for the landing page.
 import { Link } from "react-router-dom";
 import { FaHeartbeat } from "react-icons/fa";
 

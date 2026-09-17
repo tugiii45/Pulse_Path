@@ -1,3 +1,4 @@
+// Explains the patient-care workflow shown on the public landing page.
 function HowItWorks() {
   const steps = [
     {

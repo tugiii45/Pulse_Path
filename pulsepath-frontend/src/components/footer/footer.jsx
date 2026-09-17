@@ -1,3 +1,4 @@
+// Shared footer used inside the authenticated dashboard layout.
 import { FaHeartbeat, FaEnvelope, FaPhone } from "react-icons/fa";
 import { Link } from "react-router-dom";
 

@@ -1,3 +1,4 @@
+// Landing-page overview of the platform's main healthcare capabilities.
 import {
   FaCalendarCheck,
   FaClipboardCheck,

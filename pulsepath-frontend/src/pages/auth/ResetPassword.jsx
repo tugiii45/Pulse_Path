@@ -1,3 +1,4 @@
+// Completes password recovery after the user opens the emailed token link.
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";

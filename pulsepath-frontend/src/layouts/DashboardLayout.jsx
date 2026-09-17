@@ -1,3 +1,4 @@
+// Shared shell for protected pages: dashboard navigation, page outlet, and footer.
 import { Outlet } from "react-router-dom";
 
 import Navbar from "../components/navbar/navbar";

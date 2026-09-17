@@ -1,3 +1,4 @@
+// Public landing-page footer with brand and navigation links.
 import { Link } from "react-router-dom";
 import {
   FaHeartbeat,

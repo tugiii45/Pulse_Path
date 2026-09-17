@@ -1,3 +1,4 @@
+// Primary landing-page section introducing PulsePath and its main entry points.
 import { Link } from "react-router-dom";
 import {
   FaHeartbeat,

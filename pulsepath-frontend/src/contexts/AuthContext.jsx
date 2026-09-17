@@ -1,3 +1,4 @@
+// Shares the current profile and authentication actions across the application.
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getProfile } from "../services/profileService";
 import { getAccessToken, logoutUser } from "../services/AuthService";

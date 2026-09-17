@@ -1,3 +1,4 @@
+// Authenticated navigation bar with profile, notifications, and logout actions.
 import { useState, useRef, useEffect } from "react";
 import {
   FaBell,

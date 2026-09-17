@@ -1,3 +1,4 @@
+// Landing-page call to action that directs visitors into the application.
 import { Link } from "react-router-dom";
 import { FaArrowRight, FaHeartbeat } from "react-icons/fa";
 

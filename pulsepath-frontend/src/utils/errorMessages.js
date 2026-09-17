@@ -1,3 +1,4 @@
+// Converts backend validation errors into messages suitable for the UI.
 const humanizeFieldName = (field) => {
   const labels = {
     first_name: "First name",
