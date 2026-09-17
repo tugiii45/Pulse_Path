@@ -10,4 +10,5 @@ from .patient import PatientSerializer
 from .department import DepartmentSerializer
 from .doctor import DoctorSerializer
 from .doctor_provisioning import AdminCreateDoctorSerializer, SetPasswordSerializer
+from .password_reset import PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 from .admin_provisioning import *

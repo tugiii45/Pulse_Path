@@ -7,7 +7,12 @@ class.
 """
 
 from django.urls import path
-from .views import RegisterView, ProfileView
+from .views import (
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+    ProfileView,
+    RegisterView,
+)
 from .views.patient import PatientProfileView, PatientListView
 from .views.department import DepartmentListCreateView, DepartmentDetailView
 from .views.doctor import DoctorListCreateView, DoctorDetailView, HospitalDoctorsView
@@ -23,6 +28,8 @@ urlpatterns = [
     # Authentication
     path("register/", RegisterView.as_view(), name="register"),
     path("profile/", ProfileView.as_view(), name="profile"),
+    path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset"),
+    path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path("set-password/", SetPasswordView.as_view(), name="set-password"),
     # Patient management
     path("patient_profile/", PatientProfileView.as_view(), name="patient_profile"),

@@ -1,8 +1,65 @@
-from django.test import TestCase
+import re
+
+from django.core import mail
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient, APIRequestFactory
 
 from accounts.models import CustomUser, Patient
 from accounts.permissions import IsDoctorOrAdminOrPatientOwner
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class PasswordResetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = CustomUser.objects.create_user(
+            email="reset@example.com",
+            password="OldSecurePassword123!",
+            first_name="Reset",
+            last_name="User",
+            role=CustomUser.Role.PATIENT,
+        )
+
+    def test_request_does_not_reveal_whether_email_exists(self):
+        known = self.client.post(
+            "/api/password-reset/",
+            {"email": self.user.email},
+            format="json",
+        )
+        unknown = self.client.post(
+            "/api/password-reset/",
+            {"email": "missing@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(known.status_code, 200)
+        self.assertEqual(unknown.status_code, 200)
+        self.assertEqual(known.data, unknown.data)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_valid_reset_token_changes_password(self):
+        self.client.post(
+            "/api/password-reset/",
+            {"email": self.user.email},
+            format="json",
+        )
+        link = re.search(r"http[^\s]+/reset-password/([^\s]+)", mail.outbox[0].body)
+        self.assertIsNotNone(link)
+        uidb64, token = link.group(1).rstrip("/").split("/")
+
+        response = self.client.post(
+            "/api/password-reset-confirm/",
+            {
+                "uidb64": uidb64,
+                "token": token,
+                "password": "NewSecurePassword123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("NewSecurePassword123!"))
 
 
 class PermissionTests(TestCase):

@@ -62,6 +62,20 @@ export const setPassword = async ({ uidb64, token, password }) => {
   return getAuthPayload(response);
 };
 
+export const requestPasswordReset = async (email) => {
+  const response = await api.post("password-reset/", { email });
+  return getAuthPayload(response);
+};
+
+export const confirmPasswordReset = async ({ uidb64, token, password }) => {
+  const response = await api.post("password-reset-confirm/", {
+    uidb64,
+    token,
+    password,
+  });
+  return getAuthPayload(response);
+};
+
 /**
  * Saves the JWT authentication tokens in localStorage.
  *
