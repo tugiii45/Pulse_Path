@@ -122,7 +122,7 @@ Pulse_Path/
 ### 1) Clone the repository
 
 ```bash
-git clone https://github.com/your-username/Pulse_Path.git
+git clone https://github.com/tugiii45/Pulse_Path/
 cd Pulse_Path
 ```
 
