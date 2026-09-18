@@ -96,7 +96,7 @@ CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
     default=(
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174,"
-        "https://pulse-path-ruby.vercel.app"
+        "https://pulse-path-ruby.vercel.app,https://pulse-path-okd8-six.vercel.app"
     ),
     cast=Csv(),
 )
@@ -105,7 +105,7 @@ CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
     default=(
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174,"
-        "https://pulse-path-ruby.vercel.app"
+        "https://pulse-path-ruby.vercel.app,https://pulse-path-okd8-six.vercel.app"
     ),
     cast=Csv(),
 )
