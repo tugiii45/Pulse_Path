@@ -64,7 +64,7 @@ def send_doctor_invite_email(user):
         f"{link}\n\n"
         "This link expires after a limited time. If you did not expect "
         "this email, you can ignore it.\n\n"
-        "-- PulsePath"
+        "PulsePath Management Team"
     )
 
     html_body = f"""
@@ -75,7 +75,7 @@ def send_doctor_invite_email(user):
     <a href="{link}">{link}</a></p>
     <p>This link expires after a limited time. If you did not expect this
     email, you can ignore it.</p>
-    <p>-- PulsePath</p>
+    <p> PulsePath Management Team</p>
     """
 
     email = EmailMultiAlternatives(
@@ -110,7 +110,7 @@ def send_admin_invite_email(user):
         "set up its departments.\n\n"
         "This link expires after a limited time. If you did not expect "
         "this email, you can ignore it.\n\n"
-        "-- PulsePath"
+        " PulsePath Management Team"
     )
 
     html_body = f"""
@@ -123,7 +123,7 @@ def send_admin_invite_email(user):
     its departments.</p>
     <p>This link expires after a limited time. If you did not expect this
     email, you can ignore it.</p>
-    <p>-- PulsePath</p>
+    <p> PulsePath Management Team</p>
     """
 
     email = EmailMultiAlternatives(

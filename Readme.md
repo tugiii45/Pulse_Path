@@ -1,175 +1,272 @@
-#  PulsePath
+# PulsePath
 
-> ## Overview
+PulsePath is a healthcare management platform built for the continuous care journey between patients, doctors, and hospital staff. It combines a Django REST API with a React frontend to support appointment management, clinical documentation, prescription workflows, treatment follow-up, and automated patient reminders.
 
-**PulsePath** is a modern healthcare management system designed to digitize and streamline the entire patient care lifecycle. Developed as a capstone project using **Django REST Framework** and **PostgreSQL**, it provides a secure, scalable RESTful API that connects patients and healthcare providers through a centralized platform.
-
-The system manages every stage of care, including patient registration, appointment scheduling, clinical visits, medical records, diagnoses, prescriptions, medication scheduling, adherence tracking, symptom logging, side-effect reporting, recovery monitoring, and healthcare notifications. By consolidating these processes, PulsePath improves data accessibility, reduces manual record keeping, and enhances communication between patients and healthcare professionals.
-
-A key feature of PulsePath is its focus on **continuity of care**. Instead of ending the patient journey after treatment, the platform enables healthcare providers to monitor recovery, medication adherence, and reported symptoms over time, supporting better clinical decisions and improved patient outcomes.
-
-Built with a modular architecture, JWT-based authentication, and interactive API documentation using Swagger/OpenAPI, PulsePath is designed to be maintainable, extensible, and ready for future enhancements such as AI-powered clinical decision support, M-Pesa integration, mobile applications, and real-time healthcare notifications.
+The system is designed around continuity of care: each patient interaction is tracked across appointments, visits, diagnoses, medications, recovery updates, and notifications so clinicians can act on a complete view of treatment progress.
 
 
 
-##  Features
+## Why PulsePath
 
--  JWT Authentication & User Management
--  Patient Profile Management
--  Appointment Booking & Visit Tracking
--  Clinical Records & Diagnoses
--  Prescription Management
--  Medication Scheduling
--  Medication Adherence Logging
--  Symptom Tracking
--  Side Effect Reporting
--  Recovery Progress Monitoring
--  Healthcare Notifications
--  Interactive API Documentation with Swagger
+PulsePath helps digitize the core operational flow of a healthcare service without losing the human aspect of care. Instead of treating each step as an isolated record, the platform connects them into one treatment lifecycle.
+
+This creates a better experience for:
+
+- Patients, who can track treatment adherence and receive reminders
+- Doctors, who can review patient history and treatment progress
+- Hospital staff, who can manage departments, doctors, and appointment workflows
+- Administrators, who can provision staff and manage hospital-level operations
+
+
+
+## Core Features
+
+### Patient and user lifecycle
+- JWT-based authentication and secure access
+- user registration and profile management
+- password reset and account setup flows
+- patient profile updates and patient list access
+- doctor and admin provisioning by authorized users
+
+### Hospital and staff operations
+- hospital registration and management
+- department setup and organization
+- doctor listing and hospital-scoped assignment
+- staff-specific access and role-aware permissions
+
+### Appointment and visit management
+- appointment booking and update workflows
+- appointment status changes such as confirmed or cancelled
+- patient/doctor-specific views of appointments
+- visit tracking linked to appointments
+
+### Clinical care workflow
+- clinical record creation and review
+- diagnosis records tied to visit and patient context
+- prescription creation and management
+- treatment tracking over time
+
+### Medication and recovery tracking
+- medication schedule creation with timing and date windows
+- medication logs for adherence tracking
+- side effect reporting by patients
+- recovery progress updates and doctor review
+- follow-up scheduling for treatment continuity
+
+### Notifications and reminders
+- automated medication reminders
+- appointment reminders
+- follow-up reminders
+- missed-dose alerts
+- notification read state, filtering, and deletion
+- deduplicated alert creation using a unique notification key
+
+### Dashboard and assistant support
+- dashboard statistics endpoint
+- chatbot integration
+- Swagger/OpenAPI documentation for API exploration
 
 
 
 ## Tech Stack
 
-- **Backend:** Django, Django REST Framework
-- **Database:** PostgreSQL
-- **Authentication:** JWT
-- **API Documentation:** DRF Spectacular (Swagger/OpenAPI)
-- **Version Control:** Git & GitHub
+### Backend
+- Python
+- Django
+- Django REST Framework
+- Django Filters
+- Simple JWT
+- DRF Spectacular
+
+### Frontend
+- React
+- Vite
+- Bootstrap
+- React Router
+- Axios
+
+### Infrastructure
+- SQLite for local development
+- PostgreSQL-compatible configuration via environment settings
+- CORS enabled for frontend-backend communication
+- WhiteNoise for static file serving
 
 
 
 ## Project Structure
 
+```text
+Pulse_Path/
+├── accounts/                 # auth, profiles, hospitals, doctors, patients
+├── clinical/                 # clinical records and diagnoses
+├── config/                   # project settings, URL routing, custom renderers
+├── dashboard/                # dashboard summary APIs
+├── notifications/            # notification models, services, reminder automation
+├── treatment/                # prescriptions, medications, logs, side effects, recovery
+├── visits/                   # appointments and visits
+├── chatbot/                  # chat endpoint integration
+├── pulsepath-frontend/       # React application
+├── manage.py
+├── requirements.txt
+├── package.json
+├── run_notifications.bat     # Windows task wrapper for reminder automation
+├── Readme.md
+├── TODO.md
+└── .env-based configuration
 ```
-pulsepath/
-│── accounts/
-│── visits/
-│── clinical/
-│── treatment/
-│── notifications/
-│── manage.py
-```
 
 
 
-##  Installation
+## Quick Start
 
-Clone the repository:
+### 1) Clone the repository
 
 ```bash
-git clone https://github.com/tugiii45/Pulse_Path.git
-cd pulsepath
+git clone https://github.com/your-username/Pulse_Path.git
+cd Pulse_Path
 ```
 
-Create a virtual environment:
+### 2) Create a virtual environment
+
+Windows:
 
 ```bash
 python -m venv myenv
-```
-
-Activate it:
-
-**Windows**
-
-```bash
 myenv\Scripts\activate
 ```
 
-**Linux/macOS**
+macOS/Linux:
 
 ```bash
-source venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-Install dependencies:
+### 3) Install dependencies
+
+Backend:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Apply migrations:
+Frontend:
 
 ```bash
-python manage.py makemigrations
+cd pulsepath-frontend
+npm install
+```
+
+### 4) Configure environment variables
+
+The app expects core environment settings such as:
+
+- `SECRET_KEY`
+- `DEBUG`
+- `ALLOWED_HOSTS`
+- `GROQ_API_KEY`
+- `EMAIL_HOST_USER`
+- `EMAIL_HOST_PASSWORD`
+- `DEFAULT_FROM_EMAIL`
+- `FRONTEND_BASE_URL`
+
+If you use a `.env` file, make sure it is loaded correctly before starting Django.
+
+### 5) Apply migrations
+
+```bash
 python manage.py migrate
 ```
 
-Run the server:
+### 6) Run the backend
 
 ```bash
 python manage.py runserver
 ```
 
+### 7) Run the frontend
 
-
-##  Authentication
-
-PulsePath uses **JWT Authentication**.
-
-Include the access token in every protected request:
-
-```text
-Authorization: Bearer <access_token>
+```bash
+cd pulsepath-frontend
+npm run dev
 ```
 
 
+## API Overview
 
-##  API Workflow
+The backend exposes the main app routes under `/api/`.
 
-```text
-Register User
-      ↓
-Create Patient
-      ↓
-Book Appointment
-      ↓
-Create Visit
-      ↓
-Create Clinical Record
-      ↓
-Create Diagnosis
-      ↓
-Create Prescription
-      ↓
-Schedule Medication
-      ↓
-Log Medication Adherence
-      ↓
-Report Symptoms & Side Effects
-      ↓
-Track Recovery Progress
-```
+### Main endpoints
+- `/api/login/`
+- `/api/token/refresh/`
+- `/api/register/`
+- `/api/profile/`
+- `/api/patients/`
+- `/api/doctors/`
+- `/api/hospitals/`
+- `/api/departments/`
+- `/api/visits/appointments/`
+- `/api/visits/visits/`
+- `/api/treatment/`
+- `/api/notifications/`
+- `/api/clinical/`
+- `/api/dashboard/stats/`
 
+### API documentation
 
-
-##  API Documentation
-
-After starting the server:
+After starting the backend:
 
 - Swagger UI: `http://127.0.0.1:8000/api/docs/`
+- Redoc: `http://127.0.0.1:8000/api/redoc/`
+- Schema: `http://127.0.0.1:8000/api/schema/`
 
 
 
+## Notification Automation
 
-##  Future Enhancements
+The reminder system is driven by a custom Django management command, executed through the Windows batch wrapper in `run_notifications.bat`.
 
--  AI-powered health insights
--  M-Pesa integration
--  Mobile application
--  Analytics dashboard
--  SMS & Email reminders
+The command in `notifications/management/commands/process_notifications.py` checks for:
 
+- medication reminders
+- appointment reminders due within the next 24 hours
+- follow-up reminders
+- missed-dose alerts
 
+All new reminders are created via the centralized helper in `notifications/services.py`, which prevents duplicate notifications with a unique `notification_key`.
 
-##  Author
-
-**Conrad**
-
-Aspiring Software Engineer 
+This is intended to be scheduled with Windows Task Scheduler, which makes the system automatically generate patient reminders without requiring manual intervention.
 
 
 
-##  License
+## Typical User Journey
 
-This project is licensed under the **MIT License**.
+```text
+Register account
+  ↓
+Create or join hospital workflow
+  ↓
+Book appointment
+  ↓
+Create visit and clinical notes
+  ↓
+Add diagnosis and prescription
+  ↓
+Schedule medication and treatment follow-up
+  ↓
+Log adherence, side effects, and recovery progress
+  ↓
+Receive automated reminder notifications
+```
+
+
+
+## Project Status
+
+PulsePath is a working healthcare management project with a complete backend API, frontend interface, and automated notification flow. It is modular and suitable for continued development, including enhancements such as analytics, more advanced patient dashboards, SMS/email integrations, and broader clinical reporting.
+
+
+
+## License
+
+This project is currently licensed under the MIT License unless otherwise specified in the repository.
