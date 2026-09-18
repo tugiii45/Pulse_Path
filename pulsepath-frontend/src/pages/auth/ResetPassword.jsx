@@ -21,11 +21,14 @@ function ResetPassword() {
     event.preventDefault();
     setError("");
 
+    // The route token is the credential for this unauthenticated page.
     if (!uidb64 || !token) {
       setError("This password reset link is invalid or incomplete.");
       return;
     }
 
+    // Check both fields before contacting the API so obvious mistakes are
+    // corrected immediately and the reset token is not consumed unnecessarily.
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -34,8 +37,10 @@ function ResetPassword() {
     setLoading(true);
 
     try {
+      // Django validates the token and password policy before saving the hash.
       await confirmPasswordReset({ uidb64, token, password });
       setSuccess(true);
+      // Keep the success message visible before returning to sign in.
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(getFriendlyErrorMessage(err, "This password reset link is invalid or has expired."));

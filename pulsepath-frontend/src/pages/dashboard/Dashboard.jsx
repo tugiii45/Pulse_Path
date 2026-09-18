@@ -9,10 +9,12 @@ function Dashboard() {
   const { profile, loading } = useAuth();
 
   if (loading) {
+    // Wait for AuthContext before making a role decision.
     return <p>Loading dashboard...</p>;
   }
 
   if (!profile) {
+    // The protected route normally handles this, but keep the page defensive.
     return <p>Unable to load profile.</p>;
   }
 
@@ -26,12 +28,15 @@ function Dashboard() {
 
   switch (profile.role) {
     case "ADMIN":
+      // Regular administrators manage one hospital's operations.
       return <AdminDashboard />;
 
     case "DOCTOR":
+      // Doctors work with assigned patients, visits, and clinical records.
       return <DoctorDashboard />;
 
     case "PATIENT":
+      // Patients see their own appointments, treatment, and recovery data.
       return <PatientDashboard />;
 
     default:

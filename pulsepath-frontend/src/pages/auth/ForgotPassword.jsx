@@ -13,14 +13,18 @@ function ForgotPassword() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    // Clear stale feedback before starting a new request.
     setError("");
     setSuccess("");
     setLoading(true);
 
     try {
+      // The backend intentionally returns a generic message for both known
+      // and unknown emails, preventing account enumeration.
       const response = await requestPasswordReset(email);
       setSuccess(response?.detail || "If an account exists for that email, a password reset link has been sent.");
     } catch (err) {
+      // Convert API validation/network errors into messages suitable for users.
       setError(getFriendlyErrorMessage(err, "We could not process that request. Please try again."));
     } finally {
       setLoading(false);

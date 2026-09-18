@@ -27,6 +27,7 @@ function Diagnosis() {
   });
 
   useEffect(() => {
+    // Load existing diagnoses as soon as the page becomes available.
     loadDiagnoses();
   }, []);
 
@@ -34,6 +35,7 @@ function Diagnosis() {
     try {
       setLoading(true);
 
+      // The service normalizes the backend response before it reaches the UI.
       const data = await getDiagnoses();
       console.log("DIAGNOSES API RESPONSE:", data);
       setDiagnoses(Array.isArray(data) ? data : []);
@@ -50,6 +52,8 @@ function Diagnosis() {
     try {
       setLoadingVisits(true);
 
+      // A diagnosis must reference a visit, so populate the selector on demand
+      // when the user opens the form instead of loading it unnecessarily.
       const data = await getVisits();
 
       console.log("VISITS API RESPONSE:", data);
@@ -64,6 +68,7 @@ function Diagnosis() {
   };
 
   const handleOpenForm = () => {
+    // Reset feedback and fetch the current visit list before data entry.
     setShowForm(true);
     setError("");
     setSuccess("");
@@ -72,6 +77,7 @@ function Diagnosis() {
   };
 
   const handleCloseForm = () => {
+    // Reset the form so the next diagnosis starts with a clean state.
     setShowForm(false);
 
     setFormData({
@@ -101,6 +107,7 @@ function Diagnosis() {
     setSuccess("");
 
     try {
+      // Convert the selected HTML option value to the numeric ID expected by DRF.
       const diagnosisData = {
         ...formData,
         visit: Number(formData.visit),
@@ -110,6 +117,7 @@ function Diagnosis() {
 
       await createDiagnosis(diagnosisData);
 
+      // Refresh the list so the newly created diagnosis appears immediately.
       setSuccess("Diagnosis added successfully!");
 
       handleCloseForm();

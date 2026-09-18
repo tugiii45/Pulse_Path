@@ -1,12 +1,14 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
+// Central constant so redirect target and path-check stay in sync
 const REGISTER_HOSPITAL_PATH = "/dashboard/register-hospital";
 
 function ProtectedRoute({ allowedRoles = [], requireSuperuser = false }) {
   const { profile, loading } = useAuth();
   const location = useLocation();
 
+  // Auth state not resolved yet — show spinner, don't redirect prematurely
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
@@ -17,6 +19,7 @@ function ProtectedRoute({ allowedRoles = [], requireSuperuser = false }) {
     );
   }
 
+  // Not logged in — send to login
   if (!profile) {
     return <Navigate to="/login" replace />;
   }
@@ -37,6 +40,7 @@ function ProtectedRoute({ allowedRoles = [], requireSuperuser = false }) {
     return <Navigate to={REGISTER_HOSPITAL_PATH} replace />;
   }
 
+  // Role not permitted on this route — bounce to dashboard
   if (allowedRoles.length > 0 && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -49,6 +53,7 @@ function ProtectedRoute({ allowedRoles = [], requireSuperuser = false }) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // All checks passed — render nested route
   return <Outlet />;
 }
 
