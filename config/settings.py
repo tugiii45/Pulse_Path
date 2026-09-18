@@ -94,13 +94,19 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174",
+    default=(
+        "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174,"
+        "https://pulse-path-ruby.vercel.app"
+    ),
     cast=Csv(),
 )
 
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
-    default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174",
+    default=(
+        "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174,"
+        "https://pulse-path-ruby.vercel.app"
+    ),
     cast=Csv(),
 )
 
@@ -137,7 +143,8 @@ DATABASES = {
     'default': dj_database_url.config(
         # Fallback to local SQLite if DATABASE_URL environment variable is missing
         default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
-        conn_max_age=600
+        conn_max_age=600,
+        ssl_require=not DEBUG,
     )
 }
 
