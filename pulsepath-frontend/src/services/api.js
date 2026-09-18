@@ -14,7 +14,7 @@ const setAuthMessage = (message) => {
 // The API routes are mounted under /api/ in Django.
 const configuredApiUrl =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-const API_BASE_URL = `${configuredApiUrl
+export const API_BASE_URL = `${configuredApiUrl
   .replace(/\/+$/, "")
   .replace(/\/api$/, "")}/api/`;
 

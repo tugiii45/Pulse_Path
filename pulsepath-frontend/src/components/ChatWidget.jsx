@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { FaXmark } from "react-icons/fa6";
+import { API_BASE_URL } from "../services/api";
 import "./ChatWidget.css";
 
 const PULSE_PATH = "M0,12 L14,12 L18,4 L24,20 L28,12 L34,12 L38,6 L42,18 L46,12 L64,12";
+const CHAT_API_URL = `${API_BASE_URL}chat/`;
 
 // -----------------------------------------------------------------------------
 // Chat assistant widget
@@ -35,7 +37,7 @@ export default function ChatWidget() {
     const token = localStorage.getItem("access");
 
     try {
-      const res = await fetch("http://localhost:8000/api/chat/", {
+      const res = await fetch(CHAT_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

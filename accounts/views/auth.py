@@ -14,6 +14,8 @@ that no longer exists) was removed from this file -- it was dead code
 left over from an earlier, abandoned attempt at the same feature.
 """
 
+import logging
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.encoding import force_bytes
@@ -28,6 +30,9 @@ from ..serializers import (
 )
 from ..models import CustomUser
 from ..serializers.password_reset import password_reset_token_generator
+
+
+logger = logging.getLogger(__name__)
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
@@ -132,7 +137,13 @@ class PasswordResetRequestView(APIView):
                 to=[user.email],
             )
             email.attach_alternative(html_body, "text/html")
-            email.send(fail_silently=False)
+            try:
+                email.send(fail_silently=False)
+            except Exception:
+                # Keep the response identical for known and unknown emails.
+                # This prevents account enumeration while leaving the SMTP
+                # failure available in the server logs for configuration fixes.
+                logger.exception("Password reset email could not be delivered")
 
         return Response(
             {"detail": "If an account exists for that email, a password reset link has been sent."},

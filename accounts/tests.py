@@ -1,4 +1,5 @@
 import re
+from unittest.mock import patch
 
 from django.core import mail
 from django.test import TestCase, override_settings
@@ -60,6 +61,19 @@ class PasswordResetTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("NewSecurePassword123!"))
+
+    @patch("accounts.views.auth.EmailMultiAlternatives.send")
+    def test_email_failure_does_not_return_server_error(self, send):
+        send.side_effect = OSError("SMTP unavailable")
+
+        response = self.client.post(
+            "/api/password-reset/",
+            {"email": self.user.email},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("If an account exists", response.data["detail"])
 
 
 class PermissionTests(TestCase):
